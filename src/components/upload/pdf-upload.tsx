@@ -27,6 +27,10 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function isPdfFile(file: File): boolean {
+  return file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+}
+
 export function PDFUpload({
   onUpload,
   isProcessing = false,
@@ -41,7 +45,7 @@ export function PDFUpload({
 
   const validateAndUpload = useCallback(
     (file: File) => {
-      if (file.type !== "application/pdf") {
+      if (!isPdfFile(file)) {
         setState("error");
         setErrorMessage("请上传PDF格式文件");
         return;

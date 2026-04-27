@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle2, Eye, Palette, Upload } from "lucide-react";
+import { CheckCircle2, Palette, Upload } from "lucide-react";
 import { useResumeStore } from "@/store/resume-store";
 import { loadInterviewProject, saveInterviewProject } from "@/lib/projects/registry";
 import { interviewToResumeData, resumeDataToInterview } from "@/lib/projects/adapters";
@@ -52,8 +52,18 @@ export default function InterviewEditPage() {
 
   const currentIdx = stepOrder.indexOf(currentStep);
   const canGoBack = currentIdx > 0;
-  const canGoForward =
-    currentIdx >= 0 && currentIdx < stepOrder.length - 1 && currentStep !== "upload";
+  const hasResume = Boolean(resumeData);
+  const enterPreview = () => router.push(`/workspace/interview/${id}/preview`);
+  const goNext = () => {
+    if (currentStep === "edit") {
+      enterPreview();
+      return;
+    }
+    if (currentIdx >= 0 && currentIdx < stepOrder.length - 1) {
+      setCurrentStep(stepOrder[currentIdx + 1]);
+    }
+  };
+  const canGoForward = currentStep === "edit" ? hasResume : currentStep !== "upload" && currentIdx < stepOrder.length - 1;
 
   return (
     <AppShell
@@ -69,22 +79,16 @@ export default function InterviewEditPage() {
               返回工作台
             </Button>
           </Link>
-          <Link href={`/workspace/interview/${id}/preview`}>
-            <Button size="sm" variant="brand" className="gap-1.5 rounded-full">
-              <Eye className="h-3.5 w-3.5" />
-              进入面试预览
-            </Button>
-          </Link>
         </>
       }
       footer={
         <PageFooterNav
           onPrev={() => setCurrentStep(stepOrder[currentIdx - 1])}
-          onNext={() =>
-            canGoForward ? setCurrentStep(stepOrder[currentIdx + 1]) : null
-          }
+          onNext={goNext}
           disablePrev={!canGoBack}
           disableNext={!canGoForward}
+          nextLabel={currentStep === "edit" ? "完整预览" : "下一步"}
+          nextHint={!hasResume ? "请先上传并解析简历" : undefined}
           hint={`${currentIdx + 1} / ${stepOrder.length}`}
         />
       }
@@ -100,12 +104,7 @@ export default function InterviewEditPage() {
         <div className="min-h-0 flex-1 overflow-hidden">
           {currentStep === "upload" && <UploadPage />}
           {currentStep === "confirm" && <ConfirmPage />}
-          {currentStep === "edit" && (
-            <EditPage
-              mode="interview"
-              onEnterPreview={() => router.push(`/workspace/interview/${id}/preview`)}
-            />
-          )}
+          {currentStep === "edit" && <EditPage mode="interview" />}
         </div>
       </div>
     </AppShell>

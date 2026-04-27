@@ -22,6 +22,36 @@ export interface TimelineNode {
   projects: ProjectDetail[];
   skills: string[];
   order: number;
+  careerKind?: CareerKind;
+  storyTitle?: string;
+  storyScene?: string;
+  storyChallenge?: string;
+  storyAction?: string;
+  storyOutcome?: string;
+  storyReflection?: string;
+  storyMood?: StoryMood;
+  evidenceProblem?: string;
+  evidenceAction?: string;
+  evidenceResult?: string;
+  evidenceProof?: string;
+  evidenceStrength?: EvidenceStrength;
+  promotionStages?: PromotionStage[];
+}
+
+export type CareerKind = 'internship' | 'fulltime';
+export type StoryMood = 'focus' | 'growth' | 'breakthrough' | 'craft' | 'impact';
+export type EvidenceStrength = 'weak' | 'medium' | 'strong';
+export type PublicSiteTemplate = 'executive-dossier' | 'minimal-growth';
+
+export interface PromotionStage {
+  id: string;
+  title: string;
+  period: string;
+  teamScale: string;
+  leadershipType: 'none' | 'dotted' | 'solid';
+  responsibility: string;
+  outcome: string;
+  reflection: string;
 }
 
 export interface ProjectDetail {
@@ -42,6 +72,71 @@ export interface SkillNode {
   children?: SkillNode[];
   x?: number;
   y?: number;
+  status?: SkillMatchStatus;
+  importance?: SkillImportance;
+  aliases?: string[];
+  sourceTimelineIds?: string[];
+  sourceSnippets?: string[];
+}
+
+export type SkillMatchStatus = 'owned' | 'missing' | 'inferred';
+export type SkillImportance = 'core' | 'important' | 'optional';
+
+export interface RoleSkillTemplate {
+  templateId: string;
+  roleName: string;
+  aliases: string[];
+  categories: RoleSkillCategory[];
+}
+
+export interface RoleSkillCategory {
+  id: string;
+  name: string;
+  description: string;
+  skills: RoleSkillDefinition[];
+}
+
+export interface RoleSkillDefinition {
+  id: string;
+  name: string;
+  aliases: string[];
+  importance: SkillImportance;
+  displayGroup: string;
+}
+
+export interface SkillMatch {
+  skillId: string;
+  name: string;
+  categoryId: string;
+  categoryName: string;
+  status: SkillMatchStatus;
+  importance: SkillImportance;
+  sourceTimelineIds: string[];
+  sourceSnippets: string[];
+}
+
+export interface SkillCategory {
+  id: string;
+  name: string;
+  description: string;
+  matches: SkillMatch[];
+}
+
+export interface SkillCoverage {
+  owned: number;
+  total: number;
+  coreOwned: number;
+  coreTotal: number;
+  percent: number;
+}
+
+export interface SkillProfile {
+  templateId: string;
+  roleName: string;
+  confidence: number;
+  categories: SkillCategory[];
+  coverage: SkillCoverage;
+  detectedSkillNames: string[];
 }
 
 export interface ArchitectureModule {
@@ -58,8 +153,13 @@ export interface ArchitectureModule {
 
 export interface ResumeData {
   profile: UserProfile;
+  publicSiteTemplate?: PublicSiteTemplate;
   timeline: TimelineNode[];
   skills: SkillNode[];
+  skillProfile?: SkillProfile;
+  roleTemplateId?: string;
+  publishedSiteId?: string;
+  publishedAt?: string;
   architecture: ArchitectureModule[];
   education: Education[];
   roleUnderstanding: RoleUnderstanding;

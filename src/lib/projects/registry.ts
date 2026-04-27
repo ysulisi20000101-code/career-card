@@ -46,8 +46,9 @@ function migrateLegacyEditorData() {
     const record: ProjectRecord = {
       id: crypto.randomUUID(),
       type: "personal",
-      title: "迁移的个人网站草稿",
+      title: "迁移的职业档案草稿",
       status: "draft",
+      createdAt: nowIso(),
       updatedAt: nowIso(),
     };
     window.localStorage.setItem(PERSONAL_PREFIX + record.id, JSON.stringify(resumeDataToPersonal(legacyResume)));
@@ -69,6 +70,7 @@ export function createProjectRecord(type: "personal" | "interview", title: strin
     type,
     title,
     status: "draft",
+    createdAt: nowIso(),
     updatedAt: nowIso(),
   };
   upsertProjectRecord(record);
@@ -87,6 +89,56 @@ export function updateProjectRecord(
     ...patch,
     updatedAt: nowIso(),
   });
+}
+
+export function renameProjectRecord(id: string, title: string): void {
+  const trimmed = title.trim();
+  if (!trimmed) return;
+  updateProjectRecord(id, { title: trimmed });
+}
+
+export function archiveProjectRecord(id: string, archived = true): void {
+  updateProjectRecord(id, { status: archived ? "archived" : "draft" });
+}
+
+export function deleteProjectRecord(id: string): void {
+  if (typeof window === "undefined") return;
+  const records = listProjectRecords();
+  const existing = records.find((item) => item.id === id);
+  if (!existing) return;
+  window.localStorage.setItem(
+    REGISTRY_KEY,
+    JSON.stringify(records.filter((item) => item.id !== id)),
+  );
+  window.localStorage.removeItem(PERSONAL_PREFIX + id);
+  window.localStorage.removeItem(INTERVIEW_PREFIX + id);
+}
+
+export function duplicateProjectRecord(id: string): ProjectRecord | null {
+  if (typeof window === "undefined") return null;
+  const records = listProjectRecords();
+  const existing = records.find((item) => item.id === id);
+  if (!existing) return null;
+
+  const duplicated: ProjectRecord = {
+    ...existing,
+    id: crypto.randomUUID(),
+    title: `${existing.title} 副本`,
+    status: "draft",
+    createdAt: nowIso(),
+    updatedAt: nowIso(),
+    publishedSlug: undefined,
+    publishedAt: undefined,
+  };
+  const sourceKey = existing.type === "personal" ? PERSONAL_PREFIX + id : INTERVIEW_PREFIX + id;
+  const targetKey =
+    duplicated.type === "personal"
+      ? PERSONAL_PREFIX + duplicated.id
+      : INTERVIEW_PREFIX + duplicated.id;
+  const sourceData = window.localStorage.getItem(sourceKey);
+  if (sourceData) window.localStorage.setItem(targetKey, sourceData);
+  upsertProjectRecord(duplicated);
+  return duplicated;
 }
 
 export function savePersonalProject(id: string, data: PersonalSiteData): void {

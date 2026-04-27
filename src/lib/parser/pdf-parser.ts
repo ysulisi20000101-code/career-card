@@ -4,9 +4,8 @@
  * Browser-side PDF text extraction powered by pdfjs-dist.
  *
  * The pdfjs worker is loaded from the same package via `new URL(..., import.meta.url)`
- * so that bundlers (Webpack/Turbopack) emit it as a static asset.
- *
- * Throws ParseError with a clear message when the PDF cannot be read.
+ * so bundlers emit it as a static asset. The parser keeps PDF coordinates so Chinese
+ * resumes with multi-column or mixed font output can be reconstructed by line.
  */
 
 export class ParseError extends Error {
@@ -46,6 +45,29 @@ function extractTextChunks(items: unknown[]): TextChunk[] {
     .filter((chunk): chunk is TextChunk => Boolean(chunk && chunk.text.trim()));
 }
 
+function shouldGlueText(left: string, right: string): boolean {
+  if (!left || !right) return false;
+  const a = left[left.length - 1];
+  const b = right[0];
+  if (/[\u4e00-\u9fff]/.test(a) && /[\u4e00-\u9fff]/.test(b)) return true;
+  if (/\d/.test(a) && /[\d.年月]/.test(b)) return true;
+  if (/[./年月]/.test(a) && /\d/.test(b)) return true;
+  return false;
+}
+
+function joinLineText(chunks: TextChunk[]): string {
+  return chunks
+    .sort((a, b) => a.x - b.x)
+    .reduce((line, chunk) => {
+      const text = chunk.text.trim();
+      if (!text) return line;
+      if (!line) return text;
+      return shouldGlueText(line, text) ? `${line}${text}` : `${line} ${text}`;
+    }, "")
+    .replace(/[ \t]+/g, " ")
+    .trim();
+}
+
 function joinChunksByLines(chunks: TextChunk[]): string {
   if (chunks.length === 0) return "";
   const sorted = [...chunks].sort((a, b) => {
@@ -59,12 +81,7 @@ function joinChunksByLines(chunks: TextChunk[]): string {
 
   const flushLine = () => {
     if (currentLine.length === 0) return;
-    const line = currentLine
-      .sort((a, b) => a.x - b.x)
-      .map((chunk) => chunk.text.trim())
-      .join(" ")
-      .replace(/[ \t]+/g, " ")
-      .trim();
+    const line = joinLineText(currentLine);
     if (line) lines.push(line);
     currentLine = [];
   };
@@ -76,9 +93,7 @@ function joinChunksByLines(chunks: TextChunk[]): string {
       currentY = chunk.y;
     }
     currentLine.push(chunk);
-    if (chunk.hasEOL) {
-      flushLine();
-    }
+    if (chunk.hasEOL) flushLine();
   }
   flushLine();
 
@@ -90,8 +105,6 @@ async function ensureWorker(): Promise<void> {
   try {
     const pdfjs = await import("pdfjs-dist");
     if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-      // Resolve the worker URL relative to the pdfjs-dist ESM entry so
-      // bundlers (Webpack/Turbopack) emit it as a static asset.
       pdfjs.GlobalWorkerOptions.workerSrc = new URL(
         "pdfjs-dist/build/pdf.worker.min.mjs",
         import.meta.url,
@@ -107,7 +120,7 @@ async function ensureWorker(): Promise<void> {
 }
 
 export async function extractPdfText(file: File): Promise<string> {
-  if (file.type && file.type !== "application/pdf") {
+  if (file.type && file.type !== "application/pdf" && !/\.pdf$/i.test(file.name)) {
     throw new ParseError("INVALID_PDF", "仅支持 PDF 格式文件");
   }
 
@@ -127,7 +140,7 @@ export async function extractPdfText(file: File): Promise<string> {
   }
 
   const pageTexts: string[] = [];
-  for (let pageIndex = 1; pageIndex <= pdf.numPages; pageIndex++) {
+  for (let pageIndex = 1; pageIndex <= pdf.numPages; pageIndex += 1) {
     const page = await pdf.getPage(pageIndex);
     const content = await page.getTextContent();
     const text = joinChunksByLines(extractTextChunks(content.items));
@@ -139,7 +152,7 @@ export async function extractPdfText(file: File): Promise<string> {
   if (fullText.length < 20) {
     throw new ParseError(
       "EMPTY_TEXT",
-      "未能从 PDF 中提取到足够文本（可能是扫描件/图片型 PDF）",
+      "未能从 PDF 中提取到足够文本，可能是扫描件或图片型 PDF。",
     );
   }
 

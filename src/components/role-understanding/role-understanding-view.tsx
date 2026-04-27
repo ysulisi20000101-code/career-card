@@ -17,7 +17,9 @@ function sectionHasContent(roleUnderstanding: RoleUnderstanding) {
       Boolean(roleUnderstanding.targetRoleTitle) ||
       Boolean(roleUnderstanding.companyContext) ||
       Boolean(roleUnderstanding.oneLineInterpretation),
-    B: roleUnderstanding.priorityProblems.some((item) => item.problem || item.impact || item.evidence),
+    B: roleUnderstanding.priorityProblems.some(
+      (item) => item.problem || item.impact || item.evidence,
+    ),
     C:
       Boolean(roleUnderstanding.ninetyDayPlan.day0To30) ||
       Boolean(roleUnderstanding.ninetyDayPlan.day31To60) ||
@@ -54,22 +56,36 @@ export function RoleUnderstandingView({
   const completionScore = useMemo(() => {
     const sectionCompletion =
       [has.A, has.B, has.C, has.D].filter(Boolean).length / 4;
-    const evidenceRows = roleUnderstanding.experienceMappings.filter(
+    const supportRows = roleUnderstanding.experienceMappings.filter(
       (row) => row.requirement && row.myExperience && row.outcomeEvidence,
     ).length;
-    const evidenceUsage = Math.min(1, evidenceRows / Math.max(1, roleUnderstanding.experienceMappings.length));
-    const measurableTerms = ["提升", "降低", "增长", "%", "转化", "时长", "效率", "结果"];
+    const supportUsage = Math.min(
+      1,
+      supportRows / Math.max(1, roleUnderstanding.experienceMappings.length),
+    );
+    const measurableTerms = [
+      "提升",
+      "降低",
+      "增长",
+      "%",
+      "转化",
+      "时长",
+      "效率",
+      "结果",
+    ];
     const measurableCount = [
       roleUnderstanding.ninetyDayPlan.day0To30,
       roleUnderstanding.ninetyDayPlan.day31To60,
       roleUnderstanding.ninetyDayPlan.day61To90,
-      ...roleUnderstanding.priorityProblems.map((p) => `${p.impact} ${p.evidence ?? ""}`),
+      ...roleUnderstanding.priorityProblems.map(
+        (problem) => `${problem.impact} ${problem.evidence ?? ""}`,
+      ),
     ]
       .join(" ")
       .split(/\s+/)
       .filter((word) => measurableTerms.some((term) => word.includes(term))).length;
     const measurable = Math.min(1, measurableCount / 3);
-    return Math.round((sectionCompletion * 0.4 + evidenceUsage * 0.3 + measurable * 0.3) * 100);
+    return Math.round((sectionCompletion * 0.4 + supportUsage * 0.3 + measurable * 0.3) * 100);
   }, [has.A, has.B, has.C, has.D, roleUnderstanding]);
 
   if (!hasContent) {
@@ -99,33 +115,71 @@ export function RoleUnderstandingView({
           <CardContent className="space-y-4 text-sm">
             {presentationSection === 0 && (
               <>
-                <p><span className="text-muted-foreground">目标岗位：</span>{roleUnderstanding.targetRoleTitle || "未填写"}</p>
-                <p><span className="text-muted-foreground">团队背景：</span>{roleUnderstanding.companyContext || "未填写"}</p>
-                <p><span className="text-muted-foreground">一句话理解：</span>{roleUnderstanding.oneLineInterpretation || "未填写"}</p>
+                <p>
+                  <span className="text-muted-foreground">目标岗位：</span>
+                  {roleUnderstanding.targetRoleTitle || "未填写"}
+                </p>
+                <p>
+                  <span className="text-muted-foreground">团队背景：</span>
+                  {roleUnderstanding.companyContext || "未填写"}
+                </p>
+                <p>
+                  <span className="text-muted-foreground">一句话理解：</span>
+                  {roleUnderstanding.oneLineInterpretation || "未填写"}
+                </p>
               </>
             )}
             {presentationSection === 1 &&
               roleUnderstanding.priorityProblems.map((item, index) => (
                 <div key={item.id} className="rounded-md border p-3">
-                  <Badge variant="outline" className="mb-2">问题 {index + 1}</Badge>
-                  <p><span className="text-muted-foreground">问题：</span>{item.problem || "未填写"}</p>
-                  <p><span className="text-muted-foreground">影响：</span>{item.impact || "未填写"}</p>
-                  <p><span className="text-muted-foreground">证据：</span>{item.evidence || "未填写"}</p>
+                  <Badge variant="outline" className="mb-2">
+                    问题 {index + 1}
+                  </Badge>
+                  <p>
+                    <span className="text-muted-foreground">问题：</span>
+                    {item.problem || "未填写"}
+                  </p>
+                  <p>
+                    <span className="text-muted-foreground">影响：</span>
+                    {item.impact || "未填写"}
+                  </p>
+                  <p>
+                    <span className="text-muted-foreground">依据：</span>
+                    {item.evidence || "未填写"}
+                  </p>
                 </div>
               ))}
             {presentationSection === 2 && (
               <>
-                <p><span className="text-muted-foreground">0-30 天：</span>{roleUnderstanding.ninetyDayPlan.day0To30 || "未填写"}</p>
-                <p><span className="text-muted-foreground">31-60 天：</span>{roleUnderstanding.ninetyDayPlan.day31To60 || "未填写"}</p>
-                <p><span className="text-muted-foreground">61-90 天：</span>{roleUnderstanding.ninetyDayPlan.day61To90 || "未填写"}</p>
+                <p>
+                  <span className="text-muted-foreground">0-30 天：</span>
+                  {roleUnderstanding.ninetyDayPlan.day0To30 || "未填写"}
+                </p>
+                <p>
+                  <span className="text-muted-foreground">31-60 天：</span>
+                  {roleUnderstanding.ninetyDayPlan.day31To60 || "未填写"}
+                </p>
+                <p>
+                  <span className="text-muted-foreground">61-90 天：</span>
+                  {roleUnderstanding.ninetyDayPlan.day61To90 || "未填写"}
+                </p>
               </>
             )}
             {presentationSection === 3 &&
               roleUnderstanding.experienceMappings.map((item) => (
                 <div key={item.id} className="rounded-md border p-3">
-                  <p><span className="text-muted-foreground">岗位要求：</span>{item.requirement || "未填写"}</p>
-                  <p><span className="text-muted-foreground">相关经历：</span>{item.myExperience || "未填写"}</p>
-                  <p><span className="text-muted-foreground">结果证据：</span>{item.outcomeEvidence || "未填写"}</p>
+                  <p>
+                    <span className="text-muted-foreground">岗位要求：</span>
+                    {item.requirement || "未填写"}
+                  </p>
+                  <p>
+                    <span className="text-muted-foreground">相关经历：</span>
+                    {item.myExperience || "未填写"}
+                  </p>
+                  <p>
+                    <span className="text-muted-foreground">结果支撑：</span>
+                    {item.outcomeEvidence || "未填写"}
+                  </p>
                 </div>
               ))}
           </CardContent>
@@ -144,61 +198,107 @@ export function RoleUnderstandingView({
           </div>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
-          <p><span className="text-muted-foreground">目标岗位：</span>{roleUnderstanding.targetRoleTitle || "未填写"}</p>
-          <p><span className="text-muted-foreground">团队背景：</span>{roleUnderstanding.companyContext || "未填写"}</p>
-          <p><span className="text-muted-foreground">一句话理解：</span>{roleUnderstanding.oneLineInterpretation || "未填写"}</p>
+          <p>
+            <span className="text-muted-foreground">目标岗位：</span>
+            {roleUnderstanding.targetRoleTitle || "未填写"}
+          </p>
+          <p>
+            <span className="text-muted-foreground">团队背景：</span>
+            {roleUnderstanding.companyContext || "未填写"}
+          </p>
+          <p>
+            <span className="text-muted-foreground">一句话理解：</span>
+            {roleUnderstanding.oneLineInterpretation || "未填写"}
+          </p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader
           className={compact ? "cursor-pointer" : ""}
-          onClick={compact ? () => setExpanded((s) => ({ ...s, B: !s.B })) : undefined}
+          onClick={compact ? () => setExpanded((state) => ({ ...state, B: !state.B })) : undefined}
         >
           <CardTitle className="text-base">B. 优先问题（Top 3）</CardTitle>
         </CardHeader>
-        {expanded.B && <CardContent className="space-y-3">
-          {roleUnderstanding.priorityProblems.map((item, index) => (
-            <div key={item.id} className="rounded-md border p-3 text-sm">
-              <Badge variant="outline" className="mb-2">问题 {index + 1}</Badge>
-              <p><span className="text-muted-foreground">问题：</span>{item.problem || "未填写"}</p>
-              <p><span className="text-muted-foreground">影响：</span>{item.impact || "未填写"}</p>
-              {item.evidence ? <p><span className="text-muted-foreground">证据：</span>{item.evidence}</p> : null}
-            </div>
-          ))}
-        </CardContent>}
+        {expanded.B && (
+          <CardContent className="space-y-3">
+            {roleUnderstanding.priorityProblems.map((item, index) => (
+              <div key={item.id} className="rounded-md border p-3 text-sm">
+                <Badge variant="outline" className="mb-2">
+                  问题 {index + 1}
+                </Badge>
+                <p>
+                  <span className="text-muted-foreground">问题：</span>
+                  {item.problem || "未填写"}
+                </p>
+                <p>
+                  <span className="text-muted-foreground">影响：</span>
+                  {item.impact || "未填写"}
+                </p>
+                {item.evidence ? (
+                  <p>
+                    <span className="text-muted-foreground">依据：</span>
+                    {item.evidence}
+                  </p>
+                ) : null}
+              </div>
+            ))}
+          </CardContent>
+        )}
       </Card>
 
       <Card>
         <CardHeader
           className={compact ? "cursor-pointer" : ""}
-          onClick={compact ? () => setExpanded((s) => ({ ...s, C: !s.C })) : undefined}
+          onClick={compact ? () => setExpanded((state) => ({ ...state, C: !state.C })) : undefined}
         >
           <CardTitle className="text-base">C. 90 天行动计划</CardTitle>
         </CardHeader>
-        {expanded.C && <CardContent className="space-y-2 text-sm">
-          <p><span className="text-muted-foreground">0-30 天：</span>{roleUnderstanding.ninetyDayPlan.day0To30 || "未填写"}</p>
-          <p><span className="text-muted-foreground">31-60 天：</span>{roleUnderstanding.ninetyDayPlan.day31To60 || "未填写"}</p>
-          <p><span className="text-muted-foreground">61-90 天：</span>{roleUnderstanding.ninetyDayPlan.day61To90 || "未填写"}</p>
-        </CardContent>}
+        {expanded.C && (
+          <CardContent className="space-y-2 text-sm">
+            <p>
+              <span className="text-muted-foreground">0-30 天：</span>
+              {roleUnderstanding.ninetyDayPlan.day0To30 || "未填写"}
+            </p>
+            <p>
+              <span className="text-muted-foreground">31-60 天：</span>
+              {roleUnderstanding.ninetyDayPlan.day31To60 || "未填写"}
+            </p>
+            <p>
+              <span className="text-muted-foreground">61-90 天：</span>
+              {roleUnderstanding.ninetyDayPlan.day61To90 || "未填写"}
+            </p>
+          </CardContent>
+        )}
       </Card>
 
       <Card>
         <CardHeader
           className={compact ? "cursor-pointer" : ""}
-          onClick={compact ? () => setExpanded((s) => ({ ...s, D: !s.D })) : undefined}
+          onClick={compact ? () => setExpanded((state) => ({ ...state, D: !state.D })) : undefined}
         >
           <CardTitle className="text-base">D. 经历映射</CardTitle>
         </CardHeader>
-        {expanded.D && <CardContent className="space-y-3">
-          {roleUnderstanding.experienceMappings.map((item) => (
-            <div key={item.id} className="rounded-md border p-3 text-sm">
-              <p><span className="text-muted-foreground">岗位要求：</span>{item.requirement || "未填写"}</p>
-              <p><span className="text-muted-foreground">相关经历：</span>{item.myExperience || "未填写"}</p>
-              <p><span className="text-muted-foreground">结果证据：</span>{item.outcomeEvidence || "未填写"}</p>
-            </div>
-          ))}
-        </CardContent>}
+        {expanded.D && (
+          <CardContent className="space-y-3">
+            {roleUnderstanding.experienceMappings.map((item) => (
+              <div key={item.id} className="rounded-md border p-3 text-sm">
+                <p>
+                  <span className="text-muted-foreground">岗位要求：</span>
+                  {item.requirement || "未填写"}
+                </p>
+                <p>
+                  <span className="text-muted-foreground">相关经历：</span>
+                  {item.myExperience || "未填写"}
+                </p>
+                <p>
+                  <span className="text-muted-foreground">结果支撑：</span>
+                  {item.outcomeEvidence || "未填写"}
+                </p>
+              </div>
+            ))}
+          </CardContent>
+        )}
       </Card>
     </div>
   );

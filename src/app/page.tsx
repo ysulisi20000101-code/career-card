@@ -2,170 +2,158 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import {
-  Sparkles,
-  ArrowRight,
-  FileText,
-  GitBranch,
-  Share2,
-} from "lucide-react";
+import { ArrowRight, Clock3, FileText, ShieldCheck, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/shell/brand-logo";
 
-const features = [
+const valueCards = [
+  {
+    icon: Clock3,
+    title: "5 分钟得到职业档案草稿",
+    description: "上传 PDF 后先生成可校准草稿，用户只需要确认关键信息和表达重点。",
+  },
   {
     icon: FileText,
-    title: "智能解析与确认",
-    description: "上传 PDF 后自动提取结构化信息，并在确认页快速校对与补全",
-    gradient: "from-blue-500 to-indigo-500",
-    bg: "bg-blue-50",
+    title: "把经历讲成面试官能读懂的结构",
+    description: "围绕目标角色、成长线、亮点支撑和能力地图组织内容，而不是堆简历条目。",
   },
   {
-    icon: GitBranch,
-    title: "交互式时间线",
-    description: "将职业经历转化为可视化时间线、技能图谱和架构图，交互式演示",
-    gradient: "from-violet-500 to-purple-500",
-    bg: "bg-violet-50",
+    icon: TrendingUp,
+    title: "发布后看到真实阅读反馈",
+    description: "记录打开、有效浏览和最近访问时间，帮助判断分享链接是否真的被阅读。",
   },
   {
-    icon: Share2,
-    title: "一键发布分享",
-    description: "生成可投递链接与面试展示内容，让面试官快速看懂你的匹配度",
-    gradient: "from-rose-500 to-pink-500",
-    bg: "bg-rose-50",
+    icon: ShieldCheck,
+    title: "隐私和公开范围可控",
+    description: "联系方式、草稿、发布链接和原始文件都应能被用户确认、隐藏或撤回。",
   },
 ];
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { delay: i * 0.12, duration: 0.5, ease: [0.33, 1, 0.68, 1] as const },
-  }),
-};
+const audiences = ["1-3 年社招候选人", "3-8 年骨干/负责人", "转岗或换赛道求职者"];
 
 export default function HomePage() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-white">
-      {/* Background decoration */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-40 left-1/2 h-[700px] w-[700px] -translate-x-1/2 rounded-full bg-gradient-to-br from-indigo-100/60 via-violet-100/40 to-transparent blur-3xl" />
-        <div className="absolute bottom-0 right-0 h-[500px] w-[500px] rounded-full bg-gradient-to-tl from-rose-100/40 via-amber-100/20 to-transparent blur-3xl" />
-        <div className="absolute left-0 top-1/2 h-[400px] w-[400px] -translate-y-1/2 rounded-full bg-gradient-to-r from-emerald-100/30 to-transparent blur-3xl" />
+        <div className="absolute -top-40 left-1/2 h-[620px] w-[620px] -translate-x-1/2 rounded-full bg-gradient-to-br from-indigo-100/70 via-sky-100/40 to-transparent blur-3xl" />
+        <div className="absolute bottom-0 right-0 h-[460px] w-[460px] rounded-full bg-gradient-to-tl from-emerald-100/35 via-amber-100/25 to-transparent blur-3xl" />
       </div>
 
       <div className="relative z-10">
-        {/* Header */}
         <header className="flex items-center justify-between px-6 py-5 lg:px-12">
           <BrandLogo />
-          <Link href="/workspace">
-            <Button variant="brand" size="sm" className="gap-1 rounded-full">
-              进入我的空间
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </Link>
-        </header>
-
-        {/* Hero */}
-        <section className="mx-auto flex max-w-4xl flex-col items-center px-6 pb-20 pt-24 text-center lg:pt-32">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.92 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-            className="mb-6 inline-flex items-center gap-2 rounded-full border border-indigo-200/60 bg-indigo-50/60 px-4 py-1.5 text-xs font-medium text-indigo-600"
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            候选人职业表达平台
-          </motion.div>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15, duration: 0.6 }}
-            className="bg-gradient-to-r from-zinc-900 via-indigo-800 to-violet-700 bg-clip-text text-5xl font-bold leading-tight tracking-tight text-transparent sm:text-6xl lg:text-7xl"
-          >
-            职场名片
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-            className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-zinc-500"
-          >
-            一键生成可投递的个人职业网站，让不会 coding 的求职者也能讲清自己的价值
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.45, duration: 0.5 }}
-            className="mt-10 flex items-center gap-4"
-          >
-            <Link href="/workspace/personal/new">
-              <Button size="lg" variant="brand" className="gap-2 rounded-full px-8">
-                立即开始
+          <div className="flex items-center gap-2">
+            <Link href="/profile" className="hidden text-sm text-zinc-500 hover:text-zinc-900 sm:inline">
+              查看样例
+            </Link>
+            <Link href="/workspace">
+              <Button variant="brand" size="sm" className="gap-1 rounded-full">
+                进入工作台
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
-            <Link href="/profile">
-              <Button
-                variant="outline"
-                size="lg"
-                className="rounded-full px-8"
-              >
-                查看示例
-              </Button>
-            </Link>
+          </div>
+        </header>
+
+        <section className="mx-auto grid max-w-6xl gap-10 px-6 pb-20 pt-16 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:pt-24">
+          <div>
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45 }}
+              className="mb-6 inline-flex items-center gap-2 rounded-full border border-indigo-200/70 bg-indigo-50/70 px-4 py-1.5 text-xs font-medium text-indigo-700"
+            >
+              面向社招候选人的职业表达工具
+            </motion.div>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.55 }}
+              className="max-w-4xl text-5xl font-semibold leading-tight tracking-normal text-zinc-950 sm:text-6xl lg:text-7xl"
+            >
+              5 分钟生成可分享的职业档案草稿
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.22, duration: 0.5 }}
+              className="mt-6 max-w-2xl text-lg leading-8 text-zinc-600"
+            >
+              Career Card 帮求职者把项目经历、成长路径和亮点支撑整理成一份稳定链接，让面试官更快判断候选人的角色匹配和核心能力。
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.34, duration: 0.5 }}
+              className="mt-9 flex flex-wrap gap-3"
+            >
+              <Link href="/workspace/personal/new">
+                <Button size="lg" variant="brand" className="gap-2 rounded-full px-8">
+                  开始生成草稿
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link href="/profile">
+                <Button variant="outline" size="lg" className="rounded-full px-8">
+                  查看样例职业档案
+                </Button>
+              </Link>
+            </motion.div>
+
+            <div className="mt-7 flex flex-wrap gap-2">
+              {audiences.map((audience) => (
+                <span key={audience} className="rounded-full border border-zinc-200 bg-white/80 px-3 py-1 text-xs text-zinc-600 shadow-sm">
+                  {audience}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 22 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.18, duration: 0.55 }}
+            className="rounded-lg border border-zinc-100 bg-white/85 p-5 shadow-xl shadow-zinc-200/60 backdrop-blur"
+          >
+            <div className="rounded-md bg-zinc-950 p-5 text-white">
+              <p className="text-xs uppercase tracking-[0.18em] text-white/42">面试官 30 秒看到</p>
+              <div className="mt-5 space-y-4">
+                {["目标角色与候选人定位", "最有说服力的职业亮点", "能力成长路径与关键产出", "联系方式与公开资料"].map((item, index) => (
+                  <div key={item} className="flex items-center gap-3 rounded-md border border-white/10 bg-white/[0.06] p-3">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-xs font-semibold text-zinc-950">
+                      {index + 1}
+                    </span>
+                    <span className="text-sm text-white/82">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </motion.div>
         </section>
 
-        {/* Features */}
-        <section className="mx-auto max-w-5xl px-6 pb-32">
-          <div className="grid gap-6 md:grid-cols-3">
-            {features.map((feature, i) => (
+        <section className="mx-auto max-w-6xl px-6 pb-24">
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+            {valueCards.map((card, index) => (
               <motion.div
-                key={feature.title}
-                custom={i}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: "-40px" }}
-                variants={fadeUp}
+                key={card.title}
+                initial={{ opacity: 0, y: 18 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.06, duration: 0.4 }}
+                className="rounded-lg border border-zinc-100 bg-white/85 p-5 shadow-sm backdrop-blur transition-all hover:-translate-y-1 hover:shadow-md"
               >
-                <div className="group relative rounded-2xl border border-zinc-100 bg-white/80 p-8 shadow-sm backdrop-blur transition-all hover:border-zinc-200 hover:shadow-md">
-                  <div
-                    className={`mb-5 inline-flex rounded-xl ${feature.bg} p-3`}
-                  >
-                    <feature.icon
-                      className={`h-6 w-6 bg-gradient-to-br ${feature.gradient} bg-clip-text`}
-                      style={{
-                        color:
-                          feature.gradient === "from-blue-500 to-indigo-500"
-                            ? "#4f46e5"
-                            : feature.gradient ===
-                                "from-violet-500 to-purple-500"
-                              ? "#7c3aed"
-                              : "#e11d48",
-                      }}
-                    />
-                  </div>
-                  <h3 className="mb-2 text-lg font-semibold text-zinc-900">
-                    {feature.title}
-                  </h3>
-                  <p className="text-sm leading-relaxed text-zinc-500">
-                    {feature.description}
-                  </p>
+                <div className="mb-4 inline-flex rounded-lg bg-indigo-50 p-3 text-indigo-600">
+                  <card.icon className="h-5 w-5" />
                 </div>
+                <h3 className="text-base font-semibold text-zinc-950">{card.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-zinc-500">{card.description}</p>
               </motion.div>
             ))}
           </div>
         </section>
-
-        {/* Footer */}
-        <footer className="border-t border-zinc-100 py-8 text-center text-xs text-zinc-400">
-          © {new Date().getFullYear()} 职场名片 · 让每一份简历都值得被看见
-        </footer>
       </div>
     </div>
   );

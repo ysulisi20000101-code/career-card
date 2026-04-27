@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 export default function PersonalPreviewPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
-  const setResumeData = useResumeStore((s) => s.setResumeData);
+  const setResumeData = useResumeStore((state) => state.setResumeData);
 
   useEffect(() => {
     const existing = loadPersonalProject(id);
@@ -25,7 +25,7 @@ export default function PersonalPreviewPage() {
     <AppShell
       breadcrumbs={[
         { label: "工作台", href: "/workspace" },
-        { label: "个人网站" },
+        { label: "职业档案" },
         { label: "预览" },
       ]}
       actions={
@@ -39,7 +39,7 @@ export default function PersonalPreviewPage() {
           <Link href={`/workspace/personal/${id}/publish`}>
             <Button size="sm" variant="brand" className="gap-1.5 rounded-full">
               <Rocket className="h-3.5 w-3.5" />
-              发布分享
+              发布
             </Button>
           </Link>
         </>

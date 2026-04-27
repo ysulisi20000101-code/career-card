@@ -10,7 +10,7 @@ export default function NewPersonalProjectPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const record = createProjectRecord("personal", "个人网站项目");
+    const record = createProjectRecord("personal", "职业档案草稿");
     router.replace(`/workspace/personal/${record.id}/edit`);
   }, [router]);
 
@@ -28,9 +28,9 @@ export default function NewPersonalProjectPage() {
             <Loader2 className="h-7 w-7 animate-spin" />
           </div>
         </div>
-        <h1 className="text-xl font-semibold text-zinc-900">正在创建个人网站项目</h1>
+        <h1 className="text-xl font-semibold text-zinc-900">正在创建职业档案草稿</h1>
         <p className="mt-2 max-w-sm text-sm text-zinc-500">
-          我们正在为你准备一个全新的个人网站工作空间，稍后会自动进入编辑页。
+          稍后会进入上传与校准流程。
         </p>
       </main>
     </div>

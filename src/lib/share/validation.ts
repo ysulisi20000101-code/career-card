@@ -2,7 +2,15 @@ import type {
   ResumeData,
   UserProfile,
   TimelineNode,
+  StoryMood,
+  CareerKind,
+  PublicSiteTemplate,
+  EvidenceStrength,
+  PromotionStage,
   SkillNode,
+  SkillProfile,
+  SkillMatchStatus,
+  SkillImportance,
   ArchitectureModule,
   Education,
   RoleUnderstanding,
@@ -23,6 +31,73 @@ function asStringArray(value: unknown): string[] {
 
 function asNumber(value: unknown, fallback = 0): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function asStoryMood(value: unknown): StoryMood | undefined {
+  return value === "focus" ||
+    value === "growth" ||
+    value === "breakthrough" ||
+    value === "craft" ||
+    value === "impact"
+    ? value
+    : undefined;
+}
+
+function asEvidenceStrength(value: unknown): EvidenceStrength | undefined {
+  return value === "weak" || value === "medium" || value === "strong"
+    ? value
+    : undefined;
+}
+
+function asCareerKind(value: unknown): CareerKind | undefined {
+  return value === "internship" || value === "fulltime" ? value : undefined;
+}
+
+function asPublicSiteTemplate(value: unknown): PublicSiteTemplate | undefined {
+  return value === "minimal-growth" || value === "executive-dossier"
+    ? value
+    : undefined;
+}
+
+function asSkillStatus(value: unknown): SkillMatchStatus | undefined {
+  return value === "owned" || value === "missing" || value === "inferred"
+    ? value
+    : undefined;
+}
+
+function asSkillImportance(value: unknown): SkillImportance | undefined {
+  return value === "core" || value === "important" || value === "optional"
+    ? value
+    : undefined;
+}
+
+function asLeadershipType(value: unknown): PromotionStage["leadershipType"] {
+  return value === "dotted" || value === "solid" ? value : "none";
+}
+
+function sanitizePromotionStages(input: unknown): PromotionStage[] {
+  if (!Array.isArray(input)) return [];
+  return input
+    .filter(isRecord)
+    .map((stage, index) => ({
+      id: asString(stage.id) || `promotion-${index + 1}`,
+      title: asString(stage.title),
+      period: asString(stage.period),
+      teamScale: asString(stage.teamScale),
+      leadershipType: asLeadershipType(stage.leadershipType),
+      responsibility: asString(stage.responsibility),
+      outcome: asString(stage.outcome),
+      reflection: asString(stage.reflection),
+    }))
+    .filter(
+      (stage) =>
+        stage.title ||
+        stage.period ||
+        stage.teamScale ||
+        stage.responsibility ||
+        stage.outcome ||
+        stage.reflection,
+    );
 }
 
 function sanitizeProfile(input: unknown): UserProfile {
@@ -67,6 +142,20 @@ function sanitizeTimeline(input: unknown): TimelineNode[] {
         : [],
       skills: asStringArray(node.skills),
       order: asNumber(node.order),
+      careerKind: asCareerKind(node.careerKind),
+      storyTitle: asString(node.storyTitle) || undefined,
+      storyScene: asString(node.storyScene) || undefined,
+      storyChallenge: asString(node.storyChallenge) || undefined,
+      storyAction: asString(node.storyAction) || undefined,
+      storyOutcome: asString(node.storyOutcome) || undefined,
+      storyReflection: asString(node.storyReflection) || undefined,
+      storyMood: asStoryMood(node.storyMood),
+      evidenceProblem: asString(node.evidenceProblem) || undefined,
+      evidenceAction: asString(node.evidenceAction) || undefined,
+      evidenceResult: asString(node.evidenceResult) || undefined,
+      evidenceProof: asString(node.evidenceProof) || undefined,
+      evidenceStrength: asEvidenceStrength(node.evidenceStrength),
+      promotionStages: sanitizePromotionStages(node.promotionStages),
     }))
     .filter((node) => node.id.length > 0);
 }
@@ -83,8 +172,52 @@ function sanitizeSkills(input: unknown): SkillNode[] {
       parentId: typeof skill.parentId === "string" ? skill.parentId : null,
       x: typeof skill.x === "number" ? skill.x : undefined,
       y: typeof skill.y === "number" ? skill.y : undefined,
+      status: asSkillStatus(skill.status),
+      importance: asSkillImportance(skill.importance),
+      aliases: asStringArray(skill.aliases),
+      sourceTimelineIds: asStringArray(skill.sourceTimelineIds),
+      sourceSnippets: asStringArray(skill.sourceSnippets),
     }))
     .filter((skill) => skill.id.length > 0);
+}
+
+function sanitizeSkillProfile(input: unknown): SkillProfile | undefined {
+  if (!isRecord(input)) return undefined;
+  const categories = Array.isArray(input.categories)
+    ? input.categories.filter(isRecord).map((category) => ({
+        id: asString(category.id),
+        name: asString(category.name),
+        description: asString(category.description),
+        matches: Array.isArray(category.matches)
+          ? category.matches.filter(isRecord).map((match) => ({
+              skillId: asString(match.skillId),
+              name: asString(match.name),
+              categoryId: asString(match.categoryId),
+              categoryName: asString(match.categoryName),
+              status: asSkillStatus(match.status) ?? "missing",
+              importance: asSkillImportance(match.importance) ?? "important",
+              sourceTimelineIds: asStringArray(match.sourceTimelineIds),
+              sourceSnippets: asStringArray(match.sourceSnippets),
+            }))
+          : [],
+      }))
+    : [];
+  const coverage = isRecord(input.coverage) ? input.coverage : {};
+  if (!asString(input.templateId) || categories.length === 0) return undefined;
+  return {
+    templateId: asString(input.templateId),
+    roleName: asString(input.roleName),
+    confidence: asNumber(input.confidence),
+    categories,
+    coverage: {
+      owned: asNumber(coverage.owned),
+      total: asNumber(coverage.total),
+      coreOwned: asNumber(coverage.coreOwned),
+      coreTotal: asNumber(coverage.coreTotal),
+      percent: asNumber(coverage.percent),
+    },
+    detectedSkillNames: asStringArray(input.detectedSkillNames),
+  };
 }
 
 function sanitizeArchitecture(input: unknown): ArchitectureModule[] {
@@ -175,6 +308,7 @@ export function sanitizeResumeData(input: unknown): ResumeData | null {
   const profile = sanitizeProfile(input.profile);
   const timeline = sanitizeTimeline(input.timeline);
   const skills = sanitizeSkills(input.skills);
+  const skillProfile = sanitizeSkillProfile(input.skillProfile);
   const architecture = sanitizeArchitecture(input.architecture);
   const education = sanitizeEducation(input.education);
   const roleUnderstanding = sanitizeRoleUnderstanding(input.roleUnderstanding);
@@ -183,5 +317,17 @@ export function sanitizeResumeData(input: unknown): ResumeData | null {
     return null;
   }
 
-  return { profile, timeline, skills, architecture, education, roleUnderstanding };
+  return {
+    profile,
+    publicSiteTemplate: asPublicSiteTemplate(input.publicSiteTemplate),
+    timeline,
+    skills,
+    skillProfile,
+    roleTemplateId: asString(input.roleTemplateId) || skillProfile?.templateId,
+    publishedSiteId: asString(input.publishedSiteId) || undefined,
+    publishedAt: asString(input.publishedAt) || undefined,
+    architecture,
+    education,
+    roleUnderstanding,
+  };
 }

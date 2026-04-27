@@ -13,6 +13,7 @@ interface PageFooterNavProps {
   disableNext?: boolean;
   hint?: string;
   contained?: boolean;
+  nextHint?: string;
 }
 
 export function PageFooterNav({
@@ -24,6 +25,7 @@ export function PageFooterNav({
   disableNext,
   hint,
   contained = false,
+  nextHint,
 }: PageFooterNavProps) {
   return (
     <div
@@ -43,20 +45,23 @@ export function PageFooterNav({
         {prevLabel}
       </Button>
 
-      {hint && (
-        <div className="hidden text-xs text-muted-foreground sm:block">{hint}</div>
-      )}
+      {hint && <div className="hidden text-xs text-muted-foreground sm:block">{hint}</div>}
 
-      <Button
-        variant="brand"
-        size="sm"
-        disabled={disableNext}
-        onClick={onNext}
-        className="gap-1.5 rounded-full"
-      >
-        {nextLabel}
-        <ChevronRight className="h-4 w-4" />
-      </Button>
+      <div className="flex flex-col items-end gap-1">
+        <Button
+          variant="brand"
+          size="sm"
+          disabled={disableNext}
+          onClick={onNext}
+          className="gap-1.5 rounded-full"
+        >
+          {nextLabel}
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+        {disableNext && nextHint && (
+          <p className="max-w-[220px] text-right text-[11px] text-zinc-500">{nextHint}</p>
+        )}
+      </div>
     </div>
   );
 }

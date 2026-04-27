@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle2, Eye, Palette, Upload } from "lucide-react";
+import { CheckCircle2, Palette, Upload } from "lucide-react";
 import { useResumeStore } from "@/store/resume-store";
 import { loadPersonalProject, savePersonalProject } from "@/lib/projects/registry";
 import { personalToResumeData, resumeDataToPersonal } from "@/lib/projects/adapters";
@@ -21,17 +21,18 @@ const steps: StepItem<EditorStep>[] = [
   { key: "confirm", label: "确认信息", icon: CheckCircle2 },
   { key: "edit", label: "可视化编辑", icon: Palette },
 ];
-const stepOrder: EditorStep[] = steps.map((s) => s.key);
+
+const stepOrder: EditorStep[] = steps.map((step) => step.key);
 
 export default function PersonalEditPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const id = params.id;
-  const resumeData = useResumeStore((s) => s.resumeData);
-  const currentStep = useResumeStore((s) => s.currentStep);
-  const setCurrentStep = useResumeStore((s) => s.setCurrentStep);
-  const setResumeData = useResumeStore((s) => s.setResumeData);
-  const resetResumeData = useResumeStore((s) => s.resetResumeData);
+  const resumeData = useResumeStore((state) => state.resumeData);
+  const currentStep = useResumeStore((state) => state.currentStep);
+  const setCurrentStep = useResumeStore((state) => state.setCurrentStep);
+  const setResumeData = useResumeStore((state) => state.setResumeData);
+  const resetResumeData = useResumeStore((state) => state.resetResumeData);
 
   useEffect(() => {
     resetResumeData();
@@ -52,14 +53,24 @@ export default function PersonalEditPage() {
 
   const currentIdx = stepOrder.indexOf(currentStep);
   const canGoBack = currentIdx > 0;
-  const canGoForward =
-    currentIdx >= 0 && currentIdx < stepOrder.length - 1 && currentStep !== "upload";
+  const hasResume = Boolean(resumeData);
+  const enterPreview = () => router.push(`/workspace/personal/${id}/preview`);
+  const goNext = () => {
+    if (currentStep === "edit") {
+      enterPreview();
+      return;
+    }
+    if (currentIdx >= 0 && currentIdx < stepOrder.length - 1) {
+      setCurrentStep(stepOrder[currentIdx + 1]);
+    }
+  };
+  const canGoForward = currentStep === "edit" ? hasResume : currentStep !== "upload" && currentIdx < stepOrder.length - 1;
 
   return (
     <AppShell
       breadcrumbs={[
         { label: "工作台", href: "/workspace" },
-        { label: "个人网站" },
+        { label: "职业档案" },
         { label: "编辑" },
       ]}
       actions={
@@ -69,23 +80,17 @@ export default function PersonalEditPage() {
               返回工作台
             </Button>
           </Link>
-          <Link href={`/workspace/personal/${id}/preview`}>
-            <Button size="sm" variant="brand" className="gap-1.5 rounded-full">
-              <Eye className="h-3.5 w-3.5" />
-              进入网站预览
-            </Button>
-          </Link>
         </>
       }
       footer={
         <PageFooterNav
           onPrev={() => setCurrentStep(stepOrder[currentIdx - 1])}
-          onNext={() =>
-            canGoForward ? setCurrentStep(stepOrder[currentIdx + 1]) : null
-          }
+          onNext={goNext}
           disablePrev={!canGoBack}
           disableNext={!canGoForward}
-          hint={`${currentIdx + 1} / ${stepOrder.length}`}
+          nextLabel={currentStep === "edit" ? "完整预览" : "下一步"}
+          nextHint={!hasResume ? "请先上传并解析简历" : undefined}
+          hint={`${Math.max(currentIdx + 1, 1)} / ${stepOrder.length}`}
         />
       }
     >
@@ -94,18 +99,15 @@ export default function PersonalEditPage() {
           <StepIndicator<EditorStep>
             steps={steps}
             current={currentStep}
-            onStepClick={(key) => setCurrentStep(key)}
+            onStepClick={(key) => {
+              if (key === "upload" || resumeData) setCurrentStep(key);
+            }}
           />
         </div>
         <div className="min-h-0 flex-1 overflow-hidden">
           {currentStep === "upload" && <UploadPage />}
           {currentStep === "confirm" && <ConfirmPage />}
-          {currentStep === "edit" && (
-            <EditPage
-              mode="personal"
-              onEnterPreview={() => router.push(`/workspace/personal/${id}/preview`)}
-            />
-          )}
+          {currentStep === "edit" && <EditPage mode="personal" />}
         </div>
       </div>
     </AppShell>

@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 export default function PersonalPublishPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
-  const setResumeData = useResumeStore((s) => s.setResumeData);
+  const setResumeData = useResumeStore((state) => state.setResumeData);
 
   useEffect(() => {
     const existing = loadPersonalProject(id);
@@ -26,7 +26,7 @@ export default function PersonalPublishPage() {
       tone="muted"
       breadcrumbs={[
         { label: "工作台", href: "/workspace" },
-        { label: "个人网站" },
+        { label: "职业档案" },
         { label: "发布" },
       ]}
       actions={
@@ -40,10 +40,11 @@ export default function PersonalPublishPage() {
     >
       <div className="h-full overflow-auto">
         <PublishPage
-          onPublished={({ slug }) => {
+          onPublished={({ slug, publishedAt }) => {
             updateProjectRecord(id, {
               status: "published",
-              title: `个人网站-${slug}`,
+              publishedSlug: slug,
+              publishedAt,
             });
           }}
         />

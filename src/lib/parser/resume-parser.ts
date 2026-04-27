@@ -1,36 +1,21 @@
 import type {
+  ArchitectureModule,
+  Education,
+  ParseConfidence,
+  ParseStats,
+  PromotionStage,
   ResumeData,
   TimelineNode,
-  Education,
-  SkillNode,
-  ArchitectureModule,
-  ParseStats,
-  ParseConfidence,
 } from "@/types";
 import { generateId } from "@/lib/utils";
 import { createDefaultRoleUnderstanding } from "@/lib/role-understanding/default";
-
-/**
- * Lightweight rule-based resume parser.
- *
- * This is intentionally not "perfect" — it's a deterministic baseline that
- * produces *real, file-derived* ResumeData from extracted text, so the
- * upload step is no longer a fixed mock. Every field that cannot be detected
- * is left empty / default rather than fabricated.
- */
+import { buildSkillNodesFromProfile, buildSkillProfile } from "@/lib/skills/profile";
 
 const EMAIL_RE = /[\w.+-]+@[\w-]+\.[\w.-]+/;
-const PHONE_RE = /(?:\+?86[-\s]?)?1[3-9]\d{9}|\d{3,4}[-\s]?\d{7,8}/;
-const URL_RE = /https?:\/\/[^\s,，;；]+/;
-
-const SECTION_HEADERS: Record<keyof Sections, string[]> = {
-  profile: ["个人信息", "基本信息", "profile", "personal"],
-  summary: ["个人简介", "自我评价", "summary", "about"],
-  work: ["工作经历", "工作经验", "实习经历", "experience", "work experience"],
-  project: ["项目经历", "项目经验", "projects"],
-  education: ["教育背景", "教育经历", "education"],
-  skills: ["技能", "专业技能", "技术栈", "skills", "技能特长"],
-};
+const PHONE_RE = /(?:\+?86[-\s]?)?1[3-9](?:[-\s]?\d){9}|\d{3,4}[-\s]?\d{7,8}/;
+const URL_RE = /https?:\/\/[^\s,，。)）]+/;
+const DATE_RANGE_RE =
+  /((?:19|20)\d{2})\s*(?:[./年]\s*)?(\d{1,2})?\s*(?:月)?\s*(?:[-—–~至到－]+\s*)(((?:19|20)\d{2})\s*(?:[./年]\s*)?(\d{1,2})?\s*(?:月)?|至今|现在|present|now)?/i;
 
 interface Sections {
   profile: string[];
@@ -41,45 +26,73 @@ interface Sections {
   skills: string[];
 }
 
-function emptySections(): Sections {
-  return {
-    profile: [],
-    summary: [],
-    work: [],
-    project: [],
-    education: [],
-    skills: [],
-  };
+export interface ParseResult {
+  data: ResumeData;
+  stats: ParseStats;
+  confidence: ParseConfidence;
 }
 
-type SectionKey = keyof Sections;
+const SECTION_HEADERS: Record<keyof Sections, string[]> = {
+  profile: ["个人信息", "基本信息", "联系方式", "求职意向", "profile", "personal"],
+  summary: ["个人简介", "个人优势", "自我评价", "自我介绍", "summary", "about"],
+  work: ["工作经历", "工作经验", "任职经历", "实习经历", "实习经验", "experience", "work experience"],
+  project: ["核心项目经历", "项目经历", "项目经验", "项目实践", "产品项目", "projects"],
+  education: ["教育背景", "教育经历", "教育信息", "education"],
+  skills: ["技能证书", "技能", "专业技能", "职业技能", "核心能力", "产品技能", "工具技能", "skills"],
+};
 
-function detectHeader(line: string): SectionKey | null {
-  const normalized = line.replace(/[\s:：·•—\-]/g, "").toLowerCase();
-  if (!normalized) return null;
-  for (const [key, hints] of Object.entries(SECTION_HEADERS) as [
-    SectionKey,
-    string[],
-  ][]) {
-    for (const hint of hints) {
-      const h = hint.replace(/\s+/g, "").toLowerCase();
-      // Treat short header-only lines (<=12 chars) as section markers.
-      if (normalized === h || (normalized.includes(h) && normalized.length <= 12)) {
-        return key;
-      }
-    }
+function emptySections(): Sections {
+  return { profile: [], summary: [], work: [], project: [], education: [], skills: [] };
+}
+
+function repairChineseSpacing(value: string): string {
+  let text = value;
+  for (let i = 0; i < 4; i += 1) {
+    text = text.replace(/([\u4e00-\u9fff])\s+([\u4e00-\u9fff])/g, "$1$2");
+  }
+  return text
+    .replace(/\s+([，。；：、！？）】])/g, "$1")
+    .replace(/([（【])\s+/g, "$1")
+    .replace(/\s*([｜|])\s*/g, "$1")
+    .replace(/[“”]\s*[“”]/g, "")
+    .replace(/[ \t]+/g, " ")
+    .trim();
+}
+
+function cleanText(rawText: string): string {
+  return rawText
+    .replace(/\u00a0/g, " ")
+    .replace(/\r/g, "\n")
+    .split(/\n+/)
+    .map(repairChineseSpacing)
+    .filter(Boolean)
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function splitLines(text: string): string[] {
+  return text
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function normalizeHeader(line: string): string {
+  return line.replace(/[\s:：\-—–]/g, "").toLowerCase();
+}
+
+function detectHeader(line: string): keyof Sections | null {
+  const normalized = normalizeHeader(line);
+  for (const [key, hints] of Object.entries(SECTION_HEADERS) as [keyof Sections, string[]][]) {
+    if (hints.some((hint) => normalized === normalizeHeader(hint))) return key;
   }
   return null;
 }
 
-function splitToSections(text: string): Sections {
+function splitToSections(lines: string[]): Sections {
   const sections = emptySections();
-  const lines = text
-    .split(/\r?\n+/)
-    .map((l) => l.trim())
-    .filter(Boolean);
-
-  let current: SectionKey | "head" = "head";
+  let current: keyof Sections | "head" = "head";
   const head: string[] = [];
 
   for (const line of lines) {
@@ -88,230 +101,314 @@ function splitToSections(text: string): Sections {
       current = header;
       continue;
     }
-    if (current === "head") {
-      head.push(line);
-    } else {
-      sections[current].push(line);
-    }
+    if (current === "head") head.push(line);
+    else sections[current].push(line);
   }
 
-  // Treat the head block as profile context (often top of resume).
-  sections.profile = head.concat(sections.profile);
+  sections.profile = [...head, ...sections.profile];
   return sections;
 }
 
-function pickName(lines: string[]): string {
-  for (const line of lines.slice(0, 10)) {
+function pickName(lines: string[], fileName: string): string {
+  for (const line of lines.slice(0, 8)) {
     const cleaned = line.replace(/[|｜]/g, " ").trim();
-    // Chinese names are typically 2–4 chars; English names 2–3 tokens.
     if (/^[\u4e00-\u9fa5]{2,4}$/.test(cleaned)) return cleaned;
-    const m = cleaned.match(/^姓\s*名[:：]?\s*(.+)$/);
-    if (m) return m[1].trim();
+    const leading = cleaned.match(/^([\u4e00-\u9fa5]{2,4})(?:\s|$)/);
+    if (leading && cleaned.length <= 24 && !EMAIL_RE.test(cleaned) && !PHONE_RE.test(cleaned)) {
+      return leading[1];
+    }
+    const gluedTitle = cleaned.match(
+      /^([\u4e00-\u9fa5]{2,4})(?:产品|运营|设计|前端|后端|数据|项目|工程|销售|市场|算法|测试|求职)/,
+    );
+    if (gluedTitle && cleaned.length <= 28 && !EMAIL_RE.test(cleaned) && !PHONE_RE.test(cleaned)) {
+      return gluedTitle[1];
+    }
   }
-  for (const line of lines.slice(0, 5)) {
-    const tokens = line.split(/\s+/).filter(Boolean);
-    if (tokens.length > 0 && tokens[0].length <= 16) return tokens[0];
-  }
-  return "";
+  return fileName.replace(/\.(pdf|docx?)$/i, "").slice(0, 16) || "未命名候选人";
 }
-
-function pickFirst(re: RegExp, lines: string[]): string {
-  for (const line of lines) {
-    const m = line.match(re);
-    if (m) return m[0];
-  }
-  return "";
-}
-
-const DATE_RANGE_RE =
-  /((?:19|20)\d{2})[\s./年-]+(\d{1,2})?[\s./月-]*\s*[-~–至到]\s*((?:19|20)\d{2}|至今|present|now)?[\s./年-]*(\d{1,2})?/i;
 
 function normalizeMonth(year: string, month?: string): string {
-  if (!year) return "";
-  const m = month ? String(parseInt(month, 10)).padStart(2, "0") : "01";
-  return `${year}-${m}`;
+  const parsedMonth = month ? String(parseInt(month, 10)).padStart(2, "0") : "01";
+  return `${year}-${parsedMonth}`;
 }
 
-function extractDateRange(line: string): { startDate: string; endDate: string } | null {
-  const m = line.match(DATE_RANGE_RE);
-  if (!m) return null;
-  const [, sy, sm, eyRaw, em] = m;
-  const startDate = normalizeMonth(sy, sm);
-  let endDate = "";
-  if (!eyRaw || /至今|present|now/i.test(eyRaw)) {
-    endDate = "至今";
-  } else {
-    endDate = normalizeMonth(eyRaw, em);
+function extractDateRange(line: string): { startDate: string; endDate: string; raw: string } | null {
+  const match = line.match(DATE_RANGE_RE);
+  if (!match) return null;
+  const [, startYear, startMonth, endRaw, endYear, endMonth] = match;
+  const endDate =
+    !endRaw || /至今|现在|present|now/i.test(endRaw) ? "至今" : normalizeMonth(endYear, endMonth);
+  return { startDate: normalizeMonth(startYear, startMonth), endDate, raw: match[0] };
+}
+
+function removeDateRange(line: string): string {
+  return line.replace(DATE_RANGE_RE, "").replace(/[|｜]+$/g, "").trim();
+}
+
+function formatPeriodFromRange(range: { startDate: string; endDate: string } | null): string {
+  if (!range) return "";
+  const pretty = (value: string) => value.replace("-", ".");
+  return `${pretty(range.startDate)} - ${range.endDate === "至今" ? "至今" : pretty(range.endDate)}`;
+}
+
+function splitHeaderParts(header: string): { company: string; position: string } {
+  const normalized = header.replace(/[|｜]+/g, "｜").trim();
+  const parts = normalized
+    .split("｜")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (parts.length >= 2) return { company: parts[0], position: parts.slice(1).join("｜") };
+
+  const roleMatch = normalized.match(
+    /(产品负责人|AI\s*产品负责人|产品总监|产品经理|工具链产品经理|后台产品|用户产品|项目经理|运营|设计师|工程师|实习生|leader|Lead)/i,
+  );
+  if (!roleMatch) return { company: normalized || "未识别公司", position: "" };
+  const index = normalized.indexOf(roleMatch[0]);
+  return {
+    company: normalized.slice(0, index).trim() || "未识别公司",
+    position: normalized.slice(index).trim(),
+  };
+}
+
+function isStageHeader(line: string): boolean {
+  return /^阶段[一二三四五六七八九十\d]+[:：]/.test(line);
+}
+
+function isExperienceHeader(line: string): boolean {
+  if (!extractDateRange(line) || isStageHeader(line)) return false;
+  const header = removeDateRange(line);
+  if (!header || header.length > 90) return false;
+  if (/[｜|]/.test(header)) return true;
+  return /(公司|大学|学院|产品|运营|设计|工程师|实习生|负责人|总监|经理|leader|Lead)/i.test(header);
+}
+
+function cleanBullet(line: string): string {
+  return repairChineseSpacing(line.replace(/^[•\-\u2022·]\s*/, ""));
+}
+
+function isInternshipBlock(text: string): boolean {
+  return /实习|intern|internship/i.test(text);
+}
+
+function inferLeadershipType(text: string): PromotionStage["leadershipType"] {
+  if (/总监|实线|管理约?\s*\d+\s*人|管理\s*\d+\s*人|管理产品团队/.test(text)) return "solid";
+  if (/leader|负责人|虚线|带队/.test(text)) return "dotted";
+  return "none";
+}
+
+function extractTeamScale(text: string): string {
+  return (
+    text.match(/(?:管理|带领|带队|负责|团队)[^，。；;]{0,16}?(\d+\s*人)/)?.[1]?.replace(/\s+/g, "") ??
+    text.match(/(\d+\s*人)(?:产品团队|团队)/)?.[1]?.replace(/\s+/g, "") ??
+    ""
+  );
+}
+
+function buildStageReflection(title: string, text: string): string {
+  if (/总监|管理|团队/.test(`${title} ${text}`)) {
+    return "这一阶段的重点从单点产品交付转向方向判断、团队分工和商业化落地。";
   }
-  return { startDate, endDate };
+  if (/负责人|Leader|leader/.test(`${title} ${text}`)) {
+    return "这一阶段开始承担更完整的产品方向、跨团队协作和交付结果。";
+  }
+  return "这一阶段主要完成从业务理解到独立交付的能力沉淀。";
+}
+
+function splitLeaderAndDirectorStage(stage: PromotionStage): PromotionStage[] {
+  const text = `${stage.title} ${stage.responsibility} ${stage.outcome}`;
+  if (!/负责人/.test(text) || !/总监/.test(text)) return [stage];
+
+  return [
+    {
+      ...stage,
+      id: generateId(),
+      title: "产品负责人 / 产品 Leader",
+      leadershipType: "dotted",
+      teamScale: "",
+      responsibility:
+        "承担平台体系建设、跨团队推进和产品方向判断，开始从独立负责转向产品负责人角色。",
+      outcome:
+        stage.responsibility ||
+        "推动一体化智能工具平台建设，覆盖项目协作、知识库、架构设计、服务仿真、服务编排等能力。",
+      reflection: "这一阶段的核心变化，是从单模块交付升级为对产品方向、协作机制和平台结果负责。",
+    },
+    {
+      ...stage,
+      id: generateId(),
+      title: "产品总监",
+      leadershipType: "solid",
+      teamScale: stage.teamScale,
+      responsibility: stage.responsibility,
+      outcome: stage.outcome,
+      reflection: "这一阶段的重点转向团队管理、产品体系规划、商业化落地和复杂客户交付结果。",
+    },
+  ];
+}
+
+function extractPromotionStages(lines: string[]): PromotionStage[] {
+  type StageBlock = { header: string; lines: string[] };
+  const blocks: StageBlock[] = [];
+  let current: StageBlock | null = null;
+
+  for (const line of lines) {
+    if (isStageHeader(line)) {
+      if (current) blocks.push(current);
+      current = { header: line, lines: [] };
+      continue;
+    }
+    if (current) current.lines.push(line);
+  }
+  if (current) blocks.push(current);
+
+  const stages = blocks.map((block) => {
+    const range = extractDateRange(block.header);
+    const title = removeDateRange(block.header).replace(/^阶段[一二三四五六七八九十\d]+[:：]\s*/, "").trim();
+    const bullets = block.lines.map(cleanBullet).filter(Boolean);
+    const text = [title, ...bullets].join(" ");
+    const outcome =
+      bullets.find((line) => /提升|增长|\d+|0-1|覆盖|服务|客户|签单|效率|平台|建设/.test(line)) ??
+      bullets[1] ??
+      "";
+
+    return {
+      id: generateId(),
+      title: title || "阶段经历",
+      period: formatPeriodFromRange(range),
+      teamScale: extractTeamScale(text),
+      leadershipType: inferLeadershipType(text),
+      responsibility: bullets[0] ?? "",
+      outcome,
+      reflection: buildStageReflection(title, text),
+    };
+  });
+
+  return stages.flatMap(splitLeaderAndDirectorStage);
 }
 
 function buildTimeline(workLines: string[]): TimelineNode[] {
   if (workLines.length === 0) return [];
-
-  // Group lines into "blocks" separated by lines that look like a date range.
   type Block = { headerLine: string; lines: string[] };
   const blocks: Block[] = [];
-  let cur: Block | null = null;
+  let current: Block | null = null;
 
   for (const line of workLines) {
-    if (extractDateRange(line)) {
-      if (cur) blocks.push(cur);
-      cur = { headerLine: line, lines: [] };
-    } else if (cur) {
-      cur.lines.push(line);
-    } else {
-      cur = { headerLine: line, lines: [] };
+    if (isExperienceHeader(line)) {
+      if (current) blocks.push(current);
+      current = { headerLine: line, lines: [] };
+    } else if (current) {
+      current.lines.push(line);
     }
   }
-  if (cur) blocks.push(cur);
+  if (current) blocks.push(current);
 
-  return blocks.map((block, idx) => {
-    const range = extractDateRange(block.headerLine) ?? {
-      startDate: "",
-      endDate: "",
-    };
+  return blocks.map((block, index) => {
+    const range = extractDateRange(block.headerLine) ?? { startDate: "", endDate: "", raw: "" };
+    const header = removeDateRange(block.headerLine);
+    const { company, position } = splitHeaderParts(header);
+    const bulletLines = block.lines.filter((line) => !isStageHeader(line)).map(cleanBullet).filter(Boolean);
+    const highlights = bulletLines.slice(0, 7);
+    const description = highlights.slice(0, 2).join(" ").slice(0, 320) || header;
+    const skillText = [position, description, ...highlights].join(" ");
+    const skills = extractSkillNames(skillText).slice(0, 10);
+    const promotionStages = extractPromotionStages(block.lines);
 
-    // Try to extract company/position from the header line by removing the date.
-    const cleanedHeader = block.headerLine
-      .replace(DATE_RANGE_RE, "")
-      .replace(/[|｜·,，]/g, " ")
-      .trim();
-
-    const tokens = cleanedHeader.split(/\s{2,}|\s\|\s/).filter(Boolean);
-    const company = tokens[0] ?? "未识别公司";
-    const position = tokens[1] ?? "";
-
-    const description = block.lines.slice(0, 3).join(" ").slice(0, 240);
-    const highlights = block.lines
-      .filter((l) => /^[-•·●▪◆]/.test(l) || l.length < 80)
-      .slice(0, 4)
-      .map((l) => l.replace(/^[-•·●▪◆]\s*/, ""));
-
-    const skills = Array.from(
-      new Set(
-        block.lines
-          .flatMap((l) => l.split(/[，,/、|]/))
-          .map((s) => s.trim())
-          .filter((s) => s.length >= 2 && s.length <= 16 && !/^\d/.test(s)),
-      ),
-    ).slice(0, 6);
-
-    const node: TimelineNode = {
+    return {
       id: generateId(),
       company,
       position,
       startDate: range.startDate,
       endDate: range.endDate || "至今",
-      description: description || cleanedHeader,
+      description,
       highlights,
       projects: [],
       skills,
-      order: idx,
+      order: index,
+      careerKind: isInternshipBlock(`${company} ${position} ${description}`) ? "internship" : "fulltime",
+      storyMood: ["focus", "growth", "breakthrough", "craft", "impact"][index % 5] as TimelineNode["storyMood"],
+      promotionStages: promotionStages.length > 0 ? promotionStages : undefined,
     };
-    return node;
   });
 }
 
 function buildEducation(eduLines: string[]): Education[] {
-  if (eduLines.length === 0) return [];
-  type Block = { headerLine: string; lines: string[] };
-  const blocks: Block[] = [];
-  let cur: Block | null = null;
-  for (const line of eduLines) {
-    if (extractDateRange(line)) {
-      if (cur) blocks.push(cur);
-      cur = { headerLine: line, lines: [] };
-    } else if (cur) {
-      cur.lines.push(line);
-    } else {
-      cur = { headerLine: line, lines: [] };
-    }
-  }
-  if (cur) blocks.push(cur);
-
-  return blocks.map((block) => {
-    const range = extractDateRange(block.headerLine) ?? {
-      startDate: "",
-      endDate: "",
-    };
-    const cleanedHeader = block.headerLine
-      .replace(DATE_RANGE_RE, "")
-      .replace(/[|｜·,，]/g, " ")
-      .trim();
-    const tokens = cleanedHeader.split(/\s{2,}|\s\|\s/).filter(Boolean);
+  const candidates = eduLines.filter((line) => /大学|学院|学校|本科|硕士|研究生|学士|专科/.test(line));
+  return candidates.slice(0, 3).map((line) => {
+    const range = extractDateRange(line) ?? { startDate: "", endDate: "", raw: "" };
+    const header = removeDateRange(line).replace(/[|｜]+/g, "｜").trim();
+    const parts = header.split("｜").map((part) => part.trim()).filter(Boolean);
+    const degree = parts.find((part) => /本科|硕士|研究生|学士|专科|博士/.test(part)) ?? "";
     return {
       id: generateId(),
-      school: tokens[0] ?? cleanedHeader.slice(0, 30),
-      degree: tokens[1] ?? "",
-      major: tokens[2] ?? block.lines[0]?.slice(0, 24) ?? "",
+      school: parts[0] ?? header.slice(0, 24),
+      degree,
+      major: parts.find((part) => part !== parts[0] && part !== degree) ?? "",
       startDate: range.startDate,
       endDate: range.endDate,
     };
   });
 }
 
-function buildSkills(skillLines: string[]): SkillNode[] {
-  const tokens = Array.from(
-    new Set(
-      skillLines
-        .flatMap((l) => l.split(/[，,/、|;；]/))
-        .map((s) => s.trim())
-        .filter((s) => s.length >= 2 && s.length <= 24),
-    ),
-  ).slice(0, 24);
-
-  if (tokens.length === 0) return [];
-
-  const rootId = "skill-root";
-  const skills: SkillNode[] = [
-    { id: rootId, name: "技能体系", category: "root", level: 5, parentId: null },
+function extractSkillNames(text: string): string[] {
+  const known = [
+    "AI Agent",
+    "RAG",
+    "UML/SysML",
+    "MBSE",
+    "ToB 售前",
+    "招投标",
+    "产品定价",
+    "平台产品",
+    "产品规划",
+    "产品架构",
+    "需求分析",
+    "业务分析",
+    "项目管理",
+    "跨部门协作",
+    "团队管理",
+    "商业化",
+    "知识库",
+    "数据分析",
+    "指标体系",
+    "PRD",
+    "Axure",
+    "Figma",
+    "XMind",
+    "Visio",
+    "SQL",
+    "Excel",
+    "React",
+    "TypeScript",
+    "JavaScript",
+    "Python",
   ];
-
-  tokens.forEach((name) => {
-    skills.push({
-      id: generateId(),
-      name,
-      category: "技能",
-      level: 4,
-      parentId: rootId,
-    });
-  });
-
-  return skills;
+  return known.filter((skill) => new RegExp(skill.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i").test(text));
 }
 
-function buildArchitectureFromTimeline(
-  timeline: TimelineNode[],
-): ArchitectureModule[] {
+function buildArchitectureFromTimeline(timeline: TimelineNode[]): ArchitectureModule[] {
   if (timeline.length === 0) return [];
-  const root: ArchitectureModule = {
-    id: "arch-root",
-    title: "经历架构",
-    description: "基于工作经历自动生成",
-    type: "business",
-    industry: "internet",
-    position: { x: 350, y: 0 },
-    parentId: null,
-    relatedTimelineIds: timeline.map((t) => t.id),
-  };
-  const children: ArchitectureModule[] = timeline.map((t, i) => ({
-    id: generateId(),
-    title: t.company,
-    description: t.position || t.description.slice(0, 60),
-    type: "business",
-    industry: "internet",
-    position: { x: i * 240, y: 200 },
-    parentId: root.id,
-    relatedTimelineIds: [t.id],
-  }));
-  return [root, ...children];
-}
-
-export interface ParseResult {
-  data: ResumeData;
-  stats: ParseStats;
-  confidence: ParseConfidence;
+  const rootId = "arch-root";
+  return [
+    {
+      id: rootId,
+      title: "经历结构",
+      description: "基于工作经历自动生成",
+      type: "business",
+      industry: "internet",
+      position: { x: 350, y: 0 },
+      parentId: null,
+      relatedTimelineIds: timeline.map((node) => node.id),
+    },
+    ...timeline.map((node, index) => ({
+      id: generateId(),
+      title: node.company,
+      description: node.position || node.description.slice(0, 60),
+      type: "business" as const,
+      industry: "internet" as const,
+      position: { x: index * 240, y: 200 },
+      parentId: rootId,
+      relatedTimelineIds: [node.id],
+    })),
+  ];
 }
 
 function ratio(numerator: number, denominator: number): number {
@@ -320,34 +417,17 @@ function ratio(numerator: number, denominator: number): number {
 }
 
 function buildParseConfidence(data: ResumeData, stats: ParseStats): ParseConfidence {
-  const profileFilled = [
-    data.profile.name,
-    data.profile.email,
-    data.profile.title ?? "",
-    data.profile.summary ?? "",
-  ].filter((value) => value.trim().length > 0).length;
+  const profileFilled = [data.profile.name, data.profile.email, data.profile.title, data.profile.summary]
+    .filter((value) => Boolean(value?.trim())).length;
   const profile = ratio(profileFilled, 4);
-
-  const timelineDetailed = data.timeline.filter(
-    (node) => node.company.trim() && node.position.trim() && node.description.trim(),
-  ).length;
-  const timeline = data.timeline.length === 0 ? 0 : ratio(timelineDetailed, data.timeline.length);
-
-  const educationDetailed = data.education.filter(
-    (edu) => edu.school.trim() && edu.degree.trim(),
-  ).length;
-  const education =
-    data.education.length === 0 ? 0 : ratio(educationDetailed, data.education.length);
-
-  const nonRootSkills = data.skills.filter((s) => s.parentId !== null).length;
-  const skills = nonRootSkills === 0 ? 0 : Math.min(1, nonRootSkills / 8);
-
+  const timeline = data.timeline.length === 0 ? 0 : ratio(data.timeline.filter((node) => node.company && node.description).length, data.timeline.length);
+  const education = data.education.length === 0 ? 0 : ratio(data.education.filter((edu) => edu.school).length, data.education.length);
+  const skills = ratio(data.skillProfile?.coverage.owned ?? 0, Math.max(data.skillProfile?.coverage.total ?? 0, 1));
   const overall = 0.35 * profile + 0.35 * timeline + 0.15 * education + 0.15 * skills;
   const needsConfirmation: string[] = [];
   if (profile < 0.7) needsConfirmation.push("个人信息不完整");
-  if (timeline < 0.75 || stats.detectedTimelineCount === 0) needsConfirmation.push("工作经历需重点核对");
-  if (education < 0.6 && stats.detectedEducationCount > 0) needsConfirmation.push("教育信息建议补全");
-  if (skills < 0.5) needsConfirmation.push("技能信息偏少");
+  if (timeline < 0.75 || stats.detectedTimelineCount === 0) needsConfirmation.push("工作经历需要重点校对");
+  if (skills < 0.35) needsConfirmation.push("技能识别结果建议校对");
 
   return {
     profile: Math.round(profile * 100),
@@ -360,24 +440,25 @@ function buildParseConfidence(data: ResumeData, stats: ParseStats): ParseConfide
 }
 
 export function parseResumeText(rawText: string, fileName: string): ParseResult {
-  const text = rawText.replace(/\u00a0/g, " ").trim();
-  const sections = splitToSections(text);
-
-  const profileLines = sections.profile;
-  const name =
-    pickName(profileLines) ||
-    fileName.replace(/\.pdf$/i, "").slice(0, 16) ||
-    "未命名";
-  const email = pickFirst(EMAIL_RE, [text]);
-  const phone = pickFirst(PHONE_RE, [text]);
-  const website = pickFirst(URL_RE, [text]);
-
-  const timeline = buildTimeline(sections.work);
-  const education = buildEducation(sections.education);
-  const skills = buildSkills(sections.skills);
-  const architecture = buildArchitectureFromTimeline(timeline);
-
-  const summaryText = sections.summary.join(" ").slice(0, 280);
+  const text = cleanText(rawText);
+  const lines = splitLines(text);
+  const sections = splitToSections(lines);
+  const profileLines = sections.profile.length > 0 ? sections.profile : lines.slice(0, 12);
+  const name = pickName(profileLines, fileName);
+  const email = text.match(EMAIL_RE)?.[0] ?? "";
+  const phone = text.match(PHONE_RE)?.[0] ?? "";
+  const website = text.match(URL_RE)?.[0] ?? "";
+  const timelineSource = sections.work.length > 0 ? sections.work : sections.project.length > 0 ? sections.project : lines;
+  const timeline = buildTimeline(timelineSource).filter((node) => node.startDate || node.description);
+  const education = buildEducation(sections.education.length > 0 ? sections.education : lines);
+  const summary = sections.summary.join(" ").slice(0, 320) || lines.slice(1, 5).join(" ").slice(0, 320);
+  const profileTitle = timeline.find((node) => node.careerKind === "fulltime")?.position || timeline[0]?.position || "";
+  const skillProfile = buildSkillProfile({
+    text: `${text} ${sections.skills.join(" ")}`,
+    timeline,
+    profileTitle,
+  });
+  const skills = buildSkillNodesFromProfile(skillProfile);
 
   const data: ResumeData = {
     profile: {
@@ -385,28 +466,26 @@ export function parseResumeText(rawText: string, fileName: string): ParseResult 
       name,
       email,
       phone: phone || undefined,
-      title: timeline[0]?.position || "",
-      summary: summaryText,
+      title: profileTitle,
+      summary,
       website: website || undefined,
-      location: undefined,
     },
+    publicSiteTemplate: "executive-dossier",
     timeline,
     skills,
-    architecture,
+    skillProfile,
+    roleTemplateId: skillProfile.templateId,
+    architecture: buildArchitectureFromTimeline(timeline),
     education,
-    roleUnderstanding: createDefaultRoleUnderstanding(timeline[0]?.position || ""),
+    roleUnderstanding: createDefaultRoleUnderstanding(profileTitle),
   };
 
   const stats: ParseStats = {
     textLength: text.length,
     detectedTimelineCount: timeline.length,
     detectedEducationCount: education.length,
-    detectedSkillCount: skills.length,
+    detectedSkillCount: skillProfile.coverage.owned,
   };
 
-  return {
-    data,
-    stats,
-    confidence: buildParseConfidence(data, stats),
-  };
+  return { data, stats, confidence: buildParseConfidence(data, stats) };
 }

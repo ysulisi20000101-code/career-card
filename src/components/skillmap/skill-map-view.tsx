@@ -1,58 +1,11 @@
 "use client";
 
-import { useRef, useEffect, useMemo, useCallback } from "react";
-import * as d3 from "d3";
+import { Brain, CheckCircle2, Circle, Sparkles } from "lucide-react";
+import { useMemo } from "react";
 import { useResumeStore } from "@/store/resume-store";
+import { buildSkillProfileFromResume } from "@/lib/skills/profile";
 import { cn } from "@/lib/utils";
-import type { ResumeData, SkillNode, TimelineNode } from "@/types";
-
-const CATEGORY_COLORS: Record<string, string> = {
-  root: "#6366f1",
-  "B端产品": "#3b82f6",
-  "C端产品": "#10b981",
-  "AI产品": "#f59e0b",
-  "数据产品": "#ef4444",
-  "工具技能": "#8b5cf6",
-  "前端开发": "#3b82f6",
-  "后端开发": "#10b981",
-  DevOps: "#f59e0b",
-  "架构设计": "#ef4444",
-  "UI设计": "#3b82f6",
-  "UX设计": "#10b981",
-  "视觉设计": "#f59e0b",
-};
-
-function getColor(category: string): string {
-  return CATEGORY_COLORS[category] ?? "#6b7280";
-}
-
-interface TreeDatum {
-  id: string;
-  name: string;
-  category: string;
-  level: number;
-  children?: TreeDatum[];
-}
-
-function buildTree(nodes: SkillNode[]): TreeDatum | null {
-  const map = new Map<string, TreeDatum>();
-  const roots: TreeDatum[] = [];
-
-  nodes.forEach((n) => {
-    map.set(n.id, { id: n.id, name: n.name, category: n.category, level: n.level, children: [] });
-  });
-
-  nodes.forEach((n) => {
-    const datum = map.get(n.id)!;
-    if (n.parentId && map.has(n.parentId)) {
-      map.get(n.parentId)!.children!.push(datum);
-    } else if (!n.parentId) {
-      roots.push(datum);
-    }
-  });
-
-  return roots[0] ?? null;
-}
+import type { ResumeData, SkillMatch } from "@/types";
 
 interface SkillMapViewProps {
   className?: string;
@@ -60,186 +13,151 @@ interface SkillMapViewProps {
   activeTimelineId?: string | null;
 }
 
+function statusLabel(match: SkillMatch): string {
+  if (match.status === "owned") return "已体现";
+  if (match.status === "inferred") return "相关能力";
+  return match.importance === "core" ? "关键待补充" : "待补充";
+}
+
+function matchTone(match: SkillMatch, activeTimelineId?: string | null): string {
+  const active = activeTimelineId && match.sourceTimelineIds.includes(activeTimelineId);
+  if (active) return "border-indigo-300 bg-indigo-50 text-indigo-800 shadow-indigo-100";
+  if (match.status === "owned") return "border-emerald-200 bg-emerald-50 text-emerald-800";
+  if (match.status === "inferred") return "border-sky-200 bg-sky-50 text-sky-800";
+  if (match.importance === "core") return "border-zinc-200 bg-zinc-50 text-zinc-500";
+  return "border-zinc-100 bg-white text-zinc-400";
+}
+
+function SkillPill({
+  match,
+  activeTimelineId,
+}: {
+  match: SkillMatch;
+  activeTimelineId?: string | null;
+}) {
+  const active = activeTimelineId && match.sourceTimelineIds.includes(activeTimelineId);
+  const highlighted = match.status !== "missing";
+  return (
+    <div
+      className={cn(
+        "group rounded-lg border px-3 py-2 text-xs shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md",
+        matchTone(match, activeTimelineId),
+      )}
+      title={match.sourceSnippets[0] || statusLabel(match)}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className={cn("font-medium", highlighted ? "text-current" : "text-zinc-500")}>
+          {match.name}
+        </span>
+        {highlighted ? (
+          <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+        ) : (
+          <Circle className="h-3.5 w-3.5 shrink-0" />
+        )}
+      </div>
+      <div className="mt-1 flex items-center justify-between gap-2 text-[10px] opacity-75">
+        <span>{statusLabel(match)}</span>
+        {active && <span>当前经历</span>}
+      </div>
+    </div>
+  );
+}
+
 export default function SkillMapView({
   className,
   data,
   activeTimelineId: activeTimelineIdProp,
 }: SkillMapViewProps) {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const storeResumeData = useResumeStore((s) => s.resumeData);
-  const storeActiveTimelineId = useResumeStore((s) => s.activeTimelineId);
-
-  const skills: SkillNode[] = useMemo(
-    () => data?.skills ?? storeResumeData?.skills ?? [],
-    [data?.skills, storeResumeData?.skills],
-  );
-  const timeline: TimelineNode[] = useMemo(
-    () => data?.timeline ?? storeResumeData?.timeline ?? [],
-    [data?.timeline, storeResumeData?.timeline],
-  );
+  const storeResumeData = useResumeStore((state) => state.resumeData);
+  const storeActiveTimelineId = useResumeStore((state) => state.activeTimelineId);
+  const resumeData = data ?? storeResumeData;
   const activeTimelineId =
     activeTimelineIdProp !== undefined ? activeTimelineIdProp : storeActiveTimelineId;
 
-  const highlightedSkillNames = useMemo<Set<string>>(() => {
-    if (!activeTimelineId) return new Set();
-    const active: TimelineNode | undefined = timeline.find((t) => t.id === activeTimelineId);
-    return new Set((active?.skills ?? []).map((skill) => skill.trim()).filter(Boolean));
-  }, [activeTimelineId, timeline]);
+  const skillProfile = useMemo(() => {
+    if (!resumeData) return null;
+    return resumeData.skillProfile ?? buildSkillProfileFromResume(resumeData);
+  }, [resumeData]);
 
-  const treeRoot = useMemo(() => buildTree(skills), [skills]);
-
-  const render = useCallback(() => {
-    const svg = d3.select(svgRef.current);
-    const container = containerRef.current;
-    if (!svg.node() || !container || !treeRoot) return;
-
-    const width = container.clientWidth;
-    const height = container.clientHeight;
-    const cx = width / 2;
-    const cy = height / 2;
-    const radius = Math.min(width, height) / 2 - 80;
-
-    svg.attr("width", width).attr("height", height);
-    svg.selectAll("*").remove();
-
-    const g = svg.append("g").attr("transform", `translate(${cx},${cy})`);
-
-    const root = d3.hierarchy(treeRoot);
-    const treeLayout = d3
-      .tree<TreeDatum>()
-      .size([2 * Math.PI, radius])
-      .separation((a, b) => (a.parent === b.parent ? 1 : 2) / a.depth);
-
-    treeLayout(root);
-
-    const linkGen = d3
-      .linkRadial<d3.HierarchyPointLink<TreeDatum>, d3.HierarchyPointNode<TreeDatum>>()
-      .angle((d) => d.x)
-      .radius((d) => d.y);
-
-    g.selectAll(".link")
-      .data(root.links())
-      .join("path")
-      .attr("class", "link")
-      .attr("d", (d) => linkGen(d as never))
-      .attr("fill", "none")
-      .attr("stroke", (d) => {
-        const name = d.target.data.name;
-        return highlightedSkillNames.size > 0 && highlightedSkillNames.has(name)
-          ? getColor(d.target.data.category)
-          : "#d1d5db";
-      })
-      .attr("stroke-width", (d) => {
-        const name = d.target.data.name;
-        return highlightedSkillNames.size > 0 && highlightedSkillNames.has(name) ? 2.5 : 1.5;
-      })
-      .attr("opacity", (d) => {
-        if (highlightedSkillNames.size === 0) return 0.7;
-        return highlightedSkillNames.has(d.target.data.name) ? 1 : 0.3;
-      })
-      .transition()
-      .duration(300)
-      .ease(d3.easeCubicOut);
-
-    const nodeG = g
-      .selectAll<SVGGElement, d3.HierarchyPointNode<TreeDatum>>(".node")
-      .data(root.descendants())
-      .join("g")
-      .attr("class", "node")
-      .attr("transform", (d) => `rotate(${((d.x ?? 0) * 180) / Math.PI - 90}) translate(${d.y ?? 0},0)`);
-
-    nodeG
-      .append("circle")
-      .attr("r", (d) => {
-        if (d.depth === 0) return 24;
-        if (d.depth === 1) return 14;
-        return 8;
-      })
-      .attr("fill", (d) => getColor(d.data.category))
-      .attr("stroke", "#fff")
-      .attr("stroke-width", 2)
-      .attr("opacity", (d) => {
-        if (highlightedSkillNames.size === 0) return 1;
-        return highlightedSkillNames.has(d.data.name) || d.depth === 0 ? 1 : 0.35;
-      })
-      .style("transform", (d) => {
-        if (highlightedSkillNames.size > 0 && highlightedSkillNames.has(d.data.name)) {
-          return "scale(1.2)";
-        }
-        return "scale(1)";
-      })
-      .style("transition", "transform 300ms ease-out, opacity 300ms ease-out");
-
-    nodeG
-      .append("text")
-      .attr("dy", (d) => (d.depth === 0 ? "0.35em" : d.depth === 1 ? -20 : -14))
-      .attr("text-anchor", "middle")
-      .attr("transform", (d) => `rotate(${-((((d.x ?? 0) * 180) / Math.PI) - 90)})`)
-      .attr("font-size", (d) => (d.depth === 0 ? 13 : d.depth === 1 ? 12 : 10))
-      .attr("font-weight", (d) => (d.depth <= 1 ? 600 : 400))
-      .attr("fill", (d) => {
-        if (highlightedSkillNames.size === 0) return "#374151";
-        return highlightedSkillNames.has(d.data.name) || d.depth === 0 ? "#111827" : "#9ca3af";
-      })
-      .style("transition", "fill 300ms ease-out")
-      .text((d) => d.data.name);
-
-    nodeG
-      .filter((d) => d.depth >= 2)
-      .each(function (d) {
-        const sel = d3.select(this);
-        const angle = -((((d.x ?? 0) * 180) / Math.PI) - 90);
-
-        const dotGroup = sel.append("g").attr("transform", `rotate(${angle})`);
-        const dotRadius = 2;
-        const gap = 6;
-        const startX = -((5 - 1) * gap) / 2;
-        const dotY = -26;
-
-        for (let i = 0; i < 5; i++) {
-          dotGroup
-            .append("circle")
-            .attr("cx", startX + i * gap)
-            .attr("cy", dotY)
-            .attr("r", dotRadius)
-            .attr("fill", i < d.data.level ? getColor(d.data.category) : "#e5e7eb");
-        }
-      });
-
-    const svgEl = svg.node();
-    if (svgEl) {
-      const typedSvg = d3.select(svgEl);
-      const zoom = d3
-        .zoom<SVGSVGElement, unknown>()
-        .scaleExtent([0.3, 3])
-        .on("zoom", (event) => {
-          g.attr("transform", event.transform.translate(cx, cy));
-        });
-
-      typedSvg.call(zoom).call(zoom.transform, d3.zoomIdentity);
-    }
-  }, [treeRoot, highlightedSkillNames]);
-
-  useEffect(() => {
-    render();
-    const onResize = () => render();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, [render]);
-
-  if (skills.length === 0) {
+  if (!resumeData || !skillProfile) {
     return (
-      <div className={cn("flex items-center justify-center h-64 text-muted-foreground text-sm", className)}>
-        暂无技能数据
+      <div className={cn("flex h-64 items-center justify-center text-sm text-muted-foreground", className)}>
+        暂无能力数据
       </div>
     );
   }
 
   return (
-    <div ref={containerRef} className={cn("relative w-full h-full min-h-[500px]", className)}>
-      <svg ref={svgRef} className="w-full h-full" />
+    <div className={cn("h-full min-h-[420px] overflow-y-auto rounded-lg bg-white p-4", className)}>
+      <div className="mb-4 flex flex-col gap-3 border-b border-zinc-100 pb-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2 text-sm font-semibold text-zinc-900">
+            <Brain className="h-4 w-4 text-indigo-500" />
+            {skillProfile.roleName}能力结构
+          </div>
+          <p className="mt-1 text-xs leading-5 text-zinc-500">
+            按职业能力域整理已经体现的经验、方法和工具能力。
+          </p>
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="rounded-md border border-zinc-100 bg-zinc-50 px-3 py-2">
+            <p className="text-lg font-semibold text-zinc-900">{skillProfile.coverage.owned}/{skillProfile.coverage.total}</p>
+            <p className="text-[10px] text-zinc-500">能力项</p>
+          </div>
+          <div className="rounded-md border border-emerald-100 bg-emerald-50 px-3 py-2">
+            <p className="text-lg font-semibold text-emerald-700">{skillProfile.coverage.owned}</p>
+            <p className="text-[10px] text-emerald-600">已体现</p>
+          </div>
+          <div className="rounded-md border border-indigo-100 bg-indigo-50 px-3 py-2">
+            <p className="text-lg font-semibold text-indigo-700">{skillProfile.coverage.coreOwned}/{skillProfile.coverage.coreTotal}</p>
+            <p className="text-[10px] text-indigo-600">核心能力</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        {skillProfile.categories.map((category) => {
+          const ownedCount = category.matches.filter((match) => match.status !== "missing").length;
+          return (
+            <section key={category.id} className="rounded-lg border border-zinc-100 bg-zinc-50/60 p-4">
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-zinc-900">{category.name}</h3>
+                  <p className="mt-1 text-xs leading-5 text-zinc-500">{category.description}</p>
+                </div>
+                <span className="shrink-0 rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[11px] text-zinc-600">
+                  {ownedCount}/{category.matches.length}
+                </span>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {category.matches.map((match) => (
+                  <SkillPill
+                    key={match.skillId}
+                    match={match}
+                    activeTimelineId={activeTimelineId}
+                  />
+                ))}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+
+      {skillProfile.detectedSkillNames.length > 0 && (
+        <div className="mt-4 rounded-lg border border-indigo-100 bg-indigo-50/70 p-3">
+          <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-indigo-700">
+            <Sparkles className="h-3.5 w-3.5" />
+            经历中已识别的能力
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {skillProfile.detectedSkillNames.slice(0, 16).map((skill) => (
+              <span key={skill} className="rounded-full bg-white px-2.5 py-1 text-[11px] text-indigo-700 shadow-sm">
+                {skill}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

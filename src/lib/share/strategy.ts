@@ -38,10 +38,11 @@ export function resolveSharedResume(params: {
   hash: string;
   slug: string;
   loadFromStorage: (slug: string) => ResumeData | null;
+  includeStorage?: boolean;
 }): ResumeData | null {
   const hashParams = new URLSearchParams(params.hash.replace(/^#/, ""));
   const encoded = hashParams.get("d") ?? "";
   const fromHash = encoded ? decodeResumeFromHash(encoded) : null;
-  const fromStore = params.slug ? params.loadFromStorage(params.slug) : null;
-  return fromHash ?? fromStore;
+  if (fromHash) return fromHash;
+  return params.includeStorage && params.slug ? params.loadFromStorage(params.slug) : null;
 }

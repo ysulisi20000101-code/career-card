@@ -12,12 +12,19 @@ import type {
   EditorStep,
   ParseMeta,
   RoleUnderstanding,
+  PublicSiteTemplate,
 } from "@/types";
 import { createDefaultRoleUnderstanding } from "@/lib/role-understanding/default";
+import { buildSkillNodesFromProfile, buildSkillProfileFromResume } from "@/lib/skills/profile";
 
 function normalizeResumeData(data: ResumeData): ResumeData {
+  const skillProfile = data.skillProfile ?? buildSkillProfileFromResume(data);
   return {
     ...data,
+    publicSiteTemplate: data.publicSiteTemplate ?? "executive-dossier",
+    skillProfile,
+    roleTemplateId: data.roleTemplateId ?? skillProfile.templateId,
+    skills: data.skills?.length ? data.skills : buildSkillNodesFromProfile(skillProfile),
     roleUnderstanding:
       data.roleUnderstanding ?? createDefaultRoleUnderstanding(data.timeline[0]?.position ?? ""),
   };
@@ -38,6 +45,7 @@ interface ResumeStore {
   setIsPresenting: (presenting: boolean) => void;
 
   updateProfile: (profile: Partial<UserProfile>) => void;
+  updatePublicSiteTemplate: (template: PublicSiteTemplate) => void;
   updateTimeline: (timeline: TimelineNode[]) => void;
   updateTimelineNode: (id: string, data: Partial<TimelineNode>) => void;
   addTimelineNode: (node: TimelineNode) => void;
@@ -83,6 +91,13 @@ export const useResumeStore = create<ResumeStore>()(
         set((state) => ({
           resumeData: state.resumeData
             ? { ...state.resumeData, profile: { ...state.resumeData.profile, ...profile } }
+            : null,
+        })),
+
+      updatePublicSiteTemplate: (template) =>
+        set((state) => ({
+          resumeData: state.resumeData
+            ? { ...state.resumeData, publicSiteTemplate: template }
             : null,
         })),
 

@@ -12,6 +12,9 @@ export interface ProjectRecord {
   id: string;
   type: "personal" | "interview";
   title: string;
-  status: "draft" | "published";
+  status: "draft" | "published" | "archived";
   updatedAt: string;
+  createdAt?: string;
+  publishedSlug?: string;
+  publishedAt?: string;
 }
