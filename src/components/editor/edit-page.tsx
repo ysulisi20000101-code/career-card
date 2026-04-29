@@ -11,6 +11,7 @@ import SkillMapEditor from "@/components/skillmap/skill-map-editor";
 import ArchitectureEditor from "@/components/architecture/architecture-editor";
 import { RoleUnderstandingEditor } from "@/components/role-understanding/role-understanding-editor";
 import { CareerNarrativeSite } from "@/components/narrative/career-narrative-site";
+import { CareerAgentPanel } from "@/components/agent/career-agent-panel";
 
 const tabs = [
   { value: "timeline", label: "时间线", icon: Clock },
@@ -102,6 +103,7 @@ export function EditPage({ mode = "personal" }: EditPageProps) {
           transition={{ duration: 0.2 }}
           className="min-h-0 overflow-y-auto border-b border-zinc-100 p-4 xl:border-b-0 xl:border-r xl:p-6"
         >
+          <CareerAgentPanel currentSection={activeTab} />
           {activeTab === "timeline" && <TimelineEditor />}
           {activeTab === "skills" && <SkillMapEditor />}
           {activeTab === "architecture" && <ArchitectureEditor />}
