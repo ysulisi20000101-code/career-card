@@ -16,6 +16,10 @@ interface FailureInfo {
   code: ParseError["code"] | "PARSE_INSUFFICIENT" | "UNKNOWN";
 }
 
+interface UploadPageProps {
+  onParsed?: () => void;
+}
+
 const uploadNotes = [
   { icon: FileCheck2, label: "格式", value: "文本型 PDF，最大 10MB" },
   { icon: Clock3, label: "耗时", value: "通常 10-30 秒完成解析" },
@@ -23,7 +27,7 @@ const uploadNotes = [
   { icon: Trash2, label: "控制", value: "草稿和发布链接可删除或撤回" },
 ];
 
-export function UploadPage() {
+export function UploadPage({ onParsed }: UploadPageProps = {}) {
   const setResumeData = useResumeStore((state) => state.setResumeData);
   const setParseMeta = useResumeStore((state) => state.setParseMeta);
   const setCurrentStep = useResumeStore((state) => state.setCurrentStep);
@@ -84,7 +88,8 @@ export function UploadPage() {
         tickProgress(100);
         setTimeout(() => {
           setIsProcessing(false);
-          setCurrentStep("confirm");
+          if (onParsed) onParsed();
+          else setCurrentStep("confirm");
         }, 250);
       } catch (err) {
         const code: FailureInfo["code"] = err instanceof ParseError ? err.code : "UNKNOWN";
@@ -99,7 +104,7 @@ export function UploadPage() {
         setProgress(0);
       }
     },
-    [setResumeData, setParseMeta, setCurrentStep, tickProgress],
+    [setResumeData, setParseMeta, setCurrentStep, tickProgress, onParsed],
   );
 
   const handleRetry = useCallback(() => {

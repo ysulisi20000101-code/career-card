@@ -105,7 +105,7 @@ export default function PersonalEditPage() {
           />
         </div>
         <div className="min-h-0 flex-1 overflow-hidden">
-          {currentStep === "upload" && <UploadPage />}
+          {currentStep === "upload" && <UploadPage onParsed={enterPreview} />}
           {currentStep === "confirm" && <ConfirmPage />}
           {currentStep === "edit" && <EditPage mode="personal" />}
         </div>

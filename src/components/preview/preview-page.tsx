@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import SkillMapView from "@/components/skillmap/skill-map-view";
 import ArchitectureView from "@/components/architecture/architecture-view";
 import { RoleUnderstandingView } from "@/components/role-understanding/role-understanding-view";
-import { CareerNarrativeSite } from "@/components/narrative/career-narrative-site";
+import { AgentSiteWorkbench } from "@/components/agent-first/agent-site-workbench";
 
 type SectionId = "timeline" | "role" | "skills" | "architecture";
 
@@ -40,8 +40,8 @@ export function PreviewPage({ mode = "personal", onStartPresentation }: PreviewP
 
   if (mode === "personal") {
     return (
-      <div className="h-full overflow-y-auto bg-zinc-950">
-        <CareerNarrativeSite data={resumeData} showFooter={false} />
+      <div className="h-full overflow-hidden bg-zinc-100">
+        <AgentSiteWorkbench resumeData={resumeData} />
       </div>
     );
   }
