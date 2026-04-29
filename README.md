@@ -1,5 +1,26 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Career Agent
+
+Career Card includes a deterministic career agent and optional model-backed providers.
+The agent is safe by default: if a model provider is not configured, times out, or returns invalid JSON, it falls back to the rules provider.
+All generated patches still require manual confirmation in the UI.
+
+Copy `.env.example` to `.env.local` and fill only the providers you want to use:
+
+```bash
+DEEPSEEK_API_KEY=
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+DEEPSEEK_MODEL=deepseek-v4-flash
+
+MIMO_API_KEY=
+MIMO_BASE_URL=
+MIMO_MODEL=mimo-v2-flash
+```
+
+DeepSeek is wired as an OpenAI-compatible chat-completions provider.
+Mimo is also treated as OpenAI-compatible, but requires `MIMO_BASE_URL` because the target endpoint may vary by deployment.
+
 ## Getting Started
 
 First, run the development server:
