@@ -7,18 +7,18 @@ function hasText(value: unknown): value is string {
 export function validateCareerSiteDraft(draft: CareerSiteDraft): string[] {
   const issues: string[] = [];
 
-  if (!hasText(draft.hero.title)) issues.push("Hero title is missing.");
-  if (!hasText(draft.positioning.targetRole)) issues.push("Target role is missing.");
-  if (draft.sections.length < 3) issues.push("Site needs at least three sections.");
-  if (draft.experienceBlocks.length === 0) issues.push("No featured experience block was generated.");
+  if (!hasText(draft.hero.title)) issues.push("首屏标题缺失。");
+  if (!hasText(draft.positioning.targetRole)) issues.push("目标岗位缺失。");
+  if (draft.sections.length < 3) issues.push("网站至少需要三个有效区块。");
+  if (draft.experienceBlocks.length === 0) issues.push("还没有生成代表经历区块。");
   if (draft.review.publishBlockers.length > 0) {
-    issues.push(`Publish blockers remain: ${draft.review.publishBlockers.join(", ")}`);
+    issues.push(`仍有发布阻断项：${draft.review.publishBlockers.join("、")}。`);
   }
 
   const unconfirmedRisk = draft.sections
     .flatMap((section) => section.bullets)
     .some((bullet) => /第一|唯一|顶级|最佳|100%/.test(bullet));
-  if (unconfirmedRisk) issues.push("Some claims may need manual evidence review.");
+  if (unconfirmedRisk) issues.push("存在可能需要人工确认的强结论表达。");
 
   return issues;
 }

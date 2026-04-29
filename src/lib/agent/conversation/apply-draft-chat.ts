@@ -15,56 +15,56 @@ function includesAny(text: string, words: string[]): boolean {
   return words.some((word) => text.includes(word.toLowerCase()));
 }
 
-function stylePatch(preset: CareerSiteStylePreset) {
+function stylePatch(preset: CareerSiteStylePreset): CareerSiteDraft["style"] {
   const styles: Record<CareerSiteStylePreset, CareerSiteDraft["style"]> = {
     executive: {
       preset,
-      tone: "calm, senior, credible, evidence-led",
+      tone: "克制、可信、面向决策者",
       density: "balanced",
-      colorTheme: "ink, warm white, muted teal",
-      layoutStyle: "executive dossier with proof-first sections",
-      typography: "serif-like display with compact sans body",
+      colorTheme: "墨黑、暖白、深青",
+      layoutStyle: "高管档案式叙事，先给判断，再给证据",
+      typography: "沉稳标题字重，紧凑正文",
     },
     "product-led": {
       preset,
-      tone: "structured, product-minded, outcome-oriented",
+      tone: "结构清晰、结果导向、有产品判断",
       density: "balanced",
-      colorTheme: "graphite, white, signal blue",
-      layoutStyle: "product case-study flow",
-      typography: "clean sans with crisp hierarchy",
+      colorTheme: "石墨黑、白色、信号蓝",
+      layoutStyle: "产品案例式叙事，突出问题、选择和结果",
+      typography: "现代无衬线，清晰层级",
     },
     "technical-builder": {
       preset,
-      tone: "precise, systems-thinking, builder-oriented",
+      tone: "精确、系统化、证据优先",
       density: "detailed",
-      colorTheme: "charcoal, white, electric cyan",
-      layoutStyle: "technical narrative with proof and architecture lanes",
-      typography: "compact sans with monospace accents",
+      colorTheme: "炭黑、雾白、电光青",
+      layoutStyle: "技术建设者叙事，突出系统、链路和可交付结果",
+      typography: "紧凑无衬线，搭配技术感标注",
     },
     minimal: {
       preset,
-      tone: "restrained, direct, highly readable",
+      tone: "直接、干净、易读",
       density: "focused",
-      colorTheme: "black, white, zinc",
-      layoutStyle: "single-column portfolio",
-      typography: "quiet sans",
+      colorTheme: "黑、白、中性灰",
+      layoutStyle: "单列作品集，减少装饰，突出内容",
+      typography: "安静的无衬线字体",
     },
     creative: {
       preset,
-      tone: "human, vivid, story-forward",
+      tone: "有人味、故事感、表达鲜明",
       density: "balanced",
-      colorTheme: "ink, white, coral",
-      layoutStyle: "editorial story flow",
-      typography: "expressive display with readable body",
+      colorTheme: "墨黑、白色、珊瑚红",
+      layoutStyle: "杂志式职业故事，突出关键转折",
+      typography: "更有识别度的标题和清爽正文",
     },
   };
   return styles[preset];
 }
 
 function inferStyle(text: string): CareerSiteStylePreset | null {
-  if (includesAny(text, ["极简", "简洁", "克制", "minimal", "clean"])) return "minimal";
-  if (includesAny(text, ["科技", "技术", "架构", "ai", "agent", "rag", "llm", "technical"])) return "technical-builder";
-  if (includesAny(text, ["产品", "增长", "saas", "平台", "product"])) return "product-led";
+  if (includesAny(text, ["极简", "简洁", "干净", "克制", "minimal", "clean"])) return "minimal";
+  if (includesAny(text, ["科技", "技术", "架构", "ai", "agent", "rag", "llm", "智能体", "大模型"])) return "technical-builder";
+  if (includesAny(text, ["产品", "增长", "saas", "平台", "product", "pm"])) return "product-led";
   if (includesAny(text, ["高级", "高管", "管理", "负责人", "executive", "senior"])) return "executive";
   if (includesAny(text, ["创意", "设计", "品牌", "creative"])) return "creative";
   return null;
@@ -82,19 +82,8 @@ function findFocusExperience(draft: CareerSiteDraft, text: string): string | nul
   );
 }
 
-export function applyDraftChat(input: {
-  draft?: CareerSiteDraft | null;
-  resumeData: ResumeData;
-  message: string;
-  now?: Date;
-}): CareerSiteChatResult {
-  const now = input.now ?? new Date();
-  const message = input.message.trim();
-  const text = message.toLowerCase();
-  const base = input.draft ?? generateCareerSiteDraft(input.resumeData, { now });
-  const changes: string[] = [];
-  const questions: string[] = [];
-  let draft: CareerSiteDraft = {
+function cloneDraft(base: CareerSiteDraft): CareerSiteDraft {
+  return {
     ...base,
     sections: base.sections.map((section) => ({ ...section, bullets: [...section.bullets] })),
     experienceBlocks: base.experienceBlocks.map((block) => ({ ...block, bullets: [...block.bullets] })),
@@ -112,55 +101,73 @@ export function applyDraftChat(input: {
     },
     versionHistory: [...base.versionHistory],
   };
+}
+
+export function applyDraftChat(input: {
+  draft?: CareerSiteDraft | null;
+  resumeData: ResumeData;
+  message: string;
+  now?: Date;
+}): CareerSiteChatResult {
+  const now = input.now ?? new Date();
+  const message = input.message.trim();
+  const text = message.toLowerCase();
+  const base = input.draft ?? generateCareerSiteDraft(input.resumeData, { now });
+  const changes: string[] = [];
+  const questions: string[] = [];
+  let draft = cloneDraft(base);
 
   const style = inferStyle(text);
   if (style) {
     draft = { ...draft, style: stylePatch(style) };
-    changes.push(`Style preset changed to ${style}.`);
+    changes.push(`视觉风格已切换为「${style}」。`);
   }
 
-  if (includesAny(text, ["ai agent", "agent", "智能体", "deepseek", "mimo"])) {
+  if (includesAny(text, ["ai agent", "agent", "智能体", "大模型", "deepseek", "mimo"])) {
+    const name = input.resumeData.profile.name || "候选人";
     draft = {
       ...draft,
       positioning: {
         ...draft.positioning,
-        targetRole: "AI Agent Product / Platform Candidate",
-        headline: `${input.resumeData.profile.name || "Candidate"} - AI Agent Product / Platform Candidate`,
-        oneLinePitch: compact(
-          "Position the site around AI Agent product judgment, workflow automation, and the ability to turn ambiguous user problems into shipped systems.",
-        ),
-        coreStrengths: Array.from(new Set(["AI Agent", "workflow design", "platform product", ...draft.positioning.coreStrengths])).slice(0, 8),
+        targetRole: "AI Agent 产品 / 平台方向",
+        headline: `${name}｜AI Agent 产品 / 平台方向`,
+        oneLinePitch: "把复杂业务流程拆解成可交付、可验证、可持续迭代的 Agent 产品系统。",
+        coreStrengths: Array.from(new Set(["AI Agent", "工作流设计", "平台产品", "复杂问题拆解", ...draft.positioning.coreStrengths])).slice(0, 8),
+      },
+      hero: {
+        ...draft.hero,
+        title: `${name}，AI Agent 产品 / 平台方向`,
+        subtitle: "把复杂业务流程拆解成可交付、可验证、可持续迭代的 Agent 产品系统。",
       },
       narrative: {
         ...draft.narrative,
-        theme: "From product judgment to agentic systems",
-        storyArc: compact(
-          "Lead with the moments where the candidate turned workflow complexity into reusable product systems, then connect that evidence to AI Agent product work.",
-        ),
+        theme: "从产品判断到 Agent 系统落地",
+        storyArc: "叙事重点调整为：如何把复杂协作、流程和知识问题，转化为可复用的 AI Agent 产品能力。",
       },
     };
-    changes.push("Positioning shifted toward AI Agent product/platform work.");
+    changes.push("职业定位已转向 AI Agent 产品 / 平台方向。");
   }
 
-  if (includesAny(text, ["太虚", "更实在", "真实", "别夸张", "降低", "克制"])) {
+  if (includesAny(text, ["太虚", "更实在", "真实", "别夸张", "降低", "克制", "可信"])) {
     draft = {
       ...draft,
-      style: { ...draft.style, tone: "restrained, evidence-first, concrete" },
+      style: { ...draft.style, tone: "克制、具体、证据优先" },
       sections: draft.sections.map((section) =>
         section.id === "proof"
           ? {
               ...section,
-              body: "This section now prioritizes verifiable facts and avoids claims that are not already supported by the resume.",
+              title: "只保留可被简历支撑的证据",
+              body: "这一版会降低形容词密度，优先展示来自简历的事实、负责范围、上线结果和可核验成果。",
               bullets: section.bullets.map((bullet) => compact(bullet, 140)),
             }
           : section,
       ),
       review: {
         ...draft.review,
-        riskyClaims: Array.from(new Set([...draft.review.riskyClaims, "Review any claim that lacks a source in the resume."])),
+        riskyClaims: Array.from(new Set([...draft.review.riskyClaims, "请复核所有没有简历来源的强结论表达。"])),
       },
     };
-    changes.push("Tone tightened to a more concrete, evidence-first version.");
+    changes.push("表达已收敛为更具体、可信、证据优先的版本。");
   }
 
   if (includesAny(text, ["重点", "突出", "放在", "强调", "focus"])) {
@@ -173,22 +180,32 @@ export function applyDraftChat(input: {
           featuredExperienceIds: [focusExperienceId, ...draft.narrative.featuredExperienceIds.filter((id) => id !== focusExperienceId)],
         },
       };
-      changes.push("Featured experience order updated based on the requested focus.");
+      changes.push("已根据你的要求调整重点经历排序。");
     } else {
       draft = {
         ...draft,
         narrative: {
           ...draft.narrative,
-          theme: compact(`${draft.narrative.theme}; focus request: ${message}`, 140),
+          theme: compact(`${draft.narrative.theme}｜重点：${message}`, 120),
+          storyArc: compact(`这一版会把叙事重心放在「${message}」，同时不新增简历外事实。`, 180),
         },
       };
-      changes.push("Narrative focus updated from your instruction.");
+      changes.push("叙事重点已根据你的指令调整。");
     }
   }
 
+  if (includesAny(text, ["发布", "能不能发", "检查", "风险", "review"])) {
+    questions.push(
+      draft.review.publishBlockers.length > 0
+        ? `发布前还需要处理：${draft.review.publishBlockers.join("、")}。`
+        : "当前没有阻断发布的问题，可以继续做风格和措辞精修。",
+    );
+    changes.push("已重新解释发布前风险和待确认项。");
+  }
+
   if (changes.length === 0) {
-    questions.push("你想优先改定位、叙事重点、视觉风格，还是某一段经历的表达？");
-    changes.push("No direct patch was applied; the agent needs a more specific direction.");
+    questions.push("你想优先改职业定位、叙事重点、视觉风格，还是某一段经历的表达？");
+    changes.push("这条指令还不够具体，我先不改动网站内容，避免误改事实。");
   }
 
   draft = {
