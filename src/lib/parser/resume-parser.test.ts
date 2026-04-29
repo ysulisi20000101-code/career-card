@@ -94,4 +94,50 @@ PRD SQL Axure Figma
     expect(result.data.timeline[0]?.promotionStages?.at(-1)?.teamScale).toBe("10人");
     expect(result.data.skillProfile?.templateId).toBe("product-manager");
   });
+
+  it("keeps readable Chinese section parsing stable", () => {
+    const source = `
+张三
+高级产品经理
+zhangsan@example.com
+13900001111
+
+个人简介
+6 年平台产品经验，负责 AI Agent、知识库和数据看板等产品规划。
+
+工作经历
+2023.01 - 至今 北京未来科技有限公司｜高级产品经理
+- 负责 AI Agent 产品规划、需求拆解和跨团队交付。
+- 推动知识库与数据看板上线，服务销售和交付团队。
+
+教育背景
+2014.09 - 2018.06 北京大学｜信息管理｜本科
+
+技能
+PRD Figma SQL AI Agent RAG
+    `.trim();
+
+    const result = parseResumeText(source, "张三-高级产品经理.pdf");
+
+    expect(result.data.profile).toMatchObject({
+      name: "张三",
+      email: "zhangsan@example.com",
+      phone: "13900001111",
+      title: "高级产品经理",
+    });
+    expect(result.data.timeline[0]).toMatchObject({
+      company: "北京未来科技有限公司",
+      position: "高级产品经理",
+      startDate: "2023-01",
+      endDate: "至今",
+    });
+    expect(result.data.education[0]).toMatchObject({
+      school: "北京大学",
+      major: "信息管理",
+      degree: "本科",
+    });
+    expect(result.data.timeline[0].skills).toContain("AI Agent");
+    expect(result.data.skillProfile?.templateId).toBe("product-manager");
+    expect(result.data.skillProfile?.detectedSkillNames.length).toBeGreaterThan(0);
+  });
 });
