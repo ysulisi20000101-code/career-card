@@ -110,7 +110,7 @@ function splitToSections(lines: string[]): Sections {
 }
 
 function pickName(lines: string[], fileName: string): string {
-  for (const line of lines.slice(0, 8)) {
+  for (const line of lines.slice(0, 15)) {
     const cleaned = line.replace(/[|｜]/g, " ").trim();
     if (/^[\u4e00-\u9fa5]{2,4}$/.test(cleaned)) return cleaned;
     const leading = cleaned.match(/^([\u4e00-\u9fa5]{2,4})(?:\s|$)/);
@@ -122,6 +122,16 @@ function pickName(lines: string[], fileName: string): string {
     );
     if (gluedTitle && cleaned.length <= 28 && !EMAIL_RE.test(cleaned) && !PHONE_RE.test(cleaned)) {
       return gluedTitle[1];
+    }
+  }
+  // Fallback: look for a standalone Chinese name line (2-4 chars, no common non-name patterns)
+  for (const line of lines.slice(0, 15)) {
+    const cleaned = line.replace(/[|｜]/g, " ").trim();
+    if (
+      /^[一-龥]{2,4}$/.test(cleaned) &&
+      !/[@http]|手机|邮箱|电话|地址/.test(line)
+    ) {
+      return cleaned;
     }
   }
   return fileName.replace(/\.(pdf|docx?)$/i, "").slice(0, 16) || "未命名候选人";
@@ -204,7 +214,9 @@ function extractTeamScale(text: string): string {
   );
 }
 
-function buildStageReflection(title: string, text: string): string {
+function buildStageReflection(title: string, text: string, outcome?: string, responsibility?: string): string {
+  if (outcome && outcome.trim()) return outcome;
+  if (responsibility && responsibility.trim()) return responsibility;
   if (/总监|管理|团队/.test(`${title} ${text}`)) {
     return "这一阶段的重点从单点产品交付转向方向判断、团队分工和商业化落地。";
   }
@@ -278,11 +290,20 @@ function extractPromotionStages(lines: string[]): PromotionStage[] {
       leadershipType: inferLeadershipType(text),
       responsibility: bullets[0] ?? "",
       outcome,
-      reflection: buildStageReflection(title, text),
+      reflection: buildStageReflection(title, text, outcome, bullets[0]),
     };
   });
 
   return stages.flatMap(splitLeaderAndDirectorStage);
+}
+
+function deriveStoryMood(highlights: string[]): TimelineNode["storyMood"] {
+  const text = highlights.join(" ");
+  if (/突破|创新|从零/.test(text)) return "breakthrough";
+  if (/增长|提升|优化/.test(text)) return "growth";
+  if (/负责|管理|主导/.test(text)) return "impact";
+  if (/设计|打磨|精进/.test(text)) return "craft";
+  return "focus";
 }
 
 function buildTimeline(workLines: string[]): TimelineNode[] {
@@ -324,7 +345,7 @@ function buildTimeline(workLines: string[]): TimelineNode[] {
       skills,
       order: index,
       careerKind: isInternshipBlock(`${company} ${position} ${description}`) ? "internship" : "fulltime",
-      storyMood: ["focus", "growth", "breakthrough", "craft", "impact"][index % 5] as TimelineNode["storyMood"],
+      storyMood: deriveStoryMood(highlights),
       promotionStages: promotionStages.length > 0 ? promotionStages : undefined,
     };
   });

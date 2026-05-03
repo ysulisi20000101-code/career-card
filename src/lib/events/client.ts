@@ -13,7 +13,7 @@ function getEventSessionId(): string {
 
 export function trackEvent(
   eventName: string,
-  source: "edit" | "public" | "presentation" | "share" | "billing",
+  source: "edit" | "public" | "presentation" | "share",
   props: Record<string, unknown> = {},
 ) {
   if (typeof window === "undefined") return;

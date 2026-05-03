@@ -1,59 +1,42 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
-import type { ResumeData } from "@/types";
-import { sanitizeResumeData } from "@/lib/share/validation";
-
-export interface PublishedSiteSnapshot {
-  slug: string;
-  version: number;
-  publishedAt: string;
-  data: ResumeData;
-}
+import type { PublishedSiteSnapshot } from "@/lib/share/published-snapshot";
+import { getSnapshotResumeData, normalizePublishedSnapshot } from "@/lib/share/published-snapshot";
+import { getStorageAdapter, type PublishedSiteRecord } from "@/lib/server/storage-adapter";
 
 export interface PublishedSiteRepository {
   save(site: PublishedSiteSnapshot): Promise<PublishedSiteSnapshot>;
   find(slug: string): Promise<PublishedSiteSnapshot | null>;
-}
-
-const STORE_DIR = path.join(process.cwd(), ".data");
-const STORE_FILE = path.join(STORE_DIR, "published-sites.json");
-
-async function readStore(): Promise<Record<string, PublishedSiteSnapshot>> {
-  try {
-    const raw = await readFile(STORE_FILE, "utf8");
-    const parsed = JSON.parse(raw) as Record<string, PublishedSiteSnapshot>;
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-async function writeStore(store: Record<string, PublishedSiteSnapshot>): Promise<void> {
-  await mkdir(STORE_DIR, { recursive: true });
-  await writeFile(STORE_FILE, JSON.stringify(store, null, 2), "utf8");
+  remove(slug: string): Promise<void>;
 }
 
 export function createLocalPublishedSiteRepository(): PublishedSiteRepository {
+  const adapter = getStorageAdapter();
+
   return {
     async save(site) {
-      const sanitized = sanitizeResumeData(site.data);
+      const normalized = normalizePublishedSnapshot(site);
+      if (!normalized) throw new Error("INVALID_SITE_DATA");
+      const sanitized = getSnapshotResumeData(normalized);
       if (!sanitized) throw new Error("INVALID_SITE_DATA");
-      const snapshot: PublishedSiteSnapshot = {
-        ...site,
-        data: sanitized,
-      };
-      const store = await readStore();
-      store[site.slug] = snapshot;
-      await writeStore(store);
-      return snapshot;
+      // Check slug uniqueness: reject if a different snapshot already exists at this slug
+      const existing = await adapter.getPublishedSite(normalized.slug);
+      if (existing) {
+        const existingNormalized = normalizePublishedSnapshot(existing, normalized.slug);
+        const existingData = existingNormalized ? getSnapshotResumeData(existingNormalized) : null;
+        if (existingData && existingData.profile.name !== sanitized.profile.name) {
+          throw new Error("SLUG_TAKEN");
+        }
+      }
+      const record = normalized as PublishedSiteRecord;
+      await adapter.savePublishedSite(record);
+      return normalized;
     },
     async find(slug) {
-      const store = await readStore();
-      const site = store[slug];
+      const site = await adapter.getPublishedSite(slug);
       if (!site) return null;
-      const sanitized = sanitizeResumeData(site.data);
-      if (!sanitized) return null;
-      return { ...site, data: sanitized };
+      return normalizePublishedSnapshot(site, slug);
+    },
+    async remove(slug) {
+      await adapter.deletePublishedSite(slug);
     },
   };
 }

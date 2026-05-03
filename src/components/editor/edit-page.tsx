@@ -1,17 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Boxes, Brain, Clock, Eye, LayoutTemplate, Target } from "lucide-react";
+import { Boxes, Brain, Clock, Eye, LayoutTemplate, Sparkles, Target } from "lucide-react";
 import type { PublicSiteTemplate } from "@/types";
 import { useResumeStore } from "@/store/resume-store";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { TimelineEditor } from "@/components/timeline/timeline-editor";
 import SkillMapEditor from "@/components/skillmap/skill-map-editor";
 import ArchitectureEditor from "@/components/architecture/architecture-editor";
 import { RoleUnderstandingEditor } from "@/components/role-understanding/role-understanding-editor";
 import { CareerNarrativeSite } from "@/components/narrative/career-narrative-site";
 import { CareerAgentPanel } from "@/components/agent/career-agent-panel";
+import { generatePresentationDraft } from "@/lib/presentation/generator";
+import { savePresentationDraft, deletePresentationDraft } from "@/lib/presentation/storage";
+import { loadInterviewProject, saveInterviewProject } from "@/lib/projects/registry";
 
 const tabs = [
   { value: "timeline", label: "时间线", icon: Clock },
@@ -37,15 +42,43 @@ const publicTemplates: { value: PublicSiteTemplate; label: string; description: 
 
 interface EditPageProps {
   mode?: "personal" | "interview";
+  projectId?: string;
 }
 
-export function EditPage({ mode = "personal" }: EditPageProps) {
+export function EditPage({ mode = "personal", projectId }: EditPageProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabValue>("timeline");
   const resumeData = useResumeStore((state) => state.resumeData);
   const updatePublicSiteTemplate = useResumeStore((state) => state.updatePublicSiteTemplate);
   const visibleTabs = mode === "interview" ? tabs : tabs.filter((tab) => tab.value !== "role");
 
-  if (!resumeData) return null;
+  const handleGeneratePresentation = () => {
+    if (!resumeData || !projectId) return;
+    const interviewData = loadInterviewProject(projectId);
+    if (interviewData?.presentationDraftId) {
+      deletePresentationDraft(interviewData.presentationDraftId);
+    }
+    const draft = generatePresentationDraft(resumeData);
+    savePresentationDraft(draft);
+    if (interviewData) {
+      saveInterviewProject(projectId, { ...interviewData, presentationDraftId: draft.id });
+    }
+    router.push(`/workspace/interview/${projectId}/present`);
+  };
+
+  if (!resumeData) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="text-center">
+          <p className="text-lg font-semibold text-zinc-900">数据未加载</p>
+          <p className="mt-2 text-sm text-zinc-500">请先上传简历或手动填写信息。</p>
+          <a href="/workspace" className="mt-4 inline-block text-sm text-indigo-600 hover:underline">
+            返回工作台
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full flex-col bg-gradient-to-b from-zinc-50/60 via-white to-white">
@@ -88,9 +121,22 @@ export function EditPage({ mode = "personal" }: EditPageProps) {
             })}
           </div>
         ) : (
-          <div className="hidden items-center gap-1.5 text-xs text-zinc-500 md:flex">
-            <Eye className="h-3.5 w-3.5" />
-            右侧为真实公开页预览
+          <div className="hidden items-center gap-2 md:flex">
+            {projectId && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 gap-1 rounded-full px-2 text-[11px]"
+                onClick={handleGeneratePresentation}
+              >
+                <Sparkles className="h-3 w-3" />
+                重新生成演示
+              </Button>
+            )}
+            <div className="flex items-center gap-1.5 text-xs text-zinc-500">
+              <Eye className="h-3.5 w-3.5" />
+              右侧为真实公开页预览
+            </div>
           </div>
         )}
       </div>
@@ -121,7 +167,7 @@ export function EditPage({ mode = "personal" }: EditPageProps) {
             <div className="flex items-center justify-between border-b border-white/10 bg-zinc-950/95 px-4 py-3">
               <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.18em] text-white/55">
                 <Eye className="h-3.5 w-3.5 text-indigo-300" />
-                真实公开页预览
+                预览 — 发布后访客看到的效果
               </div>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto">

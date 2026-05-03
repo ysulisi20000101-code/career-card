@@ -5,10 +5,11 @@ import type {
   CareerSiteDraft,
   CareerSiteExperienceBlock,
   CareerSiteSection,
-  CareerSiteStyle,
   CareerSiteStylePreset,
   GenerateCareerSiteDraftInput,
 } from "./types";
+import { getStyleForPreset } from "./styles";
+import { clean, compactOr, unique } from "@/lib/utils-helpers";
 
 type QualitySignal = {
   missingFacts: string[];
@@ -16,19 +17,6 @@ type QualitySignal = {
   publishBlockers: string[];
   confidence: number;
 };
-
-function clean(value: string | undefined | null): string {
-  return (value ?? "").replace(/\s+/g, " ").trim();
-}
-
-function compact(value: string | undefined | null, fallback: string, max = 180): string {
-  const normalized = clean(value) || fallback;
-  return normalized.length > max ? `${normalized.slice(0, max - 1)}...` : normalized;
-}
-
-function unique(values: Array<string | undefined | null>): string[] {
-  return Array.from(new Set(values.map(clean).filter(Boolean)));
-}
 
 function periodFor(node: TimelineNode): string {
   const start = clean(node.startDate);
@@ -43,9 +31,11 @@ function scoreSkill(skill: SkillNode): number {
   return skill.level + importance + status;
 }
 
-function textCorpus(data: ResumeData, instruction?: string): string {
+function textCorpus(data: ResumeData, input?: GenerateCareerSiteDraftInput): string {
   return [
-    instruction,
+    input?.instruction,
+    input?.jdText,
+    input?.targetRoleOverride,
     data.profile.title,
     data.profile.summary,
     data.roleUnderstanding?.targetRoleTitle,
@@ -67,8 +57,8 @@ function textCorpus(data: ResumeData, instruction?: string): string {
     .toLowerCase();
 }
 
-function detectStylePreset(data: ResumeData, instruction?: string): CareerSiteStylePreset {
-  const corpus = textCorpus(data, instruction);
+function detectStylePreset(data: ResumeData, input?: GenerateCareerSiteDraftInput): CareerSiteStylePreset {
+  const corpus = textCorpus(data, input);
   if (/ai|agent|rag|llm|智能体|大模型|技术|架构|研发|工程/.test(corpus)) return "technical-builder";
   if (/产品|增长|平台|saas|b端|pm|product/.test(corpus)) return "product-led";
   if (/负责人|总监|管理|leader|director|vp|founder|ceo/.test(corpus)) return "executive";
@@ -76,55 +66,10 @@ function detectStylePreset(data: ResumeData, instruction?: string): CareerSiteSt
   return "minimal";
 }
 
-function styleForPreset(preset: CareerSiteStylePreset): CareerSiteStyle {
-  const styles: Record<CareerSiteStylePreset, CareerSiteStyle> = {
-    executive: {
-      preset,
-      tone: "克制、可信、面向决策者",
-      density: "balanced",
-      colorTheme: "墨黑、暖白、深青",
-      layoutStyle: "高管档案式叙事，先给判断，再给证据",
-      typography: "沉稳标题字重，紧凑正文",
-    },
-    "product-led": {
-      preset,
-      tone: "结构清晰、结果导向、有产品判断",
-      density: "balanced",
-      colorTheme: "石墨黑、白色、信号蓝",
-      layoutStyle: "产品案例式叙事，突出问题、选择和结果",
-      typography: "现代无衬线，清晰层级",
-    },
-    "technical-builder": {
-      preset,
-      tone: "精确、系统化、证据优先",
-      density: "detailed",
-      colorTheme: "炭黑、雾白、电光青",
-      layoutStyle: "技术建设者叙事，突出系统、链路和可交付结果",
-      typography: "紧凑无衬线，搭配技术感标注",
-    },
-    minimal: {
-      preset,
-      tone: "直接、干净、易读",
-      density: "focused",
-      colorTheme: "黑、白、中性灰",
-      layoutStyle: "单列作品集，减少装饰，突出内容",
-      typography: "安静的无衬线字体",
-    },
-    creative: {
-      preset,
-      tone: "有人味、故事感、表达鲜明",
-      density: "balanced",
-      colorTheme: "墨黑、白色、珊瑚红",
-      layoutStyle: "杂志式职业故事，突出关键转折",
-      typography: "更有识别度的标题和清爽正文",
-    },
-  };
-  return styles[preset];
-}
 
-function targetRoleFor(data: ResumeData): string {
-  return compact(
-    data.roleUnderstanding?.targetRoleTitle || data.profile.title || data.timeline[0]?.position,
+function targetRoleFor(data: ResumeData, override?: string): string {
+  return compactOr(
+    override || data.roleUnderstanding?.targetRoleTitle || data.profile.title || data.timeline[0]?.position,
     "目标岗位待确认",
     48,
   );
@@ -161,29 +106,29 @@ function proofPointsFor(data: ResumeData, orderedTimeline: TimelineNode[]): stri
 
 function inferPositioningLine(data: ResumeData, targetRole: string, strengths: string[]): string {
   if (clean(data.roleUnderstanding?.oneLineInterpretation)) {
-    return compact(data.roleUnderstanding.oneLineInterpretation, "", 160);
+    return compactOr(data.roleUnderstanding.oneLineInterpretation, "", 160);
   }
-  if (clean(data.profile.summary)) return compact(data.profile.summary, "", 160);
+  if (clean(data.profile.summary)) return compactOr(data.profile.summary, "", 160);
   const strongest = strengths.slice(0, 3).join("、");
   if (strongest) return `围绕${targetRole}，用${strongest}把复杂问题转化为可落地的结果。`;
   return `这份网站需要继续补齐目标岗位和代表性成果，才能形成清晰的${targetRole}叙事。`;
 }
 
 function storyTitleFor(node: TimelineNode): string {
-  if (clean(node.storyTitle)) return compact(node.storyTitle, "", 72);
+  if (clean(node.storyTitle)) return compactOr(node.storyTitle, "", 72);
   if (clean(node.company) && clean(node.position)) return `${node.company} · ${node.position}`;
   return clean(node.position) || clean(node.company) || "关键经历";
 }
 
 function storySummaryFor(node: TimelineNode): string {
   if (clean(node.storyScene) || clean(node.storyChallenge) || clean(node.storyAction) || clean(node.storyOutcome)) {
-    return compact(
+    return compactOr(
       unique([node.storyScene, node.storyChallenge, node.storyAction, node.storyOutcome]).join(" "),
       "",
       240,
     );
   }
-  return compact(node.description, "这段经历还需要补充背景、行动和结果，才能成为可发布的职业故事。", 220);
+  return compactOr(node.description, "这段经历还需要补充背景、行动和结果，才能成为可发布的职业故事。", 220);
 }
 
 function storyBulletsFor(node: TimelineNode): string[] {
@@ -242,7 +187,7 @@ function sectionsFor(data: ResumeData, orderedTimeline: TimelineNode[], strength
       kind: "story",
       eyebrow: "职业叙事",
       title: "把经历组织成一条能被理解的线",
-      body: compact(
+      body: compactOr(
         first.storyReflection || first.storyOutcome || first.description,
         "从最近、最相关的一段经历切入，把问题、行动、结果和目标岗位连接起来。",
         260,
@@ -351,16 +296,16 @@ function questionHint(signal: QualitySignal): string {
 export function generateCareerSiteDraft(data: ResumeData, input: GenerateCareerSiteDraftInput = {}): CareerSiteDraft {
   const now = input.now ?? new Date();
   const orderedTimeline = getOrderedTimeline(data.timeline);
-  const targetRole = targetRoleFor(data);
+  const targetRole = targetRoleFor(data, input.targetRoleOverride);
   const strengths = strengthNames(data);
   const proofPoints = proofPointsFor(data, orderedTimeline);
   const sections = sectionsFor(data, orderedTimeline, strengths, proofPoints);
   const review = qualityFor(data, sections);
-  const style = styleForPreset(detectStylePreset(data, input.instruction));
-  const name = compact(data.profile.name, "候选人", 32);
+  const style = getStyleForPreset(detectStylePreset(data, input));
+  const name = compactOr(data.profile.name, "候选人", 32);
   const firstExperience = orderedTimeline[0];
   const positioningLine = inferPositioningLine(data, targetRole, strengths);
-  const storyTheme = compact(
+  const storyTheme = compactOr(
     firstExperience?.storyTitle || data.roleUnderstanding?.oneLineInterpretation || data.profile.summary,
     `${targetRole} 的职业叙事`,
     88,
@@ -381,7 +326,7 @@ export function generateCareerSiteDraft(data: ResumeData, input: GenerateCareerS
     narrative: {
       theme: storyTheme,
       storyArc: firstExperience
-        ? compact(
+        ? compactOr(
             firstExperience.storyReflection || firstExperience.storyOutcome || firstExperience.description,
             "从最近、最相关的一段经历切入，把问题、行动、结果和目标岗位连接起来。",
             260,

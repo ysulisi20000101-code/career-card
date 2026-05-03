@@ -26,6 +26,23 @@
   --brand-to: #7c3aed;
   --surface: #ffffff;
   --surface-muted: #f8fafc;
+
+  /* Skill map tokens */
+  --skill-active-border: #a5b4fc;
+  --skill-active-bg: #eef2ff;
+  --skill-active-text: #3730a3;
+  --skill-owned-border: #a7f3d0;
+  --skill-owned-bg: #ecfdf5;
+  --skill-owned-text: #065f46;
+  --skill-inferred-border: #7dd3fc;
+  --skill-inferred-bg: #f0f9ff;
+  --skill-inferred-text: #0c4a6e;
+  --skill-missing-core-border: #e4e4e7;
+  --skill-missing-core-bg: #fafafa;
+  --skill-missing-core-text: #71717a;
+  --skill-missing-border: #f4f4f5;
+  --skill-missing-bg: #ffffff;
+  --skill-missing-text: #a1a1aa;
 }
 
 @theme inline {
@@ -51,6 +68,23 @@
   --radius: var(--radius);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Skill map semantic tokens */
+  --color-skill-active-border: var(--skill-active-border);
+  --color-skill-active-bg: var(--skill-active-bg);
+  --color-skill-active-text: var(--skill-active-text);
+  --color-skill-owned-border: var(--skill-owned-border);
+  --color-skill-owned-bg: var(--skill-owned-bg);
+  --color-skill-owned-text: var(--skill-owned-text);
+  --color-skill-inferred-border: var(--skill-inferred-border);
+  --color-skill-inferred-bg: var(--skill-inferred-bg);
+  --color-skill-inferred-text: var(--skill-inferred-text);
+  --color-skill-missing-core-border: var(--skill-missing-core-border);
+  --color-skill-missing-core-bg: var(--skill-missing-core-bg);
+  --color-skill-missing-core-text: var(--skill-missing-core-text);
+  --color-skill-missing-border: var(--skill-missing-border);
+  --color-skill-missing-bg: var(--skill-missing-bg);
+  --color-skill-missing-text: var(--skill-missing-text);
 }
 
 body {

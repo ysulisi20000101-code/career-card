@@ -14,6 +14,7 @@ import "reactflow/dist/style.css";
 import { motion } from "framer-motion";
 import { useResumeStore } from "@/store/resume-store";
 import { cn } from "@/lib/utils";
+import { improveArchitectureLayout } from "@/lib/architecture/layout";
 import type { ArchitectureModule, ResumeData } from "@/types";
 
 const INDUSTRY_COLORS: Record<string, { bg: string; border: string; glow: string }> = {
@@ -151,8 +152,12 @@ function ArchitectureFlowInner({
   const storeActiveTimelineId = useResumeStore((s) => s.activeTimelineId);
 
   const modules: ArchitectureModule[] = useMemo(
-    () => data?.architecture ?? storeResumeData?.architecture ?? [],
-    [data?.architecture, storeResumeData?.architecture],
+    () => {
+      const rawModules = data?.architecture ?? storeResumeData?.architecture ?? [];
+      const timeline = data?.timeline ?? storeResumeData?.timeline ?? [];
+      return improveArchitectureLayout(rawModules, timeline);
+    },
+    [data?.architecture, data?.timeline, storeResumeData?.architecture, storeResumeData?.timeline],
   );
   const activeTimelineId =
     activeTimelineIdProp !== undefined ? activeTimelineIdProp : storeActiveTimelineId;

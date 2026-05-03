@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, Palette, Upload } from "lucide-react";
@@ -35,27 +35,51 @@ export default function PersonalEditPage() {
   const resetResumeData = useResumeStore((state) => state.resetResumeData);
 
   useEffect(() => {
-    resetResumeData();
     const existing = loadPersonalProject(id);
     if (existing) {
       setResumeData(personalToResumeData(existing));
       setCurrentStep("edit");
     } else {
+      resetResumeData();
       setCurrentStep("upload");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
   useEffect(() => {
     if (!resumeData) return;
-    savePersonalProject(id, resumeDataToPersonal(resumeData));
+    clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      savePersonalProject(id, resumeDataToPersonal(resumeData));
+    }, 500);
+    return () => clearTimeout(saveTimerRef.current);
   }, [id, resumeData]);
+
+  const flushSave = useCallback(() => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = undefined;
+    }
+    const current = useResumeStore.getState().resumeData;
+    if (current) {
+      savePersonalProject(id, resumeDataToPersonal(current));
+    }
+  }, [id]);
 
   const currentIdx = stepOrder.indexOf(currentStep);
   const canGoBack = currentIdx > 0;
   const hasResume = Boolean(resumeData);
-  const enterPreview = () => router.push(`/workspace/personal/${id}/preview`);
+  const enterPreview = () => {
+    flushSave();
+    router.push(`/workspace/personal/${id}/preview`);
+  };
   const goNext = () => {
+    if (currentStep === "confirm") {
+      enterPreview();
+      return;
+    }
     if (currentStep === "edit") {
       enterPreview();
       return;
@@ -64,7 +88,7 @@ export default function PersonalEditPage() {
       setCurrentStep(stepOrder[currentIdx + 1]);
     }
   };
-  const canGoForward = currentStep === "edit" ? hasResume : currentStep !== "upload" && currentIdx < stepOrder.length - 1;
+  const canGoForward = currentStep === "confirm" ? hasResume : currentStep === "edit" ? hasResume : currentStep !== "upload" && currentIdx < stepOrder.length - 1;
 
   return (
     <AppShell
@@ -84,11 +108,11 @@ export default function PersonalEditPage() {
       }
       footer={
         <PageFooterNav
-          onPrev={() => setCurrentStep(stepOrder[currentIdx - 1])}
+          onPrev={() => { if (currentIdx > 0) setCurrentStep(stepOrder[currentIdx - 1]); }}
           onNext={goNext}
           disablePrev={!canGoBack}
           disableNext={!canGoForward}
-          nextLabel={currentStep === "edit" ? "完整预览" : "下一步"}
+          nextLabel={currentStep === "confirm" ? "进入 Agent 工作台" : currentStep === "edit" ? "完整预览" : "下一步"}
           nextHint={!hasResume ? "请先上传并解析简历" : undefined}
           hint={`${Math.max(currentIdx + 1, 1)} / ${stepOrder.length}`}
         />
@@ -105,8 +129,14 @@ export default function PersonalEditPage() {
           />
         </div>
         <div className="min-h-0 flex-1 overflow-hidden">
-          {currentStep === "upload" && <UploadPage onParsed={enterPreview} />}
-          {currentStep === "confirm" && <ConfirmPage />}
+          {currentStep === "upload" && (
+            <UploadPage
+              onParsed={() => {
+                enterPreview();
+              }}
+            />
+          )}
+          {currentStep === "confirm" && <ConfirmPage mode="personal" onGenerate={enterPreview} />}
           {currentStep === "edit" && <EditPage mode="personal" />}
         </div>
       </div>

@@ -104,6 +104,8 @@ export interface CareerSiteDraft {
 export interface GenerateCareerSiteDraftInput {
   provider?: AgentProviderId;
   instruction?: string;
+  jdText?: string;
+  targetRoleOverride?: string;
   now?: Date;
 }
 

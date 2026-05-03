@@ -16,14 +16,7 @@ import type {
   RoleUnderstanding,
 } from "@/types";
 import { createDefaultRoleUnderstanding } from "@/lib/role-understanding/default";
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function asString(value: unknown): string {
-  return typeof value === "string" ? value : "";
-}
+import { isRecord, asString } from "@/lib/utils-helpers";
 
 function asStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
@@ -320,6 +313,7 @@ export function sanitizeResumeData(input: unknown): ResumeData | null {
   return {
     profile,
     publicSiteTemplate: asPublicSiteTemplate(input.publicSiteTemplate),
+    siteThemeId: asString(input.siteThemeId) || undefined,
     timeline,
     skills,
     skillProfile,

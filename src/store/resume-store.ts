@@ -14,11 +14,15 @@ import type {
   RoleUnderstanding,
   PublicSiteTemplate,
 } from "@/types";
+import type { CareerSiteDraft } from "@/lib/agent/site-generator/types";
 import { createDefaultRoleUnderstanding } from "@/lib/role-understanding/default";
 import { buildSkillNodesFromProfile, buildSkillProfileFromResume } from "@/lib/skills/profile";
 
+const SCHEMA_VERSION = 1;
+
 function normalizeResumeData(data: ResumeData): ResumeData {
   const skillProfile = data.skillProfile ?? buildSkillProfileFromResume(data);
+
   return {
     ...data,
     publicSiteTemplate: data.publicSiteTemplate ?? "executive-dossier",
@@ -30,12 +34,20 @@ function normalizeResumeData(data: ResumeData): ResumeData {
   };
 }
 
+function mergeNormalized(prev: ResumeData, next: ResumeData): ResumeData {
+  const normalized = normalizeResumeData(next);
+  return { ...next, skills: normalized.skills, skillProfile: normalized.skillProfile, roleUnderstanding: normalized.roleUnderstanding };
+}
+
 interface ResumeStore {
   resumeData: ResumeData | null;
   parseMeta: ParseMeta | null;
   currentStep: EditorStep;
   activeTimelineId: string | null;
   isPresenting: boolean;
+  draftData: CareerSiteDraft | null;
+  activeSiteId: string | null;
+  interviewNotes: string;
 
   setResumeData: (data: ResumeData) => void;
   setParseMeta: (meta: ParseMeta | null) => void;
@@ -43,9 +55,13 @@ interface ResumeStore {
   setCurrentStep: (step: EditorStep) => void;
   setActiveTimelineId: (id: string | null) => void;
   setIsPresenting: (presenting: boolean) => void;
+  setDraftData: (draft: CareerSiteDraft | null) => void;
+  setActiveSiteId: (siteId: string | null) => void;
+  setInterviewNotes: (notes: string) => void;
 
   updateProfile: (profile: Partial<UserProfile>) => void;
   updatePublicSiteTemplate: (template: PublicSiteTemplate) => void;
+  updateSiteThemeId: (themeId: string) => void;
   updateTimeline: (timeline: TimelineNode[]) => void;
   updateTimelineNode: (id: string, data: Partial<TimelineNode>) => void;
   addTimelineNode: (node: TimelineNode) => void;
@@ -73,6 +89,9 @@ export const useResumeStore = create<ResumeStore>()(
       currentStep: "upload",
       activeTimelineId: null,
       isPresenting: false,
+      draftData: null,
+      activeSiteId: null,
+      interviewNotes: "",
 
       setResumeData: (data) => set({ resumeData: normalizeResumeData(data) }),
       setParseMeta: (meta) => set({ parseMeta: meta }),
@@ -82,22 +101,35 @@ export const useResumeStore = create<ResumeStore>()(
           parseMeta: null,
           currentStep: "upload",
           activeTimelineId: null,
+          draftData: null,
+          activeSiteId: null,
+          interviewNotes: "",
         }),
       setCurrentStep: (step) => set({ currentStep: step }),
       setActiveTimelineId: (id) => set({ activeTimelineId: id }),
       setIsPresenting: (presenting) => set({ isPresenting: presenting }),
+      setDraftData: (draft) => set({ draftData: draft }),
+      setActiveSiteId: (siteId) => set({ activeSiteId: siteId }),
+      setInterviewNotes: (notes) => set({ interviewNotes: notes }),
 
       updateProfile: (profile) =>
-        set((state) => ({
-          resumeData: state.resumeData
-            ? { ...state.resumeData, profile: { ...state.resumeData.profile, ...profile } }
-            : null,
-        })),
+        set((state) => {
+          if (!state.resumeData) return { resumeData: null };
+          const next = { ...state.resumeData, profile: { ...state.resumeData.profile, ...profile } };
+          return { resumeData: mergeNormalized(state.resumeData, next) };
+        }),
 
       updatePublicSiteTemplate: (template) =>
         set((state) => ({
           resumeData: state.resumeData
             ? { ...state.resumeData, publicSiteTemplate: template }
+            : null,
+        })),
+
+      updateSiteThemeId: (themeId) =>
+        set((state) => ({
+          resumeData: state.resumeData
+            ? { ...state.resumeData, siteThemeId: themeId }
             : null,
         })),
 
@@ -107,30 +139,30 @@ export const useResumeStore = create<ResumeStore>()(
         })),
 
       updateTimelineNode: (id, data) =>
-        set((state) => ({
-          resumeData: state.resumeData
-            ? {
-                ...state.resumeData,
-                timeline: state.resumeData.timeline.map((n) =>
-                  n.id === id ? { ...n, ...data } : n,
-                ),
-              }
-            : null,
-        })),
+        set((state) => {
+          if (!state.resumeData) return { resumeData: null };
+          const next = {
+            ...state.resumeData,
+            timeline: state.resumeData.timeline.map((n) =>
+              n.id === id ? { ...n, ...data } : n,
+            ),
+          };
+          return { resumeData: mergeNormalized(state.resumeData, next) };
+        }),
 
       addTimelineNode: (node) =>
-        set((state) => ({
-          resumeData: state.resumeData
-            ? { ...state.resumeData, timeline: [...state.resumeData.timeline, node] }
-            : null,
-        })),
+        set((state) => {
+          if (!state.resumeData) return { resumeData: null };
+          const next = { ...state.resumeData, timeline: [...state.resumeData.timeline, node] };
+          return { resumeData: mergeNormalized(state.resumeData, next) };
+        }),
 
       removeTimelineNode: (id) =>
-        set((state) => ({
-          resumeData: state.resumeData
-            ? { ...state.resumeData, timeline: state.resumeData.timeline.filter((n) => n.id !== id) }
-            : null,
-        })),
+        set((state) => {
+          if (!state.resumeData) return { resumeData: null };
+          const next = { ...state.resumeData, timeline: state.resumeData.timeline.filter((n) => n.id !== id) };
+          return { resumeData: mergeNormalized(state.resumeData, next) };
+        }),
 
       updateSkills: (skills) =>
         set((state) => ({
@@ -228,9 +260,11 @@ export const useResumeStore = create<ResumeStore>()(
         })),
 
       updateEducation: (education) =>
-        set((state) => ({
-          resumeData: state.resumeData ? { ...state.resumeData, education } : null,
-        })),
+        set((state) => {
+          if (!state.resumeData) return { resumeData: null };
+          const next = { ...state.resumeData, education };
+          return { resumeData: mergeNormalized(state.resumeData, next) };
+        }),
 
       updateRoleUnderstanding: (roleUnderstanding) =>
         set((state) => ({
@@ -241,7 +275,7 @@ export const useResumeStore = create<ResumeStore>()(
     }),
     {
       name: "career-card:editor",
-      version: 1,
+      version: SCHEMA_VERSION,
       storage: createJSONStorage(() => {
         if (typeof window === "undefined") {
           return {
@@ -256,10 +290,21 @@ export const useResumeStore = create<ResumeStore>()(
         resumeData: state.resumeData,
         parseMeta: state.parseMeta,
         currentStep: state.currentStep,
+        draftData: state.draftData,
+        activeSiteId: state.activeSiteId,
+        interviewNotes: state.interviewNotes,
       }),
-      migrate: (persistedState) => {
+      migrate: (persistedState, persistedVersion) => {
         const state = persistedState as Partial<ResumeStore> | undefined;
         if (!state?.resumeData) return state as ResumeStore;
+
+        // Run migration stubs when schema version changes
+        if (persistedVersion !== SCHEMA_VERSION) {
+          // Future migrations go here, e.g.:
+          // if (persistedVersion < 2) migrateV1toV2(state);
+          // if (persistedVersion < 3) migrateV2toV3(state);
+        }
+
         return {
           ...state,
           resumeData: normalizeResumeData(state.resumeData),

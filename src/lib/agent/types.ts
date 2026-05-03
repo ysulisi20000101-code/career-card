@@ -20,7 +20,7 @@ export type AgentOutputType = "question" | "suggestion" | "review" | "fallback";
 export type AgentPriority = "high" | "medium" | "low";
 export type AgentFindingSeverity = "blocker" | "warning" | "info" | "passed";
 export type AgentPatchValue = string | number | boolean | null | Record<string, unknown> | unknown[];
-export type AgentProviderId = "rules" | "mimo" | "deepseek";
+export type AgentProviderId = "rules" | "mimo" | "deepseek" | "minimax";
 
 export interface AgentInput {
   resumeData: ResumeData;

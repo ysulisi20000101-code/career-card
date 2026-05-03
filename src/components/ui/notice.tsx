@@ -1,3 +1,5 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { AlertCircle, CheckCircle2, Info, TriangleAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -48,6 +50,7 @@ export function Notice({ tone = "info", title, children, className, icon }: Noti
 
   return (
     <div
+      role={tone === "danger" ? "alert" : "status"}
       className={cn(
         "flex gap-3 rounded-xl border px-4 py-3 text-sm",
         styles.wrap,

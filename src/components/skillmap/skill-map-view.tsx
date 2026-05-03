@@ -25,11 +25,11 @@ function visibleSkillName(name: string): boolean {
 
 function matchTone(match: SkillMatch, activeTimelineId?: string | null): string {
   const active = activeTimelineId && match.sourceTimelineIds.includes(activeTimelineId);
-  if (active) return "border-indigo-300 bg-indigo-50 text-indigo-800 shadow-indigo-100";
-  if (match.status === "owned") return "border-emerald-200 bg-emerald-50 text-emerald-800";
-  if (match.status === "inferred") return "border-sky-200 bg-sky-50 text-sky-800";
-  if (match.importance === "core") return "border-zinc-200 bg-zinc-50 text-zinc-500";
-  return "border-zinc-100 bg-white text-zinc-400";
+  if (active) return "border-skill-active-border bg-skill-active-bg text-skill-active-text";
+  if (match.status === "owned") return "border-skill-owned-border bg-skill-owned-bg text-skill-owned-text";
+  if (match.status === "inferred") return "border-skill-inferred-border bg-skill-inferred-bg text-skill-inferred-text";
+  if (match.importance === "core") return "border-skill-missing-core-border bg-skill-missing-core-bg text-skill-missing-core-text";
+  return "border-skill-missing-border bg-skill-missing-bg text-skill-missing-text";
 }
 
 function SkillPill({
@@ -98,10 +98,16 @@ export default function SkillMapView({
     [skillProfile],
   );
 
-  const visibleMatchCount = visibleCategories.reduce((sum, category) => sum + category.matches.length, 0);
-  const ownedMatchCount = visibleCategories.reduce(
-    (sum, category) => sum + category.matches.filter((match) => match.status === "owned").length,
-    0,
+  const visibleMatchCount = useMemo(
+    () => visibleCategories.reduce((sum, category) => sum + category.matches.length, 0),
+    [visibleCategories],
+  );
+  const ownedMatchCount = useMemo(
+    () => visibleCategories.reduce(
+      (sum, category) => sum + category.matches.filter((match) => match.status === "owned").length,
+      0,
+    ),
+    [visibleCategories],
   );
 
   if (!resumeData || !skillProfile) {

@@ -144,7 +144,7 @@ export function CareerAgentPanel({ currentSection }: { currentSection: AgentSect
           activeTimelineId,
           message,
           targetRole: currentRole,
-          jobDescription: message,
+          jobDescription: intent === "map_to_target_role" ? message : undefined,
         };
         const result = await fetch("/api/agent/career-card", {
           method: "POST",

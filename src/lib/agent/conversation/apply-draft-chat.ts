@@ -3,72 +3,15 @@ import { generateCareerSiteDraft } from "@/lib/agent/site-generator/generate-sit
 import type {
   CareerSiteChatResult,
   CareerSiteDraft,
-  CareerSiteStylePreset,
 } from "@/lib/agent/site-generator/types";
-
-function compact(value: string, max = 220): string {
-  const normalized = value.replace(/\s+/g, " ").trim();
-  return normalized.length > max ? `${normalized.slice(0, max - 1)}...` : normalized;
-}
+import { getStyleForPreset, inferStyleFromText } from "@/lib/agent/site-generator/styles";
+import { compact } from "@/lib/utils-helpers";
+import { getFirstAvailableProviderConfig } from "@/lib/agent/provider";
 
 function includesAny(text: string, words: string[]): boolean {
   return words.some((word) => text.includes(word.toLowerCase()));
 }
 
-function stylePatch(preset: CareerSiteStylePreset): CareerSiteDraft["style"] {
-  const styles: Record<CareerSiteStylePreset, CareerSiteDraft["style"]> = {
-    executive: {
-      preset,
-      tone: "克制、可信、面向决策者",
-      density: "balanced",
-      colorTheme: "墨黑、暖白、深青",
-      layoutStyle: "高管档案式叙事，先给判断，再给证据",
-      typography: "沉稳标题字重，紧凑正文",
-    },
-    "product-led": {
-      preset,
-      tone: "结构清晰、结果导向、有产品判断",
-      density: "balanced",
-      colorTheme: "石墨黑、白色、信号蓝",
-      layoutStyle: "产品案例式叙事，突出问题、选择和结果",
-      typography: "现代无衬线，清晰层级",
-    },
-    "technical-builder": {
-      preset,
-      tone: "精确、系统化、证据优先",
-      density: "detailed",
-      colorTheme: "炭黑、雾白、电光青",
-      layoutStyle: "技术建设者叙事，突出系统、链路和可交付结果",
-      typography: "紧凑无衬线，搭配技术感标注",
-    },
-    minimal: {
-      preset,
-      tone: "直接、干净、易读",
-      density: "focused",
-      colorTheme: "黑、白、中性灰",
-      layoutStyle: "单列作品集，减少装饰，突出内容",
-      typography: "安静的无衬线字体",
-    },
-    creative: {
-      preset,
-      tone: "有人味、故事感、表达鲜明",
-      density: "balanced",
-      colorTheme: "墨黑、白色、珊瑚红",
-      layoutStyle: "杂志式职业故事，突出关键转折",
-      typography: "更有识别度的标题和清爽正文",
-    },
-  };
-  return styles[preset];
-}
-
-function inferStyle(text: string): CareerSiteStylePreset | null {
-  if (includesAny(text, ["极简", "简洁", "干净", "克制", "minimal", "clean"])) return "minimal";
-  if (includesAny(text, ["科技", "技术", "架构", "ai", "agent", "rag", "llm", "智能体", "大模型"])) return "technical-builder";
-  if (includesAny(text, ["产品", "增长", "saas", "平台", "product", "pm"])) return "product-led";
-  if (includesAny(text, ["高级", "高管", "管理", "负责人", "executive", "senior"])) return "executive";
-  if (includesAny(text, ["创意", "设计", "品牌", "creative"])) return "creative";
-  return null;
-}
 
 function findFocusExperience(draft: CareerSiteDraft, text: string): string | null {
   const normalized = text.toLowerCase();
@@ -117,9 +60,9 @@ export function applyDraftChat(input: {
   const questions: string[] = [];
   let draft = cloneDraft(base);
 
-  const style = inferStyle(text);
+  const style = inferStyleFromText(text);
   if (style) {
-    draft = { ...draft, style: stylePatch(style) };
+    draft = { ...draft, style: getStyleForPreset(style) };
     changes.push(`视觉风格已切换为「${style}」。`);
   }
 
@@ -215,7 +158,7 @@ export function applyDraftChat(input: {
       ...draft.versionHistory,
       {
         id: `v${draft.versionHistory.length + 1}`,
-        summary: compact(changes.join(" ")),
+        summary: compact([...changes, ...questions].join(" ")),
         createdAt: now.toISOString(),
       },
     ],
@@ -227,4 +170,240 @@ export function applyDraftChat(input: {
     changes,
     questions,
   };
+}
+
+// ─── LLM-enhanced site-chat ──────────────────────────────────────────────────
+
+function buildSiteChatPrompt(
+  draft: CareerSiteDraft,
+  message: string,
+  baseline: CareerSiteChatResult,
+  history?: Array<{ role: "user" | "agent"; content: string }>,
+): string {
+  const historyBlock = history && history.length > 0
+    ? [
+        "Recent conversation history:",
+        ...history.map((h) => `${h.role === "user" ? "User" : "Agent"}: ${h.content.slice(0, 200)}`),
+        "",
+      ].join("\n")
+    : "";
+
+  return [
+    "You are the Career Card site editor. Given a career site DRAFT and the user's instruction, modify the draft accordingly.",
+    "Return ONLY a JSON object with the fields to change. Do NOT invent facts, metrics, dates, or awards not present in the draft.",
+    "Only include fields that should change. Omit unchanged fields.",
+    "",
+    historyBlock,
+    "Modifiable fields (all optional in response):",
+    "- positioning.targetRole: string (role title)",
+    "- positioning.headline: string (person | role format)",
+    "- positioning.oneLinePitch: string (one-line positioning, max 160 chars)",
+    "- positioning.coreStrengths: string[] (top 5-8 skills)",
+    "- narrative.theme: string (career narrative theme, max 120 chars)",
+    "- narrative.storyArc: string (story arc description, max 260 chars)",
+    "- hero.title: string (hero section title)",
+    "- hero.subtitle: string (hero section subtitle)",
+    "- hero.eyebrow: string (hero eyebrow text)",
+    "- hero.primaryCta: string (hero primary call-to-action)",
+    "- style.tone: string (tone description)",
+    "- sections[proof].body: string (proof section body)",
+    "- sections[proof].title: string (proof section title)",
+    "- sections[proof].bullets: string[] (proof section bullet points)",
+    "- sections[positioning].body: string (positioning body)",
+    "- sections[positioning].bullets: string[] (positioning bullet points)",
+    "- sections[story].body: string (story body)",
+    "",
+    "Rules baseline (deterministic enhancement):",
+    JSON.stringify({
+      changes: baseline.changes,
+      questions: baseline.questions,
+    }, null, 2),
+    "",
+    "Current draft (key fields):",
+    JSON.stringify({
+      positioning: draft.positioning,
+      narrative: { theme: draft.narrative.theme, storyArc: draft.narrative.storyArc },
+      hero: draft.hero,
+      style: draft.style,
+    }, null, 2),
+    "",
+    `User instruction: "${message}"`,
+    "",
+    "Respond with ONLY a JSON object like:",
+    '{"changes": ["描述改动1", "描述改动2"], "questions": ["需要澄清的问题"], "updates": { "positioning": { "targetRole": "新岗位名" }, "hero": { "title": "新标题" } }}',
+    "",
+    "If the instruction is too vague or cannot be acted on without inventing facts, respond with questions asking for clarification and leave updates empty.",
+  ].join("\n");
+}
+
+function mergeLLMUpdates(draft: CareerSiteDraft, updates: unknown): CareerSiteDraft {
+  if (!updates || typeof updates !== "object") return draft;
+  const u = updates as Record<string, unknown>;
+  let next = { ...draft };
+
+  if (u.positioning && typeof u.positioning === "object") {
+    const p = u.positioning as Record<string, unknown>;
+    next = {
+      ...next,
+      positioning: {
+        ...next.positioning,
+        ...(typeof p.targetRole === "string" ? { targetRole: p.targetRole } : {}),
+        ...(typeof p.headline === "string" ? { headline: p.headline } : {}),
+        ...(typeof p.oneLinePitch === "string" ? { oneLinePitch: compact(p.oneLinePitch, 160) } : {}),
+        ...(Array.isArray(p.coreStrengths) ? { coreStrengths: (p.coreStrengths as string[]).slice(0, 8) } : {}),
+      },
+    };
+  }
+
+  if (u.narrative && typeof u.narrative === "object") {
+    const n = u.narrative as Record<string, unknown>;
+    next = {
+      ...next,
+      narrative: {
+        ...next.narrative,
+        ...(typeof n.theme === "string" ? { theme: compact(n.theme, 120) } : {}),
+        ...(typeof n.storyArc === "string" ? { storyArc: compact(n.storyArc, 260) } : {}),
+      },
+    };
+  }
+
+  if (u.hero && typeof u.hero === "object") {
+    const h = u.hero as Record<string, unknown>;
+    next = {
+      ...next,
+      hero: {
+        ...next.hero,
+        ...(typeof h.title === "string" ? { title: h.title } : {}),
+        ...(typeof h.subtitle === "string" ? { subtitle: h.subtitle } : {}),
+        ...(typeof h.eyebrow === "string" ? { eyebrow: h.eyebrow } : {}),
+        ...(typeof h.primaryCta === "string" ? { primaryCta: h.primaryCta } : {}),
+      },
+    };
+  }
+
+  if (u.style && typeof u.style === "object") {
+    const s = u.style as Record<string, unknown>;
+    next = {
+      ...next,
+      style: {
+        ...next.style,
+        ...(typeof s.tone === "string" ? { tone: s.tone } : {}),
+      },
+    };
+  }
+
+  if (u.sections && typeof u.sections === "object") {
+    const sections = u.sections as Record<string, unknown>;
+    next = {
+      ...next,
+      sections: next.sections.map((section) => {
+        const sectionUpdate = sections[section.id] as Record<string, unknown> | undefined;
+        if (!sectionUpdate) return section;
+        return {
+          ...section,
+          ...(typeof sectionUpdate.body === "string" ? { body: sectionUpdate.body } : {}),
+          ...(typeof sectionUpdate.title === "string" ? { title: sectionUpdate.title } : {}),
+          ...(Array.isArray(sectionUpdate.bullets) ? { bullets: (sectionUpdate.bullets as string[]).slice(0, 6) } : {}),
+        };
+      }),
+    };
+  }
+
+  return next;
+}
+
+export async function applyDraftChatWithLLM(input: {
+  draft?: CareerSiteDraft | null;
+  resumeData: ResumeData;
+  message: string;
+  now?: Date;
+  history?: Array<{ role: "user" | "agent"; content: string }>;
+}): Promise<CareerSiteChatResult> {
+  const baseline = applyDraftChat(input);
+  const result = getFirstAvailableProviderConfig();
+
+  if (!result) {
+    return {
+      ...baseline,
+      summary: `${baseline.summary}  (配置 AI 后可获得更个性化调整。)`,
+      questions: [...baseline.questions, "当前未配置 AI 提供商，使用规则引擎调整。配置后可获得更智能的文案优化。"],
+    };
+  }
+
+  const { config } = result;
+
+  try {
+    const draft = baseline.draft;
+    const prompt = buildSiteChatPrompt(draft, input.message, baseline, input.history);
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20_000);
+
+    const body: Record<string, unknown> = {
+      model: config.model,
+      messages: [
+        { role: "system", content: "Return only valid JSON. No markdown, no explanation." },
+        { role: "user", content: prompt },
+      ],
+      temperature: 0.3,
+    };
+    if (config.supportsResponseFormat) {
+      body.response_format = { type: "json_object" };
+    }
+
+    const response = await fetch(config.chatUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${config.apiKey}`,
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      return {
+        ...baseline,
+        questions: [...baseline.questions, "AI 服务暂时不可用，当前使用规则引擎调整。"],
+      };
+    }
+
+    const payload = await response.json();
+    const content = (payload as { choices?: Array<{ message?: { content?: string } }> }).choices?.[0]?.message?.content;
+    if (!content) return baseline;
+
+    const parsed = JSON.parse(content.trim());
+    const changes = Array.isArray(parsed.changes) ? (parsed.changes as string[]) : baseline.changes;
+    const questions = Array.isArray(parsed.questions) ? (parsed.questions as string[]) : [];
+    const llmDraft = mergeLLMUpdates(baseline.draft, parsed.updates);
+
+    const now = input.now ?? new Date();
+    const finalDraft: CareerSiteDraft = {
+      ...llmDraft,
+      updatedAt: now.toISOString(),
+      versionHistory: [
+        ...llmDraft.versionHistory,
+        {
+          id: `v${llmDraft.versionHistory.length + 1}`,
+          summary: compact([...changes, ...questions].join(" ")),
+          createdAt: now.toISOString(),
+        },
+      ],
+    };
+
+    return {
+      draft: finalDraft,
+      summary: changes.join(" "),
+      changes,
+      questions: questions.length > 0 ? questions : baseline.questions,
+    };
+  } catch (e) {
+    console.error("applyDraftChat LLM enhance failed:", e);
+    return {
+      ...baseline,
+      questions: [...baseline.questions, "AI 增强失败，已使用规则引擎处理。配置稳定的 AI 服务后可获得更好体验。"],
+    };
+  }
 }

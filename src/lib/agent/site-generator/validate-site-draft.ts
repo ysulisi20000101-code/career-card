@@ -1,8 +1,5 @@
 import type { CareerSiteDraft } from "./types";
-
-function hasText(value: unknown): value is string {
-  return typeof value === "string" && value.trim().length > 0;
-}
+import { hasText } from "@/lib/utils-helpers";
 
 export function validateCareerSiteDraft(draft: CareerSiteDraft): string[] {
   const issues: string[] = [];

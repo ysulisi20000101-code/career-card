@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { runCareerCardAgentWithProvider } from "@/lib/agent/provider";
 import type { AgentInput, AgentIntent, AgentProviderId, AgentSection } from "@/lib/agent/types";
 import { sanitizeResumeData } from "@/lib/share/validation";
+import { checkApiKey } from "@/lib/server/auth";
 
 export const runtime = "nodejs";
 
@@ -28,7 +29,7 @@ function asSection(value: unknown): AgentSection | undefined {
 }
 
 function asProvider(value: unknown): AgentProviderId | undefined {
-  return value === "rules" || value === "mimo" || value === "deepseek" ? value : undefined;
+  return value === "rules" || value === "mimo" || value === "deepseek" || value === "minimax" ? value : undefined;
 }
 
 function asString(value: unknown): string | undefined {
@@ -36,13 +37,26 @@ function asString(value: unknown): string | undefined {
 }
 
 export async function POST(request: Request) {
+  const authFailure = checkApiKey(request);
+  if (authFailure) return authFailure;
+
   const body = (await request.json().catch(() => null)) as Partial<AgentInput> | null;
+
+  const rawJson = JSON.stringify(body?.resumeData ?? {});
+  if (rawJson.length > 50000) {
+    return NextResponse.json({ error: "PAYLOAD_TOO_LARGE" }, { status: 400 });
+  }
+
   const resumeData = sanitizeResumeData(body?.resumeData);
   if (!resumeData) {
     return NextResponse.json(
       { error: "INVALID_AGENT_INPUT", detail: "缺少有效职业档案数据。" },
       { status: 400 },
     );
+  }
+
+  if (Array.isArray(resumeData.timeline) && resumeData.timeline.length > 20) {
+    return NextResponse.json({ error: "PAYLOAD_TOO_LARGE" }, { status: 400 });
   }
 
   const response = await runCareerCardAgentWithProvider({

@@ -2,6 +2,7 @@ import type { ResumeData, TimelineNode } from "@/types";
 import type { EarlyExploration } from "@/lib/narrative/sequence";
 import { buildNarrativeSequence } from "@/lib/narrative/sequence";
 import { formatDate } from "@/lib/utils";
+import { clean, compact, unique } from "@/lib/utils-helpers";
 
 export interface PublicOverviewMetric {
   label: string;
@@ -26,6 +27,7 @@ export interface PublicJourneyNode {
   keyword: string;
   href: string;
   isLatest?: boolean;
+  level: number;
 }
 
 export interface PublicDetailBlock {
@@ -65,31 +67,21 @@ export interface PublicSiteContent {
 
 const MAX_HERO_OUTCOME = 88;
 const MAX_BLOCK_TEXT = 92;
-const PUBLIC_SKILL_BLOCKLIST = ["商" + "业化", "Vi" + "sio"];
-
-function clean(value?: string): string {
-  return (value ?? "")
-    .replace(/[•·]\s*/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function compact(value: string, max = MAX_BLOCK_TEXT): string {
-  const text = clean(value);
-  if (text.length <= max) return text;
-  return `${text.slice(0, max - 1)}…`;
-}
-
-function unique(values: string[]): string[] {
-  return Array.from(new Set(values.map(clean).filter(Boolean)));
-}
+// Demo defaults — customize per deployment by replacing these arrays and maps.
+const PUBLIC_SKILL_BLOCKLIST: string[] = [];
+const PUBLIC_TEXT_REPLACEMENTS: Record<string, string> = {};
 
 function publicSkills(values: string[]): string[] {
+  if (PUBLIC_SKILL_BLOCKLIST.length === 0) return unique(values);
   return unique(values).filter((skill) => !PUBLIC_SKILL_BLOCKLIST.some((blocked) => skill.includes(blocked)));
 }
 
 function publicText(value: string): string {
-  return clean(value).replace(new RegExp("商" + "业化", "g"), "客户项目推进").replace(new RegExp("Vi" + "sio", "g"), "流程建模");
+  let text = clean(value);
+  for (const [pattern, replacement] of Object.entries(PUBLIC_TEXT_REPLACEMENTS)) {
+    text = text.replace(new RegExp(pattern, "g"), replacement);
+  }
+  return text;
 }
 
 function detailOutcome(detail: PublicExperienceDetail): string {
@@ -101,12 +93,20 @@ function detailOutcome(detail: PublicExperienceDetail): string {
   return publicText(block?.value ?? detail.meta);
 }
 
+function calcDetailLevel(detail: PublicExperienceDetail): number {
+  // Use full title (includes role info) for level detection
+  const fullTitle = detail.title;
+  if (/实习/.test(fullTitle)) return 0;
+  if (/总监/.test(fullTitle)) return 3;
+  if (/负责人|Leader|leader/.test(fullTitle)) return 2;
+  if (/经理/.test(fullTitle)) return 1;
+  return 1;
+}
+
 function journeyRoleTitle(detail: PublicExperienceDetail): string {
   if (detail.id === "internship") return "产品实习生";
-  if (detail.title.includes("阶段一")) return "产品经理";
-  if (detail.title.includes("阶段二")) return "产品负责人 / 产品总监";
-  if (detail.title.includes("复杂系统")) return "产品经理";
-  return detail.title.split(/[｜·]/)[0]?.trim() || detail.title;
+  const parts = detail.title.split(/[｜·]/);
+  return parts[0]?.trim() || detail.title;
 }
 
 function displayPeriod(startDate: string, endDate: string): string {
@@ -187,7 +187,7 @@ function earlyDetail(exploration: EarlyExploration, index: number, total: number
   return {
     id: "internship",
     eyebrow: `经历详情 ${String(index + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`,
-    title: "产品实习生",
+    title: `${companies} 产品实习生`,
     period: exploration.period,
     meta: companies,
     blocks: [
@@ -234,7 +234,7 @@ function jingweiDetail(node: TimelineNode, index: number, total: number): Public
   return {
     id: node.id,
     eyebrow: `经历详情 ${String(index + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`,
-    title: "复杂系统工具产品化",
+    title: `${node.company}｜${node.position || "产品经历"}`,
     period: displayPeriod(node.startDate, node.endDate),
     meta: `${node.company} · ${node.position}`,
     blocks: [
@@ -259,23 +259,25 @@ function latestStageDetails(node: TimelineNode, startIndex: number, total: numbe
   const firstStage = stages[0];
   const laterStages = stages.slice(1);
   const secondPeriod = laterStages.map((stage) => stage.period).filter(Boolean).at(-1) || laterStages[0]?.period || displayPeriod(node.startDate, node.endDate);
+  const stage1Title = firstStage?.title || "早期角色";
+  const stage2Title = laterStages[0]?.title || "后期角色";
   return [
     {
       id: `${node.id}-stage-1`,
       eyebrow: `经历详情 ${String(startIndex + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`,
-      title: "阶段一：工具链产品经理 / 平台产品经理",
-      period: firstStage?.period || "2023.06 - 2024.12",
-      meta: `${node.company} · ${firstStage?.title || "工具链产品经理"}`,
+      title: `阶段一：${stage1Title}`,
+      period: firstStage?.period || displayPeriod(node.startDate, node.endDate),
+      meta: `${node.company} · ${stage1Title}`,
       blocks: [
-        { label: "工作定位", value: "以客户项目为入口，负责通信设计工具、云平台基础能力和售前支撑。" },
-        { label: "关键任务", value: "在客户压力下完成 SOME/IP 工具 0-1 建设，并把项目需求沉淀为可复用平台模块。" },
-        { label: "推进动作", value: "定义建模、接口、参数配置、校验规则、ARXML/ROS2 转换等核心能力，并规划云平台基建。" },
-        { label: "代表产出", value: "推动通信设计能力从单点工具沉淀为 SOME/IP、DDS、云平台基建等通用产品能力。" },
+        { label: "工作定位", value: "以客户项目为入口，负责核心工具链、平台基础能力和售前支撑。" },
+        { label: "关键任务", value: "在客户压力下完成核心工具 0-1 建设，并把项目需求沉淀为可复用平台模块。" },
+        { label: "推进动作", value: "定义建模、接口、参数配置、校验规则、格式转换等核心能力，并规划平台基建。" },
+        { label: "代表产出", value: "推动核心能力从单点工具沉淀为通用平台模块。" },
       ],
       supportBlocks: [
         { label: "客户切入", value: "客户项目对工具链产品专业能力和行业知识都有要求。" },
-        { label: "能力定义", value: "完成通信设计工具能力边界、核心模块和云平台基础能力设计。" },
-        { label: "平台沉淀", value: "形成 SOME/IP、DDS、云平台基建等可复用产品能力。" },
+        { label: "能力定义", value: "完成核心工具能力边界、模块划分和平台基础能力设计。" },
+        { label: "平台沉淀", value: "形成可复用的平台产品能力。" },
       ],
       reflection: undefined,
       skills: publicSkills([...node.skills, "工具链产品", "平台产品", "项目管理"]).slice(0, 8),
@@ -284,23 +286,23 @@ function latestStageDetails(node: TimelineNode, startIndex: number, total: numbe
     {
       id: `${node.id}-stage-2`,
       eyebrow: `经历详情 ${String(startIndex + 2).padStart(2, "0")} / ${String(total).padStart(2, "0")}`,
-      title: "阶段二：产品负责人 / 产品总监",
+      title: `阶段二：${stage2Title}`,
       period: secondPeriod,
-      meta: `${node.company} · 产品负责人 / 产品总监`,
+      meta: `${node.company} · ${stage2Title}`,
       blocks: [
-        { label: "工作定位", value: "角色升级到产品负责人和产品总监后，负责平台体系、AI Agent、团队管理与客户项目推进。" },
+        { label: "工作定位", value: "角色升级后，负责平台体系、AI 能力、团队管理与客户项目推进。" },
         { label: "关键任务", value: "把架构设计、知识库、服务仿真、服务编排、DevOps 和观测运维收敛为一体化平台。" },
-        { label: "管理动作", value: "组织约 10 人产品团队，推进目标拆解、需求评审、版本节奏、团队分工和重点客户方案。" },
-        { label: "代表产出", value: "平台覆盖 10+ 客户项目，服务 100+ 人研发团队，部分环节效率提升 20%+ / 50%+。" },
+        { label: "管理动作", value: "组织产品团队，推进目标拆解、需求评审、版本节奏、团队分工和重点客户方案。" },
+        { label: "代表产出", value: "平台覆盖多客户项目，服务多人研发团队，关键环节效率显著提升。" },
       ],
       supportBlocks: [
         { label: "平台体系", value: "统一工程设计、知识复用、模型产出和协同流程。" },
-        { label: "AI 工作流", value: "推进受控式 AI Agent 工作流、RAG 知识库和工程产物产出场景。" },
+        { label: "AI 工作流", value: "推进受控式 AI 工作流、知识库和工程产物产出场景。" },
         { label: "团队协同", value: "组织目标拆解、需求评审、版本节奏和团队分工。" },
-        { label: "项目结果", value: "覆盖 10+ 客户项目，服务 100+ 人研发团队。" },
+        { label: "项目结果", value: "覆盖多客户项目，服务多人研发团队。" },
       ],
       reflection: undefined,
-      skills: publicSkills([...node.skills, "AI Agent", "RAG", "团队管理"]).slice(0, 8),
+      skills: publicSkills([...node.skills, "AI", "知识库", "团队管理"]).slice(0, 8),
       isLatest: true,
     },
   ];
@@ -362,6 +364,7 @@ export function buildPublicSiteContent(data: ResumeData): PublicSiteContent {
         keyword: outcome,
         href: `#experience-${detail.id}`,
         isLatest: detail.isLatest,
+        level: calcDetailLevel(detail),
       };
     }),
     details,
