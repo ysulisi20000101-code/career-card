@@ -73,7 +73,7 @@ describe("runCareerCardAgentWithProvider", () => {
       intent: "analyze_resume",
     });
 
-    const [url, init] = fetchMock.mock.calls[0];
+    const [url, init] = fetchMock.mock.calls[0]! as unknown as [string, RequestInit?];
     expect(url).toBe("https://api.deepseek.com/chat/completions");
     expect(JSON.parse(String(init?.body)).model).toBe("deepseek-v4-flash");
     expect(response.summary).toBe("Model-generated career suggestion.");

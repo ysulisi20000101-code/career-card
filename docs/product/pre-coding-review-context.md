@@ -121,3 +121,22 @@ This document summarizes structural and concrete issues found after reviewing th
 - Lint currently reports warnings but no blocking errors.
 - Production build currently succeeds.
 - Next.js warns about workspace root detection due to multiple lockfiles; this should be cleaned to reduce environment ambiguity.
+
+---
+
+## 2026-05-04 Update: LLM Interview Presentation Module
+
+### Architecture
+- New module `src/lib/agent/presentation/` implements "deterministic baseline + LLM enhancement" pattern (same architecture as `enhanceSiteDraft`).
+- 4 new files: `types.ts`, `build-prompt.ts`, `normalize-presentation.ts`, `enhance-presentation.ts`.
+- 1 new API route: `POST /api/agent/interview-presentation`.
+- 4 slide renderers modified to be data-driven (read from `slide.visualizations[0].data` instead of hardcoded values).
+
+### Critical Bug Fixed: Visualization Data Shape Mismatch
+- **Root cause**: Rule-based generator (`buildFullstackSlide`, `buildTensionSlide`, `buildHeroSlide`, `buildResolutionSlide`) produces `visualizations.data` in shapes incompatible with SVG diagram components. E.g., `stages: string[]` (company names) vs `PipelineSVG` expecting `{name, color, ...}[]`.
+- **Impact**: `TypeError: Cannot read properties of undefined (reading 'slice')` → ErrorBoundary catch → broken slide rendering.
+- **Fix**: (1) Runtime data shape validation in all 4 slide renderers — if visualization data doesn't have required fields (`color`, `name+tool`, etc.), pass `undefined` to SVG component (falls back to defaults). (2) Defense-in-depth `undefined` guards in `hexToRgb`/`hexToRgba` across all 3 SVG diagram files.
+
+### New: Rule 0 Enforcement
+- `scanForFabrication()` in `normalize-presentation.ts` scans merged LLM output for metrics/company names not found in ResumeData.
+- Returns `ValidationIssue[]` with warnings for each potential fabrication — non-blocking (candidate can override) but surfaced in UI.
