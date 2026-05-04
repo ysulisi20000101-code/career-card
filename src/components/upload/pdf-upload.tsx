@@ -115,12 +115,12 @@ export function PDFUpload({
         onDragLeave={handleDragLeave}
         onClick={() => uploadState === "idle" && inputRef.current?.click()}
         className={cn(
-          "relative overflow-hidden rounded-2xl border-2 border-dashed p-8 text-center transition-colors",
+          "relative overflow-hidden rounded-xl border-2 border-dashed p-8 text-center transition-colors",
           "cursor-pointer select-none",
           uploadState === "idle" &&
             "border-zinc-300 bg-zinc-50/50 hover:border-indigo-400 hover:bg-indigo-50/40 dark:border-zinc-700 dark:bg-zinc-900/50 dark:hover:border-indigo-500 dark:hover:bg-indigo-950/30",
           uploadState === "dragging" &&
-            "border-indigo-500 bg-indigo-50/60 dark:border-indigo-400 dark:bg-indigo-950/40",
+            "border-indigo-500 bg-indigo-100/80 dark:border-indigo-400 dark:bg-indigo-950/40",
           uploadState === "uploading" &&
             "pointer-events-none border-indigo-400 bg-indigo-50/30 dark:border-indigo-500 dark:bg-indigo-950/20",
           uploadState === "success" &&
@@ -198,8 +198,8 @@ export function PDFUpload({
               >
                 <Upload className="h-6 w-6" />
               </motion.div>
-              <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
-                松开以上传文件
+              <p className="text-sm font-medium text-indigo-700 dark:text-indigo-400">
+                释放以上传
               </p>
             </motion.div>
           )}

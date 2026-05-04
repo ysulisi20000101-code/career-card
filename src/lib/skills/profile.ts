@@ -6,7 +6,6 @@ import type {
   SkillProfile,
   TimelineNode,
 } from "@/types";
-import { generateId } from "@/lib/utils";
 import { roleSkillTemplates } from "@/lib/templates";
 
 interface BuildSkillProfileInput {
@@ -173,7 +172,7 @@ export function buildSkillNodesFromProfile(profile: SkillProfile): SkillNode[] {
 
     for (const match of category.matches) {
       nodes.push({
-        id: `skill-${match.skillId}-${generateId()}`,
+        id: `skill-${match.skillId}`,
         name: match.name,
         category: category.name,
         level: match.importance === "core" ? 5 : match.importance === "important" ? 4 : 3,

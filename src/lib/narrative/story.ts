@@ -1,5 +1,6 @@
 import type { StoryMood, TimelineNode } from "@/types";
 import { formatDate } from "@/lib/utils";
+import { clean } from "@/lib/utils-helpers";
 
 export interface TimelineStory {
   title: string;
@@ -66,10 +67,6 @@ export const STORY_MOOD_STYLES: Record<
     glow: "bg-violet-400/20",
   },
 };
-
-function clean(value?: string): string {
-  return (value ?? "").replace(/\s+/g, " ").trim();
-}
 
 function firstMeaningful(values: Array<string | undefined>): string {
   return values.map(clean).find(Boolean) ?? "";

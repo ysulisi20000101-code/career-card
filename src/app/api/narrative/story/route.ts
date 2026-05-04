@@ -4,6 +4,7 @@ import {
   AiProviderError,
   organizeTimelineStoryWithMiniMax,
 } from "@/lib/ai/minimax-provider";
+import { checkApiKey } from "@/lib/server/auth";
 
 export const runtime = "nodejs";
 
@@ -17,6 +18,9 @@ const USER_MESSAGES: Record<string, string> = {
 };
 
 export async function POST(request: Request) {
+  const authFailure = checkApiKey(request);
+  if (authFailure) return authFailure;
+
   const body = await request.json().catch(() => null);
   const node = body?.node as TimelineNode | undefined;
 
@@ -25,6 +29,13 @@ export async function POST(request: Request) {
       { code: "invalid_input", error: "缺少经历数据，请先选择一段工作经历。" },
       { status: 400 },
     );
+  }
+
+  if (Array.isArray(node.highlights) && node.highlights.length > 20) {
+    return NextResponse.json({ error: "PAYLOAD_TOO_LARGE" }, { status: 400 });
+  }
+  if (typeof node.description === "string" && node.description.length > 2000) {
+    return NextResponse.json({ error: "PAYLOAD_TOO_LARGE" }, { status: 400 });
   }
 
   try {

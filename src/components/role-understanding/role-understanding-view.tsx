@@ -35,16 +35,19 @@ export function RoleUnderstandingView({
   compact = false,
   presentationSection,
 }: RoleUnderstandingViewProps) {
-  const hasContent =
-    roleUnderstanding.targetRoleTitle ||
-    roleUnderstanding.oneLineInterpretation ||
-    roleUnderstanding.priorityProblems.some((item) => item.problem || item.impact) ||
-    roleUnderstanding.ninetyDayPlan.day0To30 ||
-    roleUnderstanding.ninetyDayPlan.day31To60 ||
-    roleUnderstanding.ninetyDayPlan.day61To90 ||
-    roleUnderstanding.experienceMappings.some(
-      (item) => item.requirement || item.myExperience || item.outcomeEvidence,
-    );
+  const hasContent = useMemo(
+    () =>
+      roleUnderstanding.targetRoleTitle ||
+      roleUnderstanding.oneLineInterpretation ||
+      roleUnderstanding.priorityProblems.some((item) => item.problem || item.impact) ||
+      roleUnderstanding.ninetyDayPlan.day0To30 ||
+      roleUnderstanding.ninetyDayPlan.day31To60 ||
+      roleUnderstanding.ninetyDayPlan.day61To90 ||
+      roleUnderstanding.experienceMappings.some(
+        (item) => item.requirement || item.myExperience || item.outcomeEvidence,
+      ),
+    [roleUnderstanding],
+  );
 
   const has = sectionHasContent(roleUnderstanding);
   const [expanded, setExpanded] = useState<Record<"A" | "B" | "C" | "D", boolean>>({

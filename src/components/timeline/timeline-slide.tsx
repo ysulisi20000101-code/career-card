@@ -1,13 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Building2,
   Calendar,
   Briefcase,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import { useResumeStore } from "@/store/resume-store";
 import { cn, formatDate } from "@/lib/utils";
@@ -39,7 +37,6 @@ export function TimelineSlide() {
   const resumeData = useResumeStore((s) => s.resumeData);
   const activeTimelineId = useResumeStore((s) => s.activeTimelineId);
   const setActiveTimelineId = useResumeStore((s) => s.setActiveTimelineId);
-  const setIsPresenting = useResumeStore((s) => s.setIsPresenting);
 
   // Track the previous active id so we can derive slide direction during
   // render instead of syncing state inside an effect (cascading renders).
@@ -71,14 +68,6 @@ export function TimelineSlide() {
     prevActiveIdRef.current = activeTimelineId;
   }, [activeTimelineId, timeline]);
 
-  const navigate = useCallback(
-    (newIndex: number) => {
-      if (newIndex < 0 || newIndex >= timeline.length) return;
-      setActiveTimelineId(timeline[newIndex].id);
-    },
-    [timeline, setActiveTimelineId]
-  );
-
   // Keyboard navigation is owned exclusively by the presentation container to avoid
   // duplicate handlers firing arrow-key navigation twice.
 
@@ -101,32 +90,6 @@ export function TimelineSlide() {
 
   return (
     <div className={cn("relative h-dvh w-full overflow-hidden bg-gradient-to-br", gradientClass)}>
-      {/* ESC hint — top left */}
-      <button
-        onClick={() => setIsPresenting(false)}
-        className="absolute top-6 left-6 z-20 rounded-md border border-border bg-card/80 backdrop-blur-sm px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-      >
-        ESC 退出
-      </button>
-
-      {/* Navigation arrows */}
-      {activeIndex > 0 && (
-        <button
-          onClick={() => navigate(activeIndex - 1)}
-          className="absolute left-4 top-1/2 z-20 -translate-y-1/2 rounded-full border border-border bg-card/80 backdrop-blur-sm p-3 text-muted-foreground hover:text-foreground hover:bg-card transition-all"
-        >
-          <ChevronLeft className="h-6 w-6" />
-        </button>
-      )}
-      {activeIndex < timeline.length - 1 && (
-        <button
-          onClick={() => navigate(activeIndex + 1)}
-          className="absolute right-4 top-1/2 z-20 -translate-y-1/2 rounded-full border border-border bg-card/80 backdrop-blur-sm p-3 text-muted-foreground hover:text-foreground hover:bg-card transition-all"
-        >
-          <ChevronRight className="h-6 w-6" />
-        </button>
-      )}
-
       {/* Slide content */}
       <AnimatePresence mode="wait" custom={direction}>
         <motion.div
@@ -220,22 +183,6 @@ export function TimelineSlide() {
           )}
         </motion.div>
       </AnimatePresence>
-
-      {/* Progress dots — bottom center */}
-      <div className="absolute bottom-8 left-1/2 z-20 -translate-x-1/2 flex items-center gap-2">
-        {timeline.map((node, i) => (
-          <button
-            key={node.id}
-            onClick={() => navigate(i)}
-            className={cn(
-              "h-2 rounded-full transition-all duration-300",
-              i === activeIndex
-                ? "w-8 bg-primary"
-                : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
-            )}
-          />
-        ))}
-      </div>
     </div>
   );
 }

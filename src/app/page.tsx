@@ -2,48 +2,49 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, Clock3, FileText, ShieldCheck, TrendingUp } from "lucide-react";
+import { ArrowRight, FileText, MonitorSmartphone, Upload, Wand2, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/shell/brand-logo";
 
-const valueCards = [
-  {
-    icon: Clock3,
-    title: "5 分钟得到职业档案草稿",
-    description: "上传 PDF 后先生成可校准草稿，用户只需要确认关键信息和表达重点。",
-  },
-  {
-    icon: FileText,
-    title: "把经历讲成面试官能读懂的结构",
-    description: "围绕目标角色、成长线、亮点支撑和能力地图组织内容，而不是堆简历条目。",
-  },
-  {
-    icon: TrendingUp,
-    title: "发布后看到真实阅读反馈",
-    description: "记录打开、有效浏览和最近访问时间，帮助判断分享链接是否真的被阅读。",
-  },
-  {
-    icon: ShieldCheck,
-    title: "隐私和公开范围可控",
-    description: "联系方式、草稿、发布链接和原始文件都应能被用户确认、隐藏或撤回。",
-  },
+const howItWorks = [
+  { icon: Upload, title: "上传简历", description: "上传 PDF 简历，AI 自动解析经历与技能" },
+  { icon: Wand2, title: "Agent 生成网站", description: "AI 自动生成个人职业网站，可对话精修" },
+  { icon: Share2, title: "发布分享", description: "一键发布，生成可分享的链接发送给面试官" },
 ];
 
-const audiences = ["1-3 年社招候选人", "3-8 年骨干/负责人", "转岗或换赛道求职者"];
+const trustPoints = [
+  {
+    icon: "🏠",
+    title: "数据不上传服务器",
+    description: "简历解析和 AI 生成在浏览器完成，数据始终在你手里。",
+  },
+  {
+    icon: "⚡",
+    title: "3 分钟生成网站",
+    description: "AI 自动提取经历、匹配能力、生成叙事，比手动排版快 100 倍。",
+  },
+  {
+    icon: "🔗",
+    title: "随时发布，随时撤回",
+    description: "公开链接可一键撤回，控制谁能看到你的职业信息。",
+  },
+];
 
 export default function HomePage() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-white">
+      {/* 背景光晕 */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-40 left-1/2 h-[620px] w-[620px] -translate-x-1/2 rounded-full bg-gradient-to-br from-indigo-100/70 via-sky-100/40 to-transparent blur-3xl" />
-        <div className="absolute bottom-0 right-0 h-[460px] w-[460px] rounded-full bg-gradient-to-tl from-emerald-100/35 via-amber-100/25 to-transparent blur-3xl" />
+        <div className="absolute bottom-0 right-0 h-[460px] w-[460px] rounded-full bg-gradient-to-tl from-emerald-100/35 via-indigo-100/25 to-transparent blur-3xl" />
       </div>
 
       <div className="relative z-10">
+        {/* Header */}
         <header className="flex items-center justify-between px-6 py-5 lg:px-12">
           <BrandLogo />
-          <div className="flex items-center gap-2">
-            <Link href="/profile" className="hidden text-sm text-zinc-500 hover:text-zinc-900 sm:inline">
+          <div className="flex items-center gap-3">
+            <Link href="/profile" className="text-sm text-muted-foreground hover:text-zinc-900">
               查看样例
             </Link>
             <Link href="/workspace">
@@ -55,105 +56,207 @@ export default function HomePage() {
           </div>
         </header>
 
-        <section className="mx-auto grid max-w-6xl gap-10 px-6 pb-20 pt-16 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:pt-24">
-          <div>
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45 }}
-              className="mb-6 inline-flex items-center gap-2 rounded-full border border-indigo-200/70 bg-indigo-50/70 px-4 py-1.5 text-xs font-medium text-indigo-700"
-            >
-              面向社招候选人的职业表达工具
-            </motion.div>
+        {/* Hero */}
+        <section className="mx-auto max-w-6xl px-6 pb-10 pt-16 text-center">
+          <motion.h1
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mx-auto max-w-3xl text-5xl font-semibold leading-tight tracking-normal text-zinc-950 sm:text-6xl lg:text-7xl"
+          >
+            简历变成<span className="bg-gradient-to-r from-indigo-500 to-violet-600 bg-clip-text text-transparent">面试官想看的</span>
+            <br />
+            职业网站
+          </motion.h1>
 
-            <motion.h1
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1, duration: 0.55 }}
-              className="max-w-4xl text-5xl font-semibold leading-tight tracking-normal text-zinc-950 sm:text-6xl lg:text-7xl"
-            >
-              5 分钟生成可分享的职业档案草稿
-            </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.12, duration: 0.5 }}
+            className="mt-5 text-xl font-medium text-zinc-700"
+          >
+            简历变职业网站，面试变故事演示
+          </motion.p>
 
-            <motion.p
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.22, duration: 0.5 }}
-              className="mt-6 max-w-2xl text-lg leading-8 text-zinc-600"
-            >
-              Career Card 帮求职者把项目经历、成长路径和亮点支撑整理成一份稳定链接，让面试官更快判断候选人的角色匹配和核心能力。
-            </motion.p>
-
-            <motion.div
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.34, duration: 0.5 }}
-              className="mt-9 flex flex-wrap gap-3"
-            >
-              <Link href="/workspace/personal/new">
-                <Button size="lg" variant="brand" className="gap-2 rounded-full px-8">
-                  开始生成草稿
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-              <Link href="/profile">
-                <Button variant="outline" size="lg" className="rounded-full px-8">
-                  查看样例职业档案
-                </Button>
-              </Link>
-            </motion.div>
-
-            <div className="mt-7 flex flex-wrap gap-2">
-              {audiences.map((audience) => (
-                <span key={audience} className="rounded-full border border-zinc-200 bg-white/80 px-3 py-1 text-xs text-zinc-600 shadow-sm">
-                  {audience}
-                </span>
-              ))}
-            </div>
-          </div>
+          <motion.p
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.22, duration: 0.5 }}
+            className="mx-auto mt-3 max-w-xl text-base leading-7 text-muted-foreground"
+          >
+            上传一份简历，AI 自动生成可公开分享的职业网站。同一份简历，不同岗位方向各自优化。发布后还能看到面试官的阅读反馈。
+          </motion.p>
 
           <motion.div
-            initial={{ opacity: 0, y: 22 }}
+            initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.18, duration: 0.55 }}
-            className="rounded-lg border border-zinc-100 bg-white/85 p-5 shadow-xl shadow-zinc-200/60 backdrop-blur"
+            transition={{ delay: 0.34, duration: 0.5 }}
+            className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row"
           >
-            <div className="rounded-md bg-zinc-950 p-5 text-white">
-              <p className="text-xs uppercase tracking-[0.18em] text-white/42">面试官 30 秒看到</p>
-              <div className="mt-5 space-y-4">
-                {["目标角色与候选人定位", "最有说服力的职业亮点", "能力成长路径与关键产出", "联系方式与公开资料"].map((item, index) => (
-                  <div key={item} className="flex items-center gap-3 rounded-md border border-white/10 bg-white/[0.06] p-3">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-xs font-semibold text-zinc-950">
-                      {index + 1}
-                    </span>
-                    <span className="text-sm text-white/82">{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <Link href="/workspace/personal/new">
+              <Button size="lg" variant="brand" className="gap-2 rounded-full px-7 shadow-md shadow-indigo-500/25">
+                <FileText className="h-5 w-5" />
+                创建职业档案
+              </Button>
+            </Link>
+            <Link href="/workspace/interview/new">
+              <Button variant="outline" size="lg" className="gap-2 rounded-full px-7">
+                <MonitorSmartphone className="h-5 w-5" />
+                创建面试演示
+              </Button>
+            </Link>
           </motion.div>
         </section>
 
-        <section className="mx-auto max-w-6xl px-6 pb-24">
-          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-            {valueCards.map((card, index) => (
+        {/* 场景对比区 */}
+        <section className="mx-auto max-w-5xl px-6 pb-20">
+          <div className="grid gap-8 lg:grid-cols-2">
+            {/* 场景一：职业网站 */}
+            <motion.div
+              initial={{ opacity: 0, y: 22 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.18, duration: 0.5 }}
+              className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-shadow hover:shadow-lg"
+            >
+              <div className="bg-gradient-to-r from-indigo-500 to-violet-600 px-5 py-3.5">
+                <p className="text-xs font-semibold uppercase tracking-wider text-white/70">场景一</p>
+                <p className="mt-0.5 text-base font-semibold text-white">一份简历 · 多个目标站点</p>
+              </div>
+              <div className="space-y-3 p-5">
+                <div className="flex items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 p-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-sm font-bold text-indigo-600">
+                    📋
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-zinc-800">基础简历数据</p>
+                    <p className="mt-0.5 text-xs text-zinc-500">一次上传，所有站点共用同一份事实数据</p>
+                  </div>
+                </div>
+                <div className="flex justify-center">
+                  <ArrowRight className="h-5 w-5 text-indigo-300" />
+                </div>
+                <div className="grid gap-2">
+                  <div className="flex items-center gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50/50 px-3 py-2.5">
+                    <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-400" />
+                    <span className="text-sm text-emerald-800">AI Agent 产品经理 → 强调 AI 产品经验、数据思维</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 rounded-lg border border-violet-200 bg-violet-50/50 px-3 py-2.5">
+                    <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-violet-400" />
+                    <span className="text-sm text-violet-800">技术产品负责人 → 突出架构理解力、技术视野</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 rounded-lg border border-blue-200 bg-blue-50/50 px-3 py-2.5">
+                    <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-blue-400" />
+                    <span className="text-sm text-blue-800">增长产品经理 → 侧重增长实验、指标体系</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* 场景二：面试演示 */}
+            <motion.div
+              initial={{ opacity: 0, y: 22 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.26, duration: 0.5 }}
+              className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-shadow hover:shadow-lg"
+            >
+              <div className="bg-gradient-to-r from-violet-500 to-fuchsia-500 px-5 py-3.5">
+                <p className="text-xs font-semibold uppercase tracking-wider text-white/70">场景二</p>
+                <p className="mt-0.5 text-base font-semibold text-white">面试时 · 经历变成故事</p>
+              </div>
+              <div className="space-y-3 p-5">
+                <div className="flex items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 p-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-sm font-bold text-violet-500">
+                    🎤
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-zinc-800">输入目标岗位</p>
+                    <p className="mt-0.5 text-xs text-zinc-500">AI 根据 JD 自动编排讲述节奏</p>
+                  </div>
+                </div>
+                <div className="flex justify-center">
+                  <ArrowRight className="h-5 w-5 text-zinc-300" />
+                </div>
+                <div className="space-y-2 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 p-4 text-white">
+                  <p className="text-xs font-medium uppercase tracking-wider text-white/60">演示稿结构</p>
+                  {["开场定位与核心叙事", "关键项目故事线", "能力跃迁与成长弧线", "量化成果与证据链"].map((item, index) => (
+                    <div key={item} className="flex items-center gap-3 rounded-lg border border-white/15 bg-white/[0.10] px-3 py-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white text-xs font-bold text-violet-500">
+                        {index + 1}
+                      </span>
+                      <span className="text-sm text-white/90">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* 三步搞定 */}
+        <section className="mx-auto max-w-4xl px-6 pb-16">
+          <motion.h2
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-center text-sm font-semibold uppercase tracking-widest text-zinc-400"
+          >
+            三步搞定
+          </motion.h2>
+          <div className="mt-8 grid gap-8 md:grid-cols-3">
+            {howItWorks.map((step, index) => (
               <motion.div
-                key={card.title}
-                initial={{ opacity: 0, y: 18 }}
+                key={step.title}
+                initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: index * 0.06, duration: 0.4 }}
-                className="rounded-lg border border-zinc-100 bg-white/85 p-5 shadow-sm backdrop-blur transition-all hover:-translate-y-1 hover:shadow-md"
+                transition={{ delay: index * 0.1, duration: 0.4 }}
+                className="text-center"
               >
-                <div className="mb-4 inline-flex rounded-lg bg-indigo-50 p-3 text-indigo-600">
-                  <card.icon className="h-5 w-5" />
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-950 text-white">
+                  <step.icon className="h-5 w-5" />
                 </div>
-                <h3 className="text-base font-semibold text-zinc-950">{card.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-zinc-500">{card.description}</p>
+                <p className="text-sm font-semibold text-zinc-900">{step.title}</p>
+                <p className="mt-1 text-sm leading-5 text-muted-foreground">{step.description}</p>
               </motion.div>
             ))}
           </div>
         </section>
+
+        {/* 信任条 */}
+        <div className="border-t border-zinc-100 bg-zinc-50/80 py-12">
+          <div className="mx-auto max-w-4xl px-6">
+            <div className="grid gap-6 md:grid-cols-3">
+              {trustPoints.map((point) => (
+                <div key={point.title} className="flex items-start gap-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white text-lg shadow-sm">
+                    {point.icon}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-zinc-800">{point.title}</p>
+                    <p className="mt-1 text-sm leading-relaxed text-zinc-500">{point.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <footer className="border-t border-zinc-100 bg-white px-6 py-8">
+          <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 sm:flex-row">
+            <div className="flex items-center gap-4 text-xs text-zinc-400">
+              <Link href="/privacy" className="transition-colors hover:text-zinc-600">
+                隐私政策
+              </Link>
+              <Link href="/terms" className="transition-colors hover:text-zinc-600">
+                服务条款
+              </Link>
+            </div>
+            <p className="text-xs text-zinc-400">
+              &copy; {new Date().getFullYear()} Career Card. All rights reserved.
+            </p>
+          </div>
+        </footer>
       </div>
     </div>
   );

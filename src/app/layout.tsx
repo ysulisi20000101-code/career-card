@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "职场名片 - 你的职业生涯演示文稿",
+  title: "Career Card - 简历变职业网站，面试变故事演示",
   description:
-    "AI驱动的简历可视化工具，一键解析简历，生成交互式职业时间线、技能图谱和架构图，分享即名片。",
+    "上传简历，一键生成职业网站和面试演示，分享稳定链接获取阅读反馈。",
 };
 
 export default function RootLayout({
@@ -28,7 +29,7 @@ export default function RootLayout({
       lang="zh-CN"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">{children}<Toaster /></body>
     </html>
   );
 }

@@ -2,13 +2,17 @@
 
 import type React from "react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Archive,
   Briefcase,
   Copy,
   ExternalLink,
+  Eye,
+  FileText,
   MonitorSmartphone,
+  MoreHorizontal,
   Pencil,
   Play,
   Plus,
@@ -18,33 +22,84 @@ import {
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { BrandLogo } from "@/components/shell/brand-logo";
-import { AccountPanel } from "@/components/commercial/account-panel";
 import {
   archiveProjectRecord,
   deleteProjectRecord,
   duplicateProjectRecord,
   listProjectRecords,
+  listSitesByProject,
+  migrateProjectToMultiSite,
   renameProjectRecord,
+  loadPersonalProject,
+  loadInterviewProject,
+  saveInterviewProject,
 } from "@/lib/projects/registry";
+import { interviewToResumeData, personalToResumeData } from "@/lib/projects/adapters";
+import { generatePresentationDraft } from "@/lib/presentation/generator";
+import { savePresentationDraft, deletePresentationDraft } from "@/lib/presentation/storage";
 import { formatRelativeTime } from "@/lib/utils";
+import { SkeletonCard } from "@/components/skeleton";
 import type { ProjectRecord } from "@/types/project";
+import type { PersonalSite } from "@/types/site";
 
 interface EventSummary {
   slug: string;
   opens: number;
   effectiveViews: number;
+  contactClicks: number;
   lastViewedAt?: string;
 }
 
 export default function WorkspacePage() {
+  const router = useRouter();
   const [records, setRecords] = useState<ProjectRecord[]>(() => listProjectRecords());
   const [showArchived, setShowArchived] = useState(false);
   const [eventSummaries, setEventSummaries] = useState<Record<string, EventSummary>>({});
+  const [mounted, setMounted] = useState(false);
+  const [generatingId, setGeneratingId] = useState<string | null>(null);
+
+  // Mark as mounted after first render to avoid hydration mismatch
+  useEffect(() => { setMounted(true); }, []);
 
   const refreshRecords = () => setRecords(listProjectRecords());
 
+  // Auto-migrate legacy projects without sites (runs once after mount)
+  const migrationRunRef = useRef(false);
+  useEffect(() => {
+    if (!mounted || migrationRunRef.current) return;
+    let changed = false;
+    for (const record of records) {
+      if (record.type !== "personal") continue;
+      if (record.siteIds && record.siteIds.length > 0) continue;
+      const legacy = loadPersonalProject(record.id);
+      if (legacy) {
+        migrateProjectToMultiSite(record.id);
+        changed = true;
+      }
+    }
+    if (changed) {
+      migrationRunRef.current = true;
+      refreshRecords();
+    }
+  }, [mounted, records]);
+
+  // Load sites for all personal projects
+  const projectSites = useMemo(() => {
+    const map = new Map<string, PersonalSite[]>();
+    for (const record of records.filter((r) => r.type === "personal")) {
+      map.set(record.id, listSitesByProject(record.id));
+    }
+    return map;
+  }, [records]);
   const publishedSlugs = useMemo(
     () => records.map((item) => item.publishedSlug).filter((slug): slug is string => Boolean(slug)),
     [records],
@@ -85,7 +140,8 @@ export default function WorkspacePage() {
   const interviewRecords = visibleRecords.filter((item) => item.type === "interview");
   const publishedCount = records.filter((item) => item.status === "published").length;
   const archivedCount = records.filter((item) => item.status === "archived").length;
-  const effectiveViews = Object.values(activeEventSummaries).reduce((sum, item) => sum + item.effectiveViews, 0);
+  const opens = Object.values(activeEventSummaries).reduce((sum, item) => sum + item.opens, 0);
+  const contactClicks = Object.values(activeEventSummaries).reduce((sum, item) => sum + item.contactClicks, 0);
 
   const handleRename = (record: ProjectRecord) => {
     const title = window.prompt("输入新的项目名称", record.title);
@@ -110,6 +166,49 @@ export default function WorkspacePage() {
     refreshRecords();
   };
 
+  const handleGenerateStoryDeck = (record: ProjectRecord) => {
+    if (record.type !== "interview") return;
+    const interviewData = loadInterviewProject(record.id);
+    if (!interviewData) return;
+    setGeneratingId(record.id);
+    try {
+      const resumeData = interviewToResumeData(interviewData);
+      const draft = generatePresentationDraft(resumeData);
+      // Delete old draft after successful generation to prevent data loss
+      if (interviewData.presentationDraftId) {
+        deletePresentationDraft(interviewData.presentationDraftId);
+      }
+      savePresentationDraft(draft);
+      saveInterviewProject(record.id, { ...interviewData, presentationDraftId: draft.id });
+      refreshRecords();
+      router.push(`/workspace/interview/${record.id}/present`);
+    } finally {
+      setGeneratingId(null);
+    }
+  };
+
+  const handleDeleteStoryDeck = (record: ProjectRecord) => {
+    if (record.type !== "interview") return;
+    const interviewData = loadInterviewProject(record.id);
+    if (!interviewData?.presentationDraftId) return;
+    deletePresentationDraft(interviewData.presentationDraftId);
+    saveInterviewProject(record.id, { ...interviewData, presentationDraftId: undefined });
+    refreshRecords();
+  };
+
+  const interviewDraftStatusMap = useMemo(() => {
+    const map = new Map<string, "none" | "ready">();
+    for (const record of records) {
+      if (record.type !== "interview") continue;
+      const data = loadInterviewProject(record.id);
+      map.set(record.id, data?.presentationDraftId ? "ready" : "none");
+    }
+    return map;
+  }, [records]);
+
+  const getInterviewDraftStatus = (record: ProjectRecord): "none" | "ready" =>
+    interviewDraftStatusMap.get(record.id) ?? "none";
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-zinc-50 via-white to-white">
       <div className="pointer-events-none absolute inset-0">
@@ -121,8 +220,7 @@ export default function WorkspacePage() {
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 py-4">
           <BrandLogo />
           <div className="flex items-center gap-3">
-            <AccountPanel compact />
-            <Link href="/" className="text-xs text-zinc-500 hover:text-zinc-900">
+            <Link href="/" className="text-xs text-muted-foreground hover:text-zinc-900">
               返回首页
             </Link>
           </div>
@@ -137,10 +235,10 @@ export default function WorkspacePage() {
               工作台
             </div>
             <h1 className="max-w-2xl text-3xl font-semibold leading-tight tracking-normal text-zinc-950 lg:text-4xl">
-              管理职业档案、面试演示和公开链接
+              你的职业网站工作台
             </h1>
-            <p className="max-w-2xl text-sm leading-7 text-zinc-500 lg:text-base">
-              主流程聚焦上传、校准、完整预览和发布。项目操作、访问反馈和多版本管理统一放在这里，避免编辑时被无关入口打断。
+            <p className="max-w-2xl text-sm leading-7 text-muted-foreground lg:text-base">
+              上传简历、生成公开页、发布稳定链接。
             </p>
           </div>
 
@@ -169,12 +267,19 @@ export default function WorkspacePage() {
         </section>
 
         <section className="mb-6 grid gap-3 md:grid-cols-3">
-          <MetricCard label="职业档案" value={`${records.filter((item) => item.type === "personal").length} 个`} />
-          <MetricCard label="已发布" value={`${publishedCount} 个公开链接`} />
-          <MetricCard label="有效浏览" value={`${effectiveViews} 次`} />
+          <MetricCard label="职业档案" value={`${records.filter((item) => item.type === "personal").length} 个`} icon={FileText} />
+          <MetricCard label="已发布" value={`${publishedCount} 个公开链接`} icon={Rocket} />
+          <MetricCard label="阅读反馈" value={`${opens} 次打开 / ${contactClicks} 次联系点击`} icon={Eye} />
         </section>
 
         <section className="grid gap-6 lg:grid-cols-2">
+          {!mounted ? (
+            <>
+              <SkeletonCard />
+              <SkeletonCard />
+            </>
+          ) : (
+          <>
           <SpaceCard
             icon={Briefcase}
             gradient="from-indigo-500 to-violet-500"
@@ -183,6 +288,7 @@ export default function WorkspacePage() {
             newHref="/workspace/personal/new"
             newLabel="新建职业档案"
             records={personalRecords}
+            sites={projectSites}
             summaries={activeEventSummaries}
             makeEditHref={(id) => `/workspace/personal/${id}/edit`}
             makePrimaryHref={(item) => (item.status === "published" && item.publishedSlug ? `/p/${item.publishedSlug}` : `/workspace/personal/${item.id}/publish`)}
@@ -205,24 +311,67 @@ export default function WorkspacePage() {
             summaries={activeEventSummaries}
             makeEditHref={(id) => `/workspace/interview/${id}/edit`}
             makePrimaryHref={(item) => `/workspace/interview/${item.id}/present`}
-            primaryAction={() => ({ label: "演示", icon: Play })}
+            primaryAction={(item) => {
+              const status = getInterviewDraftStatus(item);
+              return status === "ready"
+                ? { label: "故事演示", icon: Play }
+                : { label: "演示", icon: Play };
+            }}
             emptyHint="还没有面试演示。可以基于目标岗位搭建讲述节奏。"
             onRename={handleRename}
             onDuplicate={handleDuplicate}
             onArchive={handleArchive}
             onDelete={handleDelete}
+            extraActions={(item) => {
+              if (item.type !== "interview") return null;
+              const status = getInterviewDraftStatus(item);
+              if (status === "ready") {
+                return (
+                  <Button
+                    key="delete-deck"
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 rounded-full px-2 text-[11px] text-rose-600 hover:text-rose-700"
+                    onClick={() => handleDeleteStoryDeck(item)}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    删除演示稿
+                  </Button>
+                );
+              }
+              return (
+                <Button
+                  key="gen-deck"
+                  size="sm"
+                  variant="outline"
+                  className="h-7 gap-1 rounded-full px-2 text-[11px]"
+                  disabled={generatingId === item.id}
+                  onClick={() => handleGenerateStoryDeck(item)}
+                >
+                  <Sparkles className="h-3 w-3" />
+                  {generatingId === item.id ? "生成中..." : "生成故事演示"}
+                </Button>
+              );
+            }}
           />
+          </>
+          )}
         </section>
       </main>
     </div>
   );
 }
 
-function MetricCard({ label, value }: { label: string; value: string }) {
+function MetricCard({ label, value, icon: Icon }: { label: string; value: string; icon: React.ComponentType<{ className?: string }> }) {
   return (
-    <div className="rounded-lg border border-zinc-100 bg-white/80 p-4 shadow-sm">
-      <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-zinc-400">{label}</p>
-      <p className="mt-2 text-sm font-medium text-zinc-800">{value}</p>
+    <div className="flex items-center gap-3 rounded-lg border border-zinc-100 bg-white/80 p-4 shadow-sm">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-600">
+        <Icon className="h-5 w-5" />
+      </div>
+      <div>
+        <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-zinc-400">{label}</p>
+        <p className="text-sm font-medium text-zinc-800">{value}</p>
+      </div>
     </div>
   );
 }
@@ -235,6 +384,7 @@ interface SpaceCardProps {
   newHref: string;
   newLabel: string;
   records: ProjectRecord[];
+  sites?: Map<string, PersonalSite[]>;
   summaries: Record<string, EventSummary>;
   makeEditHref: (id: string) => string;
   makePrimaryHref: (record: ProjectRecord) => string;
@@ -244,6 +394,7 @@ interface SpaceCardProps {
   onDuplicate: (record: ProjectRecord) => void;
   onArchive: (record: ProjectRecord, archived: boolean) => void;
   onDelete: (record: ProjectRecord) => void;
+  extraActions?: (record: ProjectRecord) => React.ReactNode;
 }
 
 function SpaceCard({
@@ -254,6 +405,7 @@ function SpaceCard({
   newHref,
   newLabel,
   records,
+  sites,
   summaries,
   makeEditHref,
   makePrimaryHref,
@@ -263,6 +415,7 @@ function SpaceCard({
   onDuplicate,
   onArchive,
   onDelete,
+  extraActions,
 }: SpaceCardProps) {
   return (
     <div className="group relative overflow-hidden rounded-lg border border-zinc-100 bg-white/80 p-6 shadow-sm backdrop-blur transition-all hover:border-zinc-200 hover:shadow-md">
@@ -291,12 +444,6 @@ function SpaceCard({
           </div>
           <p className="text-sm font-medium text-zinc-800">暂无记录</p>
           <p className="mt-1 max-w-xs text-xs text-zinc-500">{emptyHint}</p>
-          <Link href={newHref} className="mt-4">
-            <Button size="sm" variant="outline" className="gap-1 rounded-full">
-              <Plus className="h-3.5 w-3.5" />
-              {newLabel}
-            </Button>
-          </Link>
         </div>
       ) : (
         <ul className="divide-y divide-zinc-100 rounded-lg border border-zinc-100 bg-white/60">
@@ -314,13 +461,13 @@ function SpaceCard({
                     <div className="min-w-0">
                       <p className="truncate font-medium text-zinc-900">{item.title}</p>
                       <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-zinc-500">
-                        <StatusBadge status={item.status} />
+                        <StatusBadge status={item.status} labels={{ draft: "草稿", published: "已发布", archived: "已归档" }} />
                         <span>·</span>
                         <span>{formatRelativeTime(item.updatedAt)}</span>
                         {summary && (
                           <>
                             <span>·</span>
-                            <span>{summary.opens} 打开 / {summary.effectiveViews} 有效浏览</span>
+                            <span>{summary.opens} 打开 / {summary.contactClicks} 联系</span>
                           </>
                         )}
                       </div>
@@ -341,23 +488,46 @@ function SpaceCard({
                     </Link>
                   </div>
                 </div>
-                <div className="flex flex-wrap justify-end gap-1">
-                  <Button size="sm" variant="ghost" className="h-7 rounded-full px-2 text-[11px]" onClick={() => onRename(item)}>
-                    重命名
-                  </Button>
-                  <Button size="sm" variant="ghost" className="h-7 gap-1 rounded-full px-2 text-[11px]" onClick={() => onDuplicate(item)}>
-                    <Copy className="h-3 w-3" />
-                    复制
-                  </Button>
-                  <Button size="sm" variant="ghost" className="h-7 gap-1 rounded-full px-2 text-[11px]" onClick={() => onArchive(item, item.status !== "archived")}>
-                    {item.status === "archived" ? <RotateCcw className="h-3 w-3" /> : <Archive className="h-3 w-3" />}
-                    {item.status === "archived" ? "恢复" : "归档"}
-                  </Button>
-                  <Button size="sm" variant="ghost" className="h-7 gap-1 rounded-full px-2 text-[11px] text-rose-600 hover:text-rose-700" onClick={() => onDelete(item)}>
-                    <Trash2 className="h-3 w-3" />
-                    删除
-                  </Button>
+                <div className="flex flex-wrap items-center justify-end gap-1">
+                  {extraActions?.(item)}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 rounded-full p-0">
+                        <MoreHorizontal className="h-3.5 w-3.5" />
+                        <span className="sr-only">更多操作</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-36">
+                      <DropdownMenuItem onClick={() => onRename(item)}>
+                        <Pencil className="h-3.5 w-3.5" />
+                        重命名
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onDuplicate(item)}>
+                        <Copy className="h-3.5 w-3.5" />
+                        复制
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onArchive(item, item.status !== "archived")}>
+                        {item.status === "archived" ? <RotateCcw className="h-3.5 w-3.5" /> : <Archive className="h-3.5 w-3.5" />}
+                        {item.status === "archived" ? "恢复" : "归档"}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => onDelete(item)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        删除
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
+                {/* Sites sub-list for personal projects */}
+                {sites && item.type === "personal" && (
+                  <SitesSubList
+                    projectId={item.id}
+                    projectSites={sites}
+                  />
+                )}
               </li>
             );
           })}
@@ -367,24 +537,50 @@ function SpaceCard({
   );
 }
 
-function StatusBadge({ status }: { status: ProjectRecord["status"] }) {
-  if (status === "published") {
-    return (
-      <Badge className="border border-emerald-200 bg-emerald-50 text-[10px] font-medium text-emerald-700">
-        已发布
-      </Badge>
-    );
-  }
-  if (status === "archived") {
-    return (
-      <Badge className="border border-zinc-200 bg-zinc-100 text-[10px] font-medium text-zinc-500">
-        已归档
-      </Badge>
-    );
-  }
+function SitesSubList({ projectId, projectSites }: { projectId: string; projectSites: Map<string, PersonalSite[]> }) {
+  const sites = projectSites.get(projectId) ?? [];
+  if (sites.length === 0) return null;
+
   return (
-    <Badge className="border border-zinc-200 bg-zinc-50 text-[10px] font-medium text-zinc-600">
-      草稿
-    </Badge>
+    <div className="ml-12 border-l-2 border-zinc-100 pl-4 pt-1">
+      <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.12em] text-zinc-400">目标站点</p>
+      <ul className="space-y-2">
+        {sites.map((site) => (
+          <li key={site.id} className="flex items-center justify-between gap-2 rounded-lg border border-zinc-100 bg-white px-3 py-2.5 text-sm shadow-sm transition-shadow hover:shadow">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <div className={`h-2.5 w-2.5 shrink-0 rounded-full ${site.status === "published" ? "bg-emerald-400" : site.status === "archived" ? "bg-zinc-300" : "bg-amber-400"}`} />
+              <span className="truncate text-sm font-medium text-zinc-700">{site.targetRole}</span>
+              <StatusBadge status={site.status} />
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              {site.status === "published" && site.slug ? (
+                <a href={`/p/${site.slug}`} target="_blank" rel="noopener noreferrer">
+                  <Button size="sm" variant="ghost" className="h-7 gap-1 rounded-full text-[11px]">
+                    <ExternalLink className="h-3 w-3" />
+                    查看
+                  </Button>
+                </a>
+              ) : (
+                <Link href={`/workspace/personal/${projectId}/sites/${site.id}`}>
+                  <Button size="sm" variant="brand" className="h-7 gap-1 rounded-full text-[11px]">
+                    <Rocket className="h-3 w-3" />
+                    进入工作台
+                  </Button>
+                </Link>
+              )}
+            </div>
+          </li>
+        ))}
+        <li>
+          <Link href={`/workspace/personal/${projectId}/sites/new`}>
+            <Button size="sm" variant="ghost" className="h-8 gap-1 rounded-full text-[11px] text-zinc-500 hover:text-indigo-600">
+              <Plus className="h-3 w-3" />
+              新建站点
+            </Button>
+          </Link>
+        </li>
+      </ul>
+    </div>
   );
 }
+

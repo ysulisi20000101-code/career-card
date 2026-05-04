@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import { Building2, Calendar, Briefcase } from "lucide-react";
 import type { TimelineNode } from "@/types";
@@ -19,7 +19,7 @@ export function TimelineView({ nodes, readOnly = false }: TimelineViewProps) {
   const setActiveTimelineId = useResumeStore((s) => s.setActiveTimelineId);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const sortedNodes = getOrderedTimeline(nodes);
+  const sortedNodes = useMemo(() => getOrderedTimeline(nodes), [nodes]);
 
   return (
     <div ref={containerRef} className="relative w-full max-w-5xl mx-auto py-12 px-4">

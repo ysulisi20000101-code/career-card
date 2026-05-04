@@ -1,17 +1,28 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { createProjectRecord } from "@/lib/projects/registry";
 import { BrandLogo } from "@/components/shell/brand-logo";
 
 export default function NewInterviewProjectPage() {
   const router = useRouter();
+  const [error, setError] = useState(false);
+  const createdRef = useRef(false);
 
   useEffect(() => {
-    const record = createProjectRecord("interview", "面试空间项目");
-    router.replace(`/workspace/interview/${record.id}/edit`);
+    if (createdRef.current) return;
+    createdRef.current = true;
+    try {
+      const now = new Date();
+      const name = `面试演示 ${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+      const record = createProjectRecord("interview", name);
+      router.replace(`/workspace/interview/${record.id}/edit`);
+    } catch {
+      queueMicrotask(() => setError(true));
+    }
   }, [router]);
 
   return (
@@ -22,16 +33,33 @@ export default function NewInterviewProjectPage() {
         </div>
       </header>
       <main className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-        <div className="relative mb-6">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-rose-200/50 to-amber-200/50 blur-2xl" />
-          <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-500 to-amber-500 text-white shadow-lg shadow-rose-500/30">
-            <Loader2 className="h-7 w-7 animate-spin" />
-          </div>
-        </div>
-        <h1 className="text-xl font-semibold text-zinc-900">正在创建面试空间项目</h1>
-        <p className="mt-2 max-w-sm text-sm text-zinc-500">
-          面试空间能独立管理岗位理解与讲述节奏，稍后会自动进入编辑页。
-        </p>
+        {error ? (
+          <>
+            <h1 className="text-xl font-semibold text-zinc-900">创建失败</h1>
+            <p className="mt-2 max-w-sm text-sm text-zinc-500">
+              无法创建面试空间项目，请检查浏览器存储设置后重试。
+            </p>
+            <Link href="/workspace" className="mt-4 text-sm text-indigo-600 hover:underline">
+              返回工作台
+            </Link>
+          </>
+        ) : (
+          <>
+            <div className="relative mb-6">
+              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-rose-200/50 to-amber-200/50 blur-2xl" />
+              <div className="relative flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-amber-500 text-white shadow-lg shadow-rose-500/30">
+                <Loader2 className="h-7 w-7 animate-spin" />
+              </div>
+            </div>
+            <h1 className="text-xl font-semibold text-zinc-900">正在创建面试空间项目</h1>
+            <p className="mt-2 max-w-sm text-sm text-zinc-500">
+              面试空间能独立管理岗位理解与讲述节奏，稍后会自动进入编辑页。
+            </p>
+            <Link href="/workspace" className="mt-4 text-sm text-zinc-400 hover:text-zinc-600">
+              取消
+            </Link>
+          </>
+        )}
       </main>
     </div>
   );

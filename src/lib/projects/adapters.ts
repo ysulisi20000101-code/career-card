@@ -1,18 +1,12 @@
 import type { ResumeData } from "@/types";
 import type { InterviewProjectData, PersonalSiteData } from "@/types/project";
-import { createDefaultRoleUnderstanding } from "@/lib/role-understanding/default";
 
 export function personalToResumeData(data: PersonalSiteData): ResumeData {
-  return {
-    ...data,
-    roleUnderstanding: createDefaultRoleUnderstanding(data.timeline[0]?.position ?? ""),
-  };
+  return data;
 }
 
 export function resumeDataToPersonal(data: ResumeData): PersonalSiteData {
-  const { roleUnderstanding, ...rest } = data;
-  void roleUnderstanding;
-  return rest;
+  return data;
 }
 
 export function interviewToResumeData(data: InterviewProjectData): ResumeData {
@@ -22,10 +16,10 @@ export function interviewToResumeData(data: InterviewProjectData): ResumeData {
   };
 }
 
-export function resumeDataToInterview(data: ResumeData): InterviewProjectData {
+export function resumeDataToInterview(data: ResumeData, existingNotes?: string): InterviewProjectData {
   return {
     resume: data,
     roleUnderstanding: data.roleUnderstanding,
-    interviewNotes: "",
+    interviewNotes: existingNotes ?? "",
   };
 }

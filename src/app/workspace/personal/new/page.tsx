@@ -1,17 +1,26 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { createProjectRecord } from "@/lib/projects/registry";
 import { BrandLogo } from "@/components/shell/brand-logo";
 
 export default function NewPersonalProjectPage() {
   const router = useRouter();
+  const createdRef = useRef(false);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    const record = createProjectRecord("personal", "职业档案草稿");
-    router.replace(`/workspace/personal/${record.id}/edit`);
+    if (createdRef.current) return;
+    createdRef.current = true;
+    try {
+      const record = createProjectRecord("personal", "职业档案草稿");
+      router.replace(`/workspace/personal/${record.id}/edit`);
+    } catch {
+      queueMicrotask(() => setError(true));
+    }
   }, [router]);
 
   return (
@@ -22,16 +31,33 @@ export default function NewPersonalProjectPage() {
         </div>
       </header>
       <main className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-        <div className="relative mb-6">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-indigo-200/50 to-violet-200/50 blur-2xl" />
-          <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/30">
-            <Loader2 className="h-7 w-7 animate-spin" />
-          </div>
-        </div>
-        <h1 className="text-xl font-semibold text-zinc-900">正在创建职业档案草稿</h1>
-        <p className="mt-2 max-w-sm text-sm text-zinc-500">
-          稍后会进入上传与校准流程。
-        </p>
+        {error ? (
+          <>
+            <h1 className="text-xl font-semibold text-zinc-900">创建失败</h1>
+            <p className="mt-2 max-w-sm text-sm text-zinc-500">
+              无法创建职业档案草稿，请检查浏览器存储设置后重试。
+            </p>
+            <Link href="/workspace" className="mt-4 text-sm text-indigo-600 hover:underline">
+              返回工作台
+            </Link>
+          </>
+        ) : (
+          <>
+            <div className="relative mb-6">
+              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-indigo-200/50 to-violet-200/50 blur-2xl" />
+              <div className="relative flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/30">
+                <Loader2 className="h-7 w-7 animate-spin" />
+              </div>
+            </div>
+            <h1 className="text-xl font-semibold text-zinc-900">正在创建职业档案草稿</h1>
+            <p className="mt-2 max-w-sm text-sm text-zinc-500">
+              稍后会进入上传与校准流程。
+            </p>
+            <Link href="/workspace" className="mt-4 text-sm text-zinc-400 hover:text-zinc-600">
+              取消
+            </Link>
+          </>
+        )}
       </main>
     </div>
   );

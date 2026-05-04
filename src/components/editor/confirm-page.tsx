@@ -8,9 +8,11 @@ import {
   GraduationCap,
   Wrench,
   Check,
-  Pencil,
   X,
   ChevronRight,
+  Plus,
+  Sparkles,
+  Pencil,
 } from "lucide-react";
 import { useResumeStore } from "@/store/resume-store";
 import { Button } from "@/components/ui/button";
@@ -35,7 +37,7 @@ function Section({
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.4 }}
+      transition={{ delay, duration: 0.3 }}
     >
       <Card>
         <CardHeader className="pb-4">
@@ -74,6 +76,11 @@ function EditableField({
     setEditing(false);
   }
 
+  function startEdit() {
+    setDraft(value);
+    setEditing(true);
+  }
+
   if (editing) {
     return (
       <div className="space-y-1.5">
@@ -109,34 +116,63 @@ function EditableField({
   }
 
   return (
-    <div className="group flex items-start justify-between rounded-md px-2 py-1.5 transition-colors hover:bg-muted/50">
+    <button
+      type="button"
+      onClick={startEdit}
+      className="group flex w-full cursor-text items-start justify-between rounded-md px-2 py-1.5 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+    >
       <div className="min-w-0 flex-1">
         <div className="text-xs font-medium text-muted-foreground">{label}</div>
         <div className="mt-0.5 text-sm break-words">
           {value || <span className="italic text-muted-foreground">未填写</span>}
         </div>
       </div>
-      <Button
-        size="icon"
-        variant="ghost"
-        className="h-7 w-7 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
-        onClick={() => setEditing(true)}
-      >
-        <Pencil className="h-3 w-3" />
-      </Button>
-    </div>
+      <span className="mt-0.5 shrink-0 rounded px-1 text-[10px] text-muted-foreground/50 opacity-0 transition-opacity group-hover:opacity-100">
+        点击编辑
+      </span>
+    </button>
   );
 }
 
-export function ConfirmPage() {
+export function ConfirmPage({
+  onGenerate,
+  mode = "personal",
+}: {
+  onGenerate?: () => void;
+  mode?: "personal" | "interview";
+}) {
   const resumeData = useResumeStore((s) => s.resumeData);
   const parseMeta = useResumeStore((s) => s.parseMeta);
   const updateProfile = useResumeStore((s) => s.updateProfile);
-  const updateTimeline = useResumeStore((s) => s.updateTimeline);
+  const updateTimelineNode = useResumeStore((s) => s.updateTimelineNode);
   const updateEducation = useResumeStore((s) => s.updateEducation);
   const setCurrentStep = useResumeStore((s) => s.setCurrentStep);
+  const [newHighlight, setNewHighlight] = useState<Record<string, string>>({});
 
-  if (!resumeData) return null;
+  const handleGenerate = () => {
+    if (onGenerate) {
+      onGenerate();
+    } else {
+      setCurrentStep("edit");
+    }
+  };
+
+  if (!resumeData) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="text-center">
+          <p className="text-lg font-semibold text-zinc-900">数据未加载</p>
+          <p className="mt-2 text-sm text-zinc-500">请先上传简历或手动填写信息。</p>
+          <button
+            onClick={() => setCurrentStep("upload")}
+            className="mt-4 inline-block text-sm text-indigo-600 hover:underline"
+          >
+            返回上传
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const { profile, timeline, education, skills } = resumeData;
 
@@ -145,10 +181,7 @@ export function ConfirmPage() {
     field: keyof TimelineNode,
     value: string
   ) {
-    const updated = timeline.map((n) =>
-      n.id === id ? { ...n, [field]: value } : n
-    );
-    updateTimeline(updated);
+    updateTimelineNode(id, { [field]: value } as Partial<TimelineNode>);
   }
 
   function handleEducationFieldChange(
@@ -287,15 +320,61 @@ export function ConfirmPage() {
                 }
                 multiline
               />
-              {node.highlights.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1.5 px-2">
+              <div className="mt-2 space-y-2 px-2">
+                <div className="flex flex-wrap gap-1.5">
                   {node.highlights.map((h, i) => (
-                    <Badge key={i} variant="secondary" className="text-xs">
+                    <Badge key={i} variant="secondary" className="gap-1 text-xs">
                       {h}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateTimelineNode(node.id, {
+                            highlights: node.highlights.filter((_, idx) => idx !== i),
+                          })
+                        }
+                        className="ml-0.5 rounded-full hover:bg-zinc-300"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
                     </Badge>
                   ))}
                 </div>
-              )}
+                <div className="flex gap-1.5">
+                  <Input
+                    value={newHighlight[node.id] ?? ""}
+                    onChange={(e) =>
+                      setNewHighlight((prev) => ({ ...prev, [node.id]: e.target.value }))
+                    }
+                    placeholder="添加亮点"
+                    className="h-7 text-xs"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && (newHighlight[node.id] ?? "").trim()) {
+                        e.preventDefault();
+                        updateTimelineNode(node.id, {
+                          highlights: [...node.highlights, newHighlight[node.id].trim()],
+                        });
+                        setNewHighlight((prev) => ({ ...prev, [node.id]: "" }));
+                      }
+                    }}
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-2"
+                    onClick={() => {
+                      const val = (newHighlight[node.id] ?? "").trim();
+                      if (val) {
+                        updateTimelineNode(node.id, {
+                          highlights: [...node.highlights, val],
+                        });
+                        setNewHighlight((prev) => ({ ...prev, [node.id]: "" }));
+                      }
+                    }}
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
             </div>
           ))}
         </div>
@@ -367,21 +446,29 @@ export function ConfirmPage() {
         </div>
       </Section>
 
-      {/* Confirm button */}
+      {/* CTA */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
-        className="flex justify-center pt-4"
+        className="flex flex-col items-center gap-3 pt-4"
       >
         <Button
           size="lg"
           className="gap-2 rounded-full px-10"
-          onClick={() => setCurrentStep("edit")}
+          onClick={handleGenerate}
         >
-          确认并继续
-          <ChevronRight className="h-4 w-4" />
+          <Sparkles className="h-4 w-4" />
+          {mode === "interview" ? "生成故事演示" : "生成网站"}
         </Button>
+        <button
+          type="button"
+          onClick={() => setCurrentStep("edit")}
+          className="flex items-center gap-1 text-sm text-zinc-400 transition-colors hover:text-zinc-600"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+          或者先手动编辑
+        </button>
       </motion.div>
       </div>
     </div>

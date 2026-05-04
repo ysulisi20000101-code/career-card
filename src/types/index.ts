@@ -1,3 +1,5 @@
+export type { PersonalSite } from "./site";
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -154,6 +156,7 @@ export interface ArchitectureModule {
 export interface ResumeData {
   profile: UserProfile;
   publicSiteTemplate?: PublicSiteTemplate;
+  siteThemeId?: string;
   timeline: TimelineNode[];
   skills: SkillNode[];
   skillProfile?: SkillProfile;

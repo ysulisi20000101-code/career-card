@@ -111,18 +111,36 @@ function pickMiniMaxContent(payload: unknown): string {
   return typeof content === "string" ? content : "";
 }
 
-function parseJsonFromText(text: string): unknown {
+function parseJsonFromText(text: string): Record<string, unknown> | null {
   const withoutThink = text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
   try {
-    return JSON.parse(withoutThink);
+    return JSON.parse(withoutThink) as Record<string, unknown>;
   } catch {
-    const match = withoutThink.match(/\{[\s\S]*\}/);
-    if (!match) return null;
-    try {
-      return JSON.parse(match[0]);
-    } catch {
-      return null;
+    // Find the first { and match balanced brackets
+    const start = withoutThink.indexOf("{");
+    if (start === -1) return null;
+    let depth = 0;
+    let inString = false;
+    let escape = false;
+    for (let i = start; i < withoutThink.length; i++) {
+      const ch = withoutThink[i];
+      if (escape) { escape = false; continue; }
+      if (ch === "\\") { escape = true; continue; }
+      if (ch === '"') { inString = !inString; continue; }
+      if (inString) continue;
+      if (ch === "{") depth++;
+      if (ch === "}") {
+        depth--;
+        if (depth === 0) {
+          try {
+            return JSON.parse(withoutThink.slice(start, i + 1)) as Record<string, unknown>;
+          } catch {
+            return null;
+          }
+        }
+      }
     }
+    return null;
   }
 }
 

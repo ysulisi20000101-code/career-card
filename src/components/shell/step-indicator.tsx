@@ -39,6 +39,7 @@ export function StepIndicator<T extends string>({
                 if (isClickable && onStepClick) onStepClick(step.key);
               }}
               disabled={!isClickable}
+              aria-current={isActive ? "step" : undefined}
               className={cn(
                 "group flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all",
                 isActive

@@ -29,6 +29,12 @@ export function savePublishedResume(slug: string, data: ResumeData): PublishedSi
   return site;
 }
 
+export function removePublishedSite(slug: string): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(SITE_PREFIX + slug);
+  window.localStorage.removeItem(LEGACY_PREFIX + slug);
+}
+
 export function loadPublishedSite(slug: string): PublishedSite | null {
   if (typeof window === "undefined") return null;
   const raw = window.localStorage.getItem(SITE_PREFIX + slug);
@@ -81,6 +87,7 @@ export function encodeResumeToHash(data: ResumeData): string {
 }
 
 export function decodeResumeFromHash(encoded: string): ResumeData | null {
+  if (typeof window === "undefined") return null;
   if (!encoded) return null;
   try {
     const padded = encoded.replace(/-/g, "+").replace(/_/g, "/");

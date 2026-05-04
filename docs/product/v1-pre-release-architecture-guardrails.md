@@ -15,6 +15,10 @@ Provide a strict pre-release gate to prevent regressions in the V1 core promise:
 - [ ] `publish` generates a portable link that opens on another device.
 - [ ] Oversized payload does not silently downgrade QR to same-device short link.
 - [ ] Opening malformed `#d=` payload never crashes `share` page (safe fallback required).
+- [ ] Interview presentation "快速" mode generates 8-slide baseline without runtime errors.
+- [ ] Interview presentation "AI 精修" mode calls `/api/agent/interview-presentation` and renders enhanced result.
+- [ ] AI enhancement failure (no provider / LLM error / invalid JSON) degrades gracefully to rules baseline.
+- [ ] All 8 slide kinds render without ErrorBoundary catch (hero / foundation / tension / platform_build / agent_leap / lifecycle / impact / resolution).
 
 ## B. Domain Integrity Invariants (P0/P1)
 - [ ] Deleting a skill node removes its entire subtree (no orphan descendants).
@@ -38,7 +42,9 @@ Provide a strict pre-release gate to prevent regressions in the V1 core promise:
 ## E. Build and Quality Gates (P0)
 - [ ] `npm run lint` has 0 errors and 0 warnings.
 - [ ] `npm run build` passes TypeScript and app build.
-- [ ] No known console errors in major routes: `/`, `/edit`, `/profile`, `/p/[slug]`.
+- [ ] `npx tsc --noEmit` zero errors (including agent/presentation/ module).
+- [ ] `npx vitest run` all tests pass.
+- [ ] No known console errors in major routes: `/`, `/edit`, `/profile`, `/p/[slug]`, `/workspace/interview/[id]/present`.
 
 ## F. Manual Smoke Test Script (Release Day)
 1. Parse two resumes: one clean text PDF, one noisy/edge PDF.

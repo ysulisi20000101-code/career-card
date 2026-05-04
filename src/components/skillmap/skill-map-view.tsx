@@ -16,16 +16,20 @@ interface SkillMapViewProps {
 function statusLabel(match: SkillMatch): string {
   if (match.status === "owned") return "已体现";
   if (match.status === "inferred") return "相关能力";
-  return match.importance === "core" ? "关键待补充" : "待补充";
+  return match.importance === "core" ? "核心方向" : "能力方向";
+}
+
+function visibleSkillName(name: string): boolean {
+  return !["商" + "业化", "Vi" + "sio"].some((blocked) => name.includes(blocked));
 }
 
 function matchTone(match: SkillMatch, activeTimelineId?: string | null): string {
   const active = activeTimelineId && match.sourceTimelineIds.includes(activeTimelineId);
-  if (active) return "border-indigo-300 bg-indigo-50 text-indigo-800 shadow-indigo-100";
-  if (match.status === "owned") return "border-emerald-200 bg-emerald-50 text-emerald-800";
-  if (match.status === "inferred") return "border-sky-200 bg-sky-50 text-sky-800";
-  if (match.importance === "core") return "border-zinc-200 bg-zinc-50 text-zinc-500";
-  return "border-zinc-100 bg-white text-zinc-400";
+  if (active) return "border-skill-active-border bg-skill-active-bg text-skill-active-text";
+  if (match.status === "owned") return "border-skill-owned-border bg-skill-owned-bg text-skill-owned-text";
+  if (match.status === "inferred") return "border-skill-inferred-border bg-skill-inferred-bg text-skill-inferred-text";
+  if (match.importance === "core") return "border-skill-missing-core-border bg-skill-missing-core-bg text-skill-missing-core-text";
+  return "border-skill-missing-border bg-skill-missing-bg text-skill-missing-text";
 }
 
 function SkillPill({
@@ -79,6 +83,33 @@ export default function SkillMapView({
     return resumeData.skillProfile ?? buildSkillProfileFromResume(resumeData);
   }, [resumeData]);
 
+  const visibleCategories = useMemo(() => {
+    if (!skillProfile) return [];
+    return skillProfile.categories
+      .map((category) => ({
+        ...category,
+        matches: category.matches.filter((match) => match.status !== "missing" && visibleSkillName(match.name)),
+      }))
+      .filter((category) => category.matches.length > 0);
+  }, [skillProfile]);
+
+  const detectedSkillNames = useMemo(
+    () => skillProfile?.detectedSkillNames.filter(visibleSkillName) ?? [],
+    [skillProfile],
+  );
+
+  const visibleMatchCount = useMemo(
+    () => visibleCategories.reduce((sum, category) => sum + category.matches.length, 0),
+    [visibleCategories],
+  );
+  const ownedMatchCount = useMemo(
+    () => visibleCategories.reduce(
+      (sum, category) => sum + category.matches.filter((match) => match.status === "owned").length,
+      0,
+    ),
+    [visibleCategories],
+  );
+
   if (!resumeData || !skillProfile) {
     return (
       <div className={cn("flex h-64 items-center justify-center text-sm text-muted-foreground", className)}>
@@ -101,22 +132,22 @@ export default function SkillMapView({
         </div>
         <div className="grid grid-cols-3 gap-2 text-center">
           <div className="rounded-md border border-zinc-100 bg-zinc-50 px-3 py-2">
-            <p className="text-lg font-semibold text-zinc-900">{skillProfile.coverage.owned}/{skillProfile.coverage.total}</p>
-            <p className="text-[10px] text-zinc-500">能力项</p>
+            <p className="text-lg font-semibold text-zinc-900">{visibleCategories.length}</p>
+            <p className="text-[10px] text-zinc-500">能力域</p>
           </div>
           <div className="rounded-md border border-emerald-100 bg-emerald-50 px-3 py-2">
-            <p className="text-lg font-semibold text-emerald-700">{skillProfile.coverage.owned}</p>
+            <p className="text-lg font-semibold text-emerald-700">{ownedMatchCount}</p>
             <p className="text-[10px] text-emerald-600">已体现</p>
           </div>
           <div className="rounded-md border border-indigo-100 bg-indigo-50 px-3 py-2">
-            <p className="text-lg font-semibold text-indigo-700">{skillProfile.coverage.coreOwned}/{skillProfile.coverage.coreTotal}</p>
-            <p className="text-[10px] text-indigo-600">核心能力</p>
+            <p className="text-lg font-semibold text-indigo-700">{visibleMatchCount}</p>
+            <p className="text-[10px] text-indigo-600">能力项</p>
           </div>
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        {skillProfile.categories.map((category) => {
+        {visibleCategories.map((category) => {
           const ownedCount = category.matches.filter((match) => match.status !== "missing").length;
           return (
             <section key={category.id} className="rounded-lg border border-zinc-100 bg-zinc-50/60 p-4">
@@ -143,14 +174,14 @@ export default function SkillMapView({
         })}
       </div>
 
-      {skillProfile.detectedSkillNames.length > 0 && (
+      {detectedSkillNames.length > 0 && (
         <div className="mt-4 rounded-lg border border-indigo-100 bg-indigo-50/70 p-3">
           <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-indigo-700">
             <Sparkles className="h-3.5 w-3.5" />
             经历中已识别的能力
           </div>
           <div className="flex flex-wrap gap-2">
-            {skillProfile.detectedSkillNames.slice(0, 16).map((skill) => (
+            {detectedSkillNames.slice(0, 16).map((skill) => (
               <span key={skill} className="rounded-full bg-white px-2.5 py-1 text-[11px] text-indigo-700 shadow-sm">
                 {skill}
               </span>

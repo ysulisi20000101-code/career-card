@@ -2,18 +2,23 @@
 
 import { useCallback, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { AlertCircle, Clock3, FileCheck2, FileWarning, RotateCcw, ShieldCheck, Sparkles, Trash2 } from "lucide-react";
+import { AlertCircle, Clock3, FileCheck2, FileWarning, Pencil, RotateCcw, ShieldCheck, Sparkles, Trash2 } from "lucide-react";
 import { PDFUpload } from "./pdf-upload";
 import { useResumeStore } from "@/store/resume-store";
 import { extractPdfText, ParseError } from "@/lib/parser/pdf-parser";
 import { parseResumeText } from "@/lib/parser/resume-parser";
+import type { ResumeData } from "@/types";
 import { trackEvent } from "@/lib/events/client";
 import { Button } from "@/components/ui/button";
 import type { ParseStats } from "@/types";
 
 interface FailureInfo {
   message: string;
-  code: ParseError["code"] | "PARSE_INSUFFICIENT" | "UNKNOWN";
+  code: ParseError["code"] | "PARSE_INSUFFICIENT" | "UNKNOWN" | "FILE_TOO_LARGE" | "INVALID_TYPE";
+}
+
+interface UploadPageProps {
+  onParsed?: () => void;
 }
 
 const uploadNotes = [
@@ -23,7 +28,7 @@ const uploadNotes = [
   { icon: Trash2, label: "控制", value: "草稿和发布链接可删除或撤回" },
 ];
 
-export function UploadPage() {
+export function UploadPage({ onParsed }: UploadPageProps = {}) {
   const setResumeData = useResumeStore((state) => state.setResumeData);
   const setParseMeta = useResumeStore((state) => state.setParseMeta);
   const setCurrentStep = useResumeStore((state) => state.setCurrentStep);
@@ -43,6 +48,20 @@ export function UploadPage() {
       setFailure(null);
       setLastStats(null);
       setParseMeta(null);
+
+      // Validate file type
+      if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+        setFailure({ code: "INVALID_TYPE", message: "请上传 PDF 格式的简历文件。" });
+        return;
+      }
+
+      // Validate file size (10MB max)
+      const MAX_FILE_SIZE = 10 * 1024 * 1024;
+      if (file.size > MAX_FILE_SIZE) {
+        setFailure({ code: "FILE_TOO_LARGE", message: "文件大小超过 10MB 限制，请选择更小的文件。" });
+        return;
+      }
+
       setIsProcessing(true);
       setProgress(5);
       cancelRef.current = false;
@@ -57,7 +76,9 @@ export function UploadPage() {
         if (cancelRef.current) return;
         tickProgress(70);
 
+        const parseStart = performance.now();
         const { data, stats, confidence } = parseResumeText(text, file.name);
+        const parseDurationMs = Math.round(performance.now() - parseStart);
         if (cancelRef.current) return;
         tickProgress(95);
 
@@ -65,7 +86,7 @@ export function UploadPage() {
         setParseMeta({ stats, confidence });
         setLastStats(stats);
         trackEvent("resume_parse_succeeded", "edit", {
-          parse_duration_ms: 0,
+          parse_duration_ms: parseDurationMs,
           timeline_count: stats.detectedTimelineCount,
           skill_count: stats.detectedSkillCount,
           education_count: stats.detectedEducationCount,
@@ -84,7 +105,8 @@ export function UploadPage() {
         tickProgress(100);
         setTimeout(() => {
           setIsProcessing(false);
-          setCurrentStep("confirm");
+          if (onParsed) onParsed();
+          else setCurrentStep("confirm");
         }, 250);
       } catch (err) {
         const code: FailureInfo["code"] = err instanceof ParseError ? err.code : "UNKNOWN";
@@ -99,7 +121,7 @@ export function UploadPage() {
         setProgress(0);
       }
     },
-    [setResumeData, setParseMeta, setCurrentStep, tickProgress],
+    [setResumeData, setParseMeta, setCurrentStep, tickProgress, onParsed],
   );
 
   const handleRetry = useCallback(() => {
@@ -109,6 +131,26 @@ export function UploadPage() {
     setProgress(0);
     setIsProcessing(false);
   }, [setParseMeta]);
+
+  const handleManualCreate = useCallback(() => {
+    const emptyData: ResumeData = {
+      profile: { id: "", name: "", email: "" },
+      timeline: [],
+      skills: [],
+      education: [],
+      architecture: [],
+      roleUnderstanding: {
+        targetRoleTitle: "",
+        oneLineInterpretation: "",
+        priorityProblems: [],
+        ninetyDayPlan: { day0To30: "", day31To60: "", day61To90: "" },
+        experienceMappings: [],
+      },
+    };
+    setResumeData(emptyData);
+    setParseMeta(null);
+    setCurrentStep("confirm");
+  }, [setResumeData, setParseMeta, setCurrentStep]);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-white dark:bg-zinc-950">
@@ -140,7 +182,7 @@ export function UploadPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.5 }}
           >
-            职场名片
+            Career Card
           </motion.h1>
 
           <motion.p
@@ -177,6 +219,24 @@ export function UploadPage() {
           ) : (
             <PDFUpload onUpload={handleUpload} isProcessing={isProcessing} progress={progress} />
           )}
+        </motion.div>
+
+        <motion.div
+          className="mt-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8, duration: 0.4 }}
+        >
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 rounded-full text-xs text-zinc-500 hover:text-zinc-700"
+            onClick={handleManualCreate}
+            disabled={isProcessing}
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            不上传，手动填写
+          </Button>
         </motion.div>
 
         <div className="mt-6 grid w-full max-w-2xl gap-2 sm:grid-cols-2">

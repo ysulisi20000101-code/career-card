@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Building2,
   Calendar,
@@ -740,8 +740,8 @@ export function TimelineEditor() {
   const [promotionSuggestions, setPromotionSuggestions] = useState<Record<string, AiPromotionResult>>({});
 
   const nodes = resumeData?.timeline ?? [];
-  const sortedNodes = getOrderedTimeline(nodes);
-  const careerNodes = sortedNodes.filter((node) => inferCareerKind(node) === "fulltime");
+  const sortedNodes = useMemo(() => getOrderedTimeline(nodes), [nodes]);
+  const careerNodes = useMemo(() => sortedNodes.filter((node) => inferCareerKind(node) === "fulltime"), [sortedNodes]);
   const latestCareerNodeId = careerNodes[0]?.id ?? null;
 
   const handleAdd = () => {
@@ -760,7 +760,7 @@ export function TimelineEditor() {
     });
   };
 
-  const handleAiOrganize = async (node: TimelineNode) => {
+  const handleAiOrganize = useCallback(async (node: TimelineNode) => {
     setAiError("");
     setAiLoadingId(node.id);
     try {
@@ -771,9 +771,9 @@ export function TimelineEditor() {
     } finally {
       setAiLoadingId(null);
     }
-  };
+  }, []);
 
-  const handlePromotionExtract = async (node: TimelineNode) => {
+  const handlePromotionExtract = useCallback(async (node: TimelineNode) => {
     setAiError("");
     setPromotionLoadingId(node.id);
     try {
@@ -784,9 +784,9 @@ export function TimelineEditor() {
     } finally {
       setPromotionLoadingId(null);
     }
-  };
+  }, []);
 
-  const handleAiOrganizeAll = async () => {
+  const handleAiOrganizeAll = useCallback(async () => {
     setAiError("");
     setAiAllLoading(true);
     try {
@@ -801,9 +801,9 @@ export function TimelineEditor() {
       setAiLoadingId(null);
       setAiAllLoading(false);
     }
-  };
+  }, [sortedNodes]);
 
-  const applySuggestion = (id: string) => {
+  const applySuggestion = useCallback((id: string) => {
     const suggestion = suggestions[id];
     if (!suggestion) return;
     updateTimelineNode(id, suggestion);
@@ -812,9 +812,9 @@ export function TimelineEditor() {
       delete next[id];
       return next;
     });
-  };
+  }, [suggestions, updateTimelineNode]);
 
-  const applyPromotion = (id: string) => {
+  const applyPromotion = useCallback((id: string) => {
     const suggestion = promotionSuggestions[id];
     if (!suggestion) return;
     updateTimelineNode(id, { promotionStages: suggestion.stages });
@@ -823,23 +823,23 @@ export function TimelineEditor() {
       delete next[id];
       return next;
     });
-  };
+  }, [promotionSuggestions, updateTimelineNode]);
 
-  const discardSuggestion = (id: string) => {
+  const discardSuggestion = useCallback((id: string) => {
     setSuggestions((current) => {
       const next = { ...current };
       delete next[id];
       return next;
     });
-  };
+  }, []);
 
-  const discardPromotion = (id: string) => {
+  const discardPromotion = useCallback((id: string) => {
     setPromotionSuggestions((current) => {
       const next = { ...current };
       delete next[id];
       return next;
     });
-  };
+  }, []);
 
   return (
     <div className="space-y-6">

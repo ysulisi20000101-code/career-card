@@ -6,9 +6,10 @@ This checklist protects V1 from feature creep, especially interviewer-side colla
 ## In Scope (build now)
 - Resume parsing quality and correction workflow.
 - Public career card readability and role-fit highlights.
-- Candidate-led presentation mode.
+- Candidate-led presentation mode (8-slide narrative + quick/AI mode toggle).
 - Role understanding module (lightweight, structured).
 - Basic publish/share path for interview delivery.
+- AI enhancement with graceful degradation (LLM unavailable → rules fallback).
 
 ## Out of Scope (park to post-V1)
 - Interviewer real-time note-taking and shared annotations.

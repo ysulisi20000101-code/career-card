@@ -1,51 +1,56 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect } from "react";
-import { useParams } from "next/navigation";
-import { ArrowLeft, Rocket } from "lucide-react";
-import { useResumeStore } from "@/store/resume-store";
-import { loadPersonalProject } from "@/lib/projects/registry";
-import { personalToResumeData } from "@/lib/projects/adapters";
-import { PreviewPage } from "@/components/preview/preview-page";
-import { AppShell } from "@/components/shell/app-shell";
-import { Button } from "@/components/ui/button";
+import { useParams, useRouter } from "next/navigation";
+import { LoadingPage } from "@/components/ui/loading";
+import {
+  loadPersonalProject,
+  listSitesByProject,
+  migrateProjectToMultiSite,
+} from "@/lib/projects/registry";
+import { useClientValue } from "@/hooks/use-client-value";
 
-export default function PersonalPreviewPage() {
+export default function PersonalPreviewRedirect() {
   const params = useParams<{ id: string }>();
-  const id = params.id;
-  const setResumeData = useResumeStore((state) => state.setResumeData);
+  const router = useRouter();
+  const projectId = params.id;
+
+  const { value: defaultSiteId, loading } = useClientValue(() => {
+    // Auto-migrate if needed
+    const legacy = loadPersonalProject(projectId);
+    if (legacy) {
+      const existingSites = listSitesByProject(projectId);
+      if (existingSites.length === 0) {
+        migrateProjectToMultiSite(projectId);
+      }
+    }
+    // Find first non-archived site
+    const sites = listSitesByProject(projectId);
+    const active = sites.find((s) => s.status !== "archived");
+    return active?.id ?? sites[0]?.id ?? null;
+  }, null, [projectId]);
 
   useEffect(() => {
-    const existing = loadPersonalProject(id);
-    if (existing) setResumeData(personalToResumeData(existing));
-  }, [id, setResumeData]);
+    if (loading) return;
+    if (defaultSiteId) {
+      router.replace(`/workspace/personal/${projectId}/sites/${defaultSiteId}`);
+    }
+  }, [loading, defaultSiteId, projectId, router]);
+
+  if (loading) {
+    return (
+      <LoadingPage />
+    );
+  }
+
+  // Fallback: no sites created, go to edit page
+  if (!defaultSiteId) {
+    return (
+      <LoadingPage />
+    );
+  }
 
   return (
-    <AppShell
-      breadcrumbs={[
-        { label: "工作台", href: "/workspace" },
-        { label: "职业档案" },
-        { label: "预览" },
-      ]}
-      actions={
-        <>
-          <Link href={`/workspace/personal/${id}/edit`}>
-            <Button size="sm" variant="ghost" className="gap-1 rounded-full">
-              <ArrowLeft className="h-3.5 w-3.5" />
-              返回编辑
-            </Button>
-          </Link>
-          <Link href={`/workspace/personal/${id}/publish`}>
-            <Button size="sm" variant="brand" className="gap-1.5 rounded-full">
-              <Rocket className="h-3.5 w-3.5" />
-              发布
-            </Button>
-          </Link>
-        </>
-      }
-    >
-      <PreviewPage mode="personal" />
-    </AppShell>
+    <LoadingPage />
   );
 }
