@@ -100,6 +100,31 @@ npm run build
 - `/workspace/interview/[id]/present`
 - `/p/[slug]` public share page
 
+## Deploy to Tencent EdgeOne Pages
+
+大陆访问 `*.vercel.app` 可能超时或被阻断；EdgeOne Pages 默认域名（如 `*.edgeone.cool`）通常更稳定。
+
+### 方式 A：GitHub Actions（推荐）
+
+1. 在 [EdgeOne Pages 控制台](https://console.tencentcloud.com/edgeone/pages) 创建或使用已有项目，记下 **项目名称**（与控制台一致）。
+2. 按文档生成 **API Token**：[API Token](https://pages.edgeone.ai/document/api-token)。
+3. 打开 GitHub 仓库 → **Settings → Secrets and variables → Actions**，新建：
+   - `EDGEONE_API_TOKEN` — 上一步的 Token
+   - `EDGEONE_PAGES_PROJECT` — 项目名称（例如 `career-card`）
+4. 推送任意提交到 **`main`**，或手动运行 Actions 里的 **Deploy EdgeOne Pages → Run workflow**。
+
+工作流定义见 [.github/workflows/edgeone-pages.yml](.github/workflows/edgeone-pages.yml)。CLI 会在云端自动构建并部署当前 Next.js 全栈应用（含 Route Handlers）。
+
+### 方式 B：本机 CLI
+
+```bash
+npm install -g edgeone
+edgeone login
+edgeone pages link
+edgeone pages deploy
+```
+
+详见 [EdgeOne CLI](https://pages.edgeone.ai/document/edgeone-cli)。
 ## Repository
 
 - GitHub: <https://github.com/ysulisi20000101-code/career-card>

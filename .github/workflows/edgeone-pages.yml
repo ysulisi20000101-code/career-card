@@ -1,0 +1,41 @@
+﻿# Deploy full-stack Next.js to Tencent EdgeOne Pages.
+# Setup: https://pages.edgeone.ai/document/api-token
+#
+# GitHub - Settings - Secrets and variables - Actions:
+#   EDGEONE_API_TOKEN      - API token from EdgeOne Pages console
+#   EDGEONE_PAGES_PROJECT  - Project name exactly as in EdgeOne Pages (e.g. career-card)
+
+name: Deploy EdgeOne Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: edgeone-pages-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy to EdgeOne Pages
+        env:
+          EDGEONE_API_TOKEN: ${{ secrets.EDGEONE_API_TOKEN }}
+        run: >-
+          npx --yes edgeone@latest pages deploy
+          -n "${{ secrets.EDGEONE_PAGES_PROJECT }}"
+          -t "$EDGEONE_API_TOKEN"
