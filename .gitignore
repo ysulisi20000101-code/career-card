@@ -44,3 +44,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local HTML design drafts (keep untracked)
+/design-preview.html
+/homepage-*.html
+/preview-*.html
