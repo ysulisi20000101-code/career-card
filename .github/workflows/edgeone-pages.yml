@@ -1,9 +1,12 @@
 ﻿# Deploy full-stack Next.js to Tencent EdgeOne Pages.
-# Setup: https://pages.edgeone.ai/document/api-token
+# Docs: https://pages.edgeone.ai/document/api-token
 #
 # GitHub - Settings - Secrets and variables - Actions:
-#   EDGEONE_API_TOKEN      - API token from EdgeOne Pages console
-#   EDGEONE_PAGES_PROJECT  - Project name exactly as in EdgeOne Pages (e.g. career-card)
+#   EDGEONE_API_TOKEN       - required
+#   EDGEONE_PAGES_PROJECT   - required (exact Pages project name)
+#   EDGEONE_DEPLOY_AREA     - optional: global | overseas (default global)
+#
+# CLI constraint: existing project must be "direct upload" type (not Git-import-only).
 
 name: Deploy EdgeOne Pages
 
@@ -14,7 +17,7 @@ on:
 
 concurrency:
   group: edgeone-pages-deploy
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
@@ -32,10 +35,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify secrets
+        run: |
+          if [ -z "${{ secrets.EDGEONE_API_TOKEN }}" ]; then echo "Missing secret EDGEONE_API_TOKEN"; exit 1; fi
+          if [ -z "${{ secrets.EDGEONE_PAGES_PROJECT }}" ]; then echo "Missing secret EDGEONE_PAGES_PROJECT"; exit 1; fi
+
       - name: Deploy to EdgeOne Pages
         env:
           EDGEONE_API_TOKEN: ${{ secrets.EDGEONE_API_TOKEN }}
-        run: >-
-          npx --yes edgeone@latest pages deploy
-          -n "${{ secrets.EDGEONE_PAGES_PROJECT }}"
-          -t "$EDGEONE_API_TOKEN"
+          EDGEONE_PAGES_PROJECT: ${{ secrets.EDGEONE_PAGES_PROJECT }}
+          EDGEONE_DEPLOY_AREA: ${{ secrets.EDGEONE_DEPLOY_AREA }}
+        run: |
+          set -euo pipefail
+          AREA="${EDGEONE_DEPLOY_AREA:-global}"
+          npx --yes edgeone@latest pages deploy \
+            -n "$EDGEONE_PAGES_PROJECT" \
+            -t "$EDGEONE_API_TOKEN" \
+            -a "$AREA"

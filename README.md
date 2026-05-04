@@ -1,4 +1,4 @@
-﻿# career-card
+# career-card
 
 AI-assisted career expression workspace for job seekers.
 
@@ -102,20 +102,30 @@ npm run build
 
 ## Deploy to Tencent EdgeOne Pages
 
-大陆访问 `*.vercel.app` 可能超时或被阻断；EdgeOne Pages 默认域名（如 `*.edgeone.cool`）通常更稳定。
+Mainland access to `*.vercel.app` may time out; EdgeOne default hostnames (for example `*.edgeone.cool`) are usually more reliable.
 
-### 方式 A：GitHub Actions（推荐）
+### Important: project type for `pages deploy`
 
-1. 在 [EdgeOne Pages 控制台](https://console.tencentcloud.com/edgeone/pages) 创建或使用已有项目，记下 **项目名称**（与控制台一致）。
-2. 按文档生成 **API Token**：[API Token](https://pages.edgeone.ai/document/api-token)。
-3. 打开 GitHub 仓库 → **Settings → Secrets and variables → Actions**，新建：
-   - `EDGEONE_API_TOKEN` — 上一步的 Token
-   - `EDGEONE_PAGES_PROJECT` — 项目名称（例如 `career-card`）
-4. 推送任意提交到 **`main`**，或手动运行 Actions 里的 **Deploy EdgeOne Pages → Run workflow**。
+This workflow runs `npx edgeone pages deploy`. According to EdgeOne CLI help, **an existing Pages project must be of the direct-upload type**. Projects created via **Git import** in the console often **cannot** be updated by CLI deploy and the job will fail.
 
-工作流定义见 [.github/workflows/edgeone-pages.yml](.github/workflows/edgeone-pages.yml)。CLI 会在云端自动构建并部署当前 Next.js 全栈应用（含 Route Handlers）。
+Pick one path:
 
-### 方式 B：本机 CLI
+- Create a **new** Pages project with **Direct upload**, then set GitHub secret `EDGEONE_PAGES_PROJECT` to that exact project name; or  
+- Skip this workflow: connect GitHub only in the Tencent EdgeOne console and let Pages build there (configure build command and env vars in the console).
+
+### Option A: GitHub Actions (direct-upload projects)
+
+1. Open [EdgeOne Pages console](https://console.tencentcloud.com/edgeone/pages), create or select a **direct-upload** project, note the **project name** exactly as shown.
+2. Create an **API Token**: [API Token](https://pages.edgeone.ai/document/api-token).
+3. In GitHub: **Settings → Secrets and variables → Actions**, add:
+   - `EDGEONE_API_TOKEN` - token from step 2  
+   - `EDGEONE_PAGES_PROJECT` - project name (for example `career-card`)  
+   - Optional: `EDGEONE_DEPLOY_AREA` - `global` or `overseas` (default is `global` if unset). Try `overseas` if deploy fails with region-related errors.
+4. Push to **`main`** or run **Actions → Deploy EdgeOne Pages → Run workflow**.
+
+Workflow file: [.github/workflows/edgeone-pages.yml](.github/workflows/edgeone-pages.yml).
+
+### Option B: Local CLI
 
 ```bash
 npm install -g edgeone
@@ -124,7 +134,8 @@ edgeone pages link
 edgeone pages deploy
 ```
 
-详见 [EdgeOne CLI](https://pages.edgeone.ai/document/edgeone-cli)。
+See [EdgeOne CLI](https://pages.edgeone.ai/document/edgeone-cli).
+
 ## Repository
 
 - GitHub: <https://github.com/ysulisi20000101-code/career-card>
