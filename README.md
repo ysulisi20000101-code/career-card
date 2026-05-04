@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# career-card
 
-## Getting Started
+AI-assisted career expression workspace for job seekers.
 
-First, run the development server:
+`career-card` helps candidates produce two key artifacts:
+
+- a pre-interview **shareable personal website**
+- an in-interview **presentation space** for structured storytelling
+
+## Features
+
+- Resume upload and browser-side parsing pipeline
+- Structured editing workflow (timeline, skills, architecture)
+- Split flows for:
+  - Personal Website
+  - Interview Space
+- Preview, presentation, and share path
+- Local-first persistence and portable share links
+
+## V1 Scope
+
+V1 focuses on candidate-side creation and delivery:
+
+- Candidate creates and edits content
+- Candidate shares links before interview
+- Candidate presents during interview
+
+Out of scope for V1:
+
+- Multi-user interviewer collaboration
+- ATS integrations and enterprise permissions
+
+See product documents at [`docs/README.md`](docs/README.md).
+
+## Tech Stack
+
+- Next.js 16 (App Router)
+- React 19 + TypeScript
+- Zustand (state and persistence)
+- Tailwind CSS v4 + Radix UI
+- D3 + React Flow (visual modules)
+
+## Local Development
+
+Requirements:
+
+- Node.js 20+
+- npm 10+ (recommended)
+
+Install and run:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev:stable
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- <http://127.0.0.1:3000>
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Quality checks:
 
-## Learn More
+```bash
+npm run lint
+npm run build
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Main Routes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `/` landing page
+- `/workspace` dashboard
+- `/workspace/personal/new`
+- `/workspace/personal/[id]/edit`
+- `/workspace/personal/[id]/preview`
+- `/workspace/personal/[id]/publish`
+- `/workspace/interview/new`
+- `/workspace/interview/[id]/edit`
+- `/workspace/interview/[id]/preview`
+- `/workspace/interview/[id]/present`
+- `/p/[slug]` public share page
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Repository
 
-## Deploy on Vercel
+- GitHub: <https://github.com/ysulisi20000101-code/career-card>
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Status
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Core V1 flow is implemented.
+- Production domain rollout can proceed after ICP/filing and final domain configuration.
