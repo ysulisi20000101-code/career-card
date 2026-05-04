@@ -104,28 +104,38 @@ npm run build
 
 Mainland access to `*.vercel.app` may time out; EdgeOne default hostnames (for example `*.edgeone.cool`) are usually more reliable.
 
-### Important: project type for `pages deploy`
+### Error you may see (Git-linked EdgeOne project)
 
-This workflow runs `npx edgeone pages deploy`. According to EdgeOne CLI help, **an existing Pages project must be of the direct-upload type**. Projects created via **Git import** in the console often **cannot** be updated by CLI deploy and the job will fail.
+If Actions logs show:
 
-Pick one path:
+`Project *** exists but has Provider "Github". This project type does not support direct folder or zip file deployment. Only projects with Provider "Upload" are supported.`
 
-- Create a **new** Pages project with **Direct upload**, then set GitHub secret `EDGEONE_PAGES_PROJECT` to that exact project name; or  
-- Skip this workflow: connect GitHub only in the Tencent EdgeOne console and let Pages build there (configure build command and env vars in the console).
+then your Pages project was created with **Git integration** in the Tencent console. **This GitHub Actions workflow cannot deploy to it** (CLI upload only supports **Upload / direct-upload** projects).
 
-### Option A: GitHub Actions (direct-upload projects)
+### Pick exactly one path
 
-1. Open [EdgeOne Pages console](https://console.tencentcloud.com/edgeone/pages), create or select a **direct-upload** project, note the **project name** exactly as shown.
-2. Create an **API Token**: [API Token](https://pages.edgeone.ai/document/api-token).
-3. In GitHub: **Settings → Secrets and variables → Actions**, add:
-   - `EDGEONE_API_TOKEN` - token from step 2  
-   - `EDGEONE_PAGES_PROJECT` - project name (for example `career-card`)  
-   - Optional: `EDGEONE_DEPLOY_AREA` - `global` or `overseas` (default is `global` if unset). Try `overseas` if deploy fails with region-related errors.
-4. Push to **`main`** or run **Actions → Deploy EdgeOne Pages → Run workflow**.
+**Path 1 - Keep using this repo workflow (recommended if you want GitHub Actions)**
 
-Workflow file: [.github/workflows/edgeone-pages.yml](.github/workflows/edgeone-pages.yml).
+1. In [EdgeOne Pages console](https://console.tencentcloud.com/edgeone/pages), **create a new project** and choose **Direct upload / Upload** (not Git import).
+2. Copy the **exact project name** into GitHub secret `EDGEONE_PAGES_PROJECT`.
+3. Re-run **Deploy EdgeOne Pages** on `main`.
 
-### Option B: Local CLI
+You may keep the old Git-linked project separately; point users to the new Upload project URL if you migrate.
+
+**Path 2 - Keep your current Git-linked project**
+
+1. **Disable or delete** [.github/workflows/edgeone-pages.yml](.github/workflows/edgeone-pages.yml) (or ignore failing runs).
+2. In the EdgeOne console, configure **GitHub integration**, branch `main`, and set build/install commands for Next.js (for example `npm ci` then `npm run build`) per EdgeOne docs.
+
+### Path 1 setup (secrets)
+
+1. Create an **API Token**: [API Token](https://pages.edgeone.ai/document/api-token).
+2. GitHub: **Settings > Secrets and variables > Actions**:
+   - `EDGEONE_API_TOKEN`
+   - `EDGEONE_PAGES_PROJECT` (Upload-type project name)
+   - Optional: `EDGEONE_DEPLOY_AREA` = `global` or `overseas`
+
+### Path 1 local CLI (optional)
 
 ```bash
 npm install -g edgeone
@@ -135,6 +145,7 @@ edgeone pages deploy
 ```
 
 See [EdgeOne CLI](https://pages.edgeone.ai/document/edgeone-cli).
+
 
 ## Repository
 
