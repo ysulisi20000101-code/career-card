@@ -2,12 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
-import { createProjectRecord } from "@/lib/projects/registry";
+import { ArrowRight, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { createProjectRecord, listProjectRecords } from "@/lib/projects/registry";
 import { BrandLogo } from "@/components/shell/brand-logo";
 
 export default function NewInterviewProjectPage() {
   const [error, setError] = useState(false);
+  const [showFallback, setShowFallback] = useState(false);
+  const [latestId, setLatestId] = useState<string | null>(null);
   const createdRef = useRef(false);
 
   useEffect(() => {
@@ -17,11 +20,22 @@ export default function NewInterviewProjectPage() {
       const now = new Date();
       const name = `面试演示 ${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
       const record = createProjectRecord("interview", name);
+      setLatestId(record.id);
       window.location.href = `/workspace/interview/${record.id}/edit`;
     } catch (err) {
       console.error("[career-card] Failed to create interview project:", err);
+      const records = listProjectRecords();
+      const interviews = records.filter((r) => r.type === "interview");
+      if (interviews.length > 0) {
+        setLatestId(interviews[0].id);
+      }
       queueMicrotask(() => setError(true));
     }
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowFallback(true), 3000);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
@@ -38,9 +52,22 @@ export default function NewInterviewProjectPage() {
             <p className="mt-2 max-w-sm text-sm text-zinc-500">
               无法创建面试空间项目，请检查浏览器存储设置后重试。
             </p>
-            <Link href="/workspace" className="mt-4 text-sm text-indigo-600 hover:underline">
-              返回工作台
-            </Link>
+            <div className="mt-6 flex flex-col gap-3">
+              {latestId && (
+                <Link href={`/workspace/interview/${latestId}/edit`}>
+                  <Button variant="brand" className="gap-2 rounded-full px-6">
+                    进入面试演示编辑页
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              )}
+              <Link href="/workspace/interview/new" className="text-sm text-indigo-600 hover:underline">
+                重试
+              </Link>
+              <Link href="/workspace" className="text-sm text-zinc-400 hover:text-zinc-600">
+                返回工作台
+              </Link>
+            </div>
           </>
         ) : (
           <>
@@ -54,6 +81,36 @@ export default function NewInterviewProjectPage() {
             <p className="mt-2 max-w-sm text-sm text-zinc-500">
               面试空间能独立管理岗位理解与讲述节奏，稍后会自动进入编辑页。
             </p>
+            {showFallback && (
+              <div className="mt-6">
+                <p className="mb-3 text-sm text-zinc-500">如果没有自动跳转，请点击下方按钮</p>
+                {latestId ? (
+                  <Link href={`/workspace/interview/${latestId}/edit`}>
+                    <Button variant="brand" className="gap-2 rounded-full px-6">
+                      进入面试演示编辑页
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button
+                    variant="brand"
+                    className="gap-2 rounded-full px-6"
+                    onClick={() => {
+                      try {
+                        const now = new Date();
+                        const name = `面试演示 ${now.getMonth()+1}/${now.getDate()}`;
+                        const record = createProjectRecord("interview", name);
+                        window.location.href = `/workspace/interview/${record.id}/edit`;
+                      } catch {
+                        setError(true);
+                      }
+                    }}
+                  >
+                    重试创建
+                  </Button>
+                )}
+              </div>
+            )}
             <Link href="/workspace" className="mt-4 text-sm text-zinc-400 hover:text-zinc-600">
               取消
             </Link>

@@ -14,9 +14,9 @@ const howItWorks = [
 
 const trustPoints = [
   {
-    icon: "🏠",
-    title: "数据不上传服务器",
-    description: "简历解析和 AI 生成在浏览器完成，数据始终在你手里。",
+    icon: "🔒",
+    title: "数据自主可控",
+    description: "简历解析在浏览器本地完成，发布内容随时可撤回删除，数据始终在你的掌控之中。",
   },
   {
     icon: "⚡",
@@ -217,6 +217,39 @@ export default function HomePage() {
                 </div>
                 <p className="text-sm font-semibold text-zinc-900">{step.title}</p>
                 <p className="mt-1 text-sm leading-5 text-muted-foreground">{step.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
+        {/* 最终产出 */}
+        <section className="mx-auto max-w-4xl px-6 pb-16">
+          <motion.h2
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-center text-sm font-semibold uppercase tracking-widest text-zinc-400"
+          >
+            你最终会获得
+          </motion.h2>
+          <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {[
+              { icon: "🌐", title: "可公开分享的职业主页", desc: "一个稳定的链接，面试官打开就能看" },
+              { icon: "🎤", title: "一套面试讲述结构", desc: "围绕目标岗位的5分钟结构化叙事" },
+              { icon: "🎯", title: "多岗位定制版本", desc: "同一份简历，面向不同JD的优化版本" },
+              { icon: "📊", title: "阅读反馈数据", desc: "发布后看到打开次数和联系方式点击" },
+            ].map((item) => (
+              <motion.div
+                key={item.title}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4 }}
+                className="rounded-xl border border-zinc-100 bg-white p-5 text-center shadow-sm"
+              >
+                <div className="mb-3 text-2xl">{item.icon}</div>
+                <p className="text-sm font-semibold text-zinc-900">{item.title}</p>
+                <p className="mt-1 text-xs leading-5 text-zinc-500">{item.desc}</p>
               </motion.div>
             ))}
           </div>

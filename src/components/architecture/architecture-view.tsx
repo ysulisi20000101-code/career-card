@@ -194,6 +194,7 @@ function ArchitectureFlowInner({
         nodesDraggable={false}
         nodesConnectable={false}
         elementsSelectable={false}
+        aria-label="架构图"
       >
         <Background color="#f1f5f9" gap={20} />
         <Controls showInteractive={false} />

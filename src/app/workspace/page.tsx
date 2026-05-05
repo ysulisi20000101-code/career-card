@@ -266,6 +266,24 @@ export default function WorkspacePage() {
           </div>
         </section>
 
+        {mounted && records.length === 0 && (
+          <section className="mb-10 flex flex-col items-center rounded-2xl border border-dashed border-indigo-200 bg-gradient-to-b from-indigo-50/60 to-white px-6 py-16 text-center">
+            <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/25">
+              <Sparkles className="h-8 w-8" />
+            </div>
+            <h2 className="text-xl font-semibold text-zinc-900">还没有职业档案</h2>
+            <p className="mt-2 max-w-md text-sm text-zinc-500">
+              上传一份简历，AI 自动生成你的第一个职业网站。支持 PDF 简历解析、多岗位定制和发布分享。
+            </p>
+            <Link href="/workspace/personal/new" className="mt-6">
+              <Button variant="brand" size="lg" className="gap-2 rounded-full px-8 shadow-md shadow-indigo-500/25">
+                <FileText className="h-5 w-5" />
+                上传简历并生成职业网站
+              </Button>
+            </Link>
+          </section>
+        )}
+
         <section className="mb-6 grid gap-3 md:grid-cols-3">
           <MetricCard label="职业档案" value={`${records.filter((item) => item.type === "personal").length} 个`} icon={FileText} />
           <MetricCard label="已发布" value={`${publishedCount} 个公开链接`} icon={Rocket} />

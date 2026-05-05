@@ -261,6 +261,7 @@ function ArchitectureEditorInner({ className }: { className?: string }) {
         fitView
         fitViewOptions={{ padding: 0.3 }}
         proOptions={{ hideAttribution: true }}
+        aria-label="架构编辑器"
       >
         <Background color="#f1f5f9" gap={20} />
         <Controls showInteractive={false} />

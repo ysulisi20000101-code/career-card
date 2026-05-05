@@ -2,25 +2,40 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
-import { createProjectRecord } from "@/lib/projects/registry";
+import { ArrowRight, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { createProjectRecord, listProjectRecords } from "@/lib/projects/registry";
 import { BrandLogo } from "@/components/shell/brand-logo";
 
 export default function NewPersonalProjectPage() {
   const createdRef = useRef(false);
   const [error, setError] = useState(false);
+  const [showFallback, setShowFallback] = useState(false);
+  const [latestId, setLatestId] = useState<string | null>(null);
 
   useEffect(() => {
     if (createdRef.current) return;
     createdRef.current = true;
     try {
       const record = createProjectRecord("personal", "职业档案草稿");
-      // Use full page navigation instead of client-side routing for reliability on EdgeOne
+      setLatestId(record.id);
       window.location.href = `/workspace/personal/${record.id}/edit`;
     } catch (err) {
       console.error("[career-card] Failed to create personal project:", err);
+      // Try to recover: check if there are existing records
+      const records = listProjectRecords();
+      const personal = records.filter((r) => r.type === "personal");
+      if (personal.length > 0) {
+        setLatestId(personal[0].id);
+      }
       queueMicrotask(() => setError(true));
     }
+  }, []);
+
+  // Show fallback manual button after 3s if auto-redirect hasn't happened
+  useEffect(() => {
+    const timer = setTimeout(() => setShowFallback(true), 3000);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
@@ -37,9 +52,22 @@ export default function NewPersonalProjectPage() {
             <p className="mt-2 max-w-sm text-sm text-zinc-500">
               无法创建职业档案草稿，请检查浏览器存储设置后重试。
             </p>
-            <Link href="/workspace" className="mt-4 text-sm text-indigo-600 hover:underline">
-              返回工作台
-            </Link>
+            <div className="mt-6 flex flex-col gap-3">
+              {latestId && (
+                <Link href={`/workspace/personal/${latestId}/edit`}>
+                  <Button variant="brand" className="gap-2 rounded-full px-6">
+                    进入上传与校准流程
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              )}
+              <Link href="/workspace/personal/new" className="text-sm text-indigo-600 hover:underline">
+                重试
+              </Link>
+              <Link href="/workspace" className="text-sm text-zinc-400 hover:text-zinc-600">
+                返回工作台
+              </Link>
+            </div>
           </>
         ) : (
           <>
@@ -53,6 +81,34 @@ export default function NewPersonalProjectPage() {
             <p className="mt-2 max-w-sm text-sm text-zinc-500">
               稍后会进入上传与校准流程。
             </p>
+            {showFallback && (
+              <div className="mt-6">
+                <p className="mb-3 text-sm text-zinc-500">如果没有自动跳转，请点击下方按钮</p>
+                {latestId ? (
+                  <Link href={`/workspace/personal/${latestId}/edit`}>
+                    <Button variant="brand" className="gap-2 rounded-full px-6">
+                      进入上传与校准流程
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button
+                    variant="brand"
+                    className="gap-2 rounded-full px-6"
+                    onClick={() => {
+                      try {
+                        const record = createProjectRecord("personal", "职业档案草稿");
+                        window.location.href = `/workspace/personal/${record.id}/edit`;
+                      } catch {
+                        setError(true);
+                      }
+                    }}
+                  >
+                    重试创建
+                  </Button>
+                )}
+              </div>
+            )}
             <Link href="/workspace" className="mt-4 text-sm text-zinc-400 hover:text-zinc-600">
               取消
             </Link>
