@@ -84,6 +84,59 @@ function publicText(value: string): string {
   return text;
 }
 
+const EXPERIENCE_TAG_RULES: Array<{ pattern: RegExp; tags: string[] }> = [
+  {
+    pattern: /实习|京东|百度|后台|用户|运营|权益|问答|问诊|商品|数据看板|BI/i,
+    tags: ["需求分析", "用户研究", "数据分析", "后台产品", "运营机制"],
+  },
+  {
+    pattern: /经纬恒润|VDE|通信|诊断|CANdela|DTC|DID|云端|SaaS|架构建模/i,
+    tags: ["通信设计", "诊断系统", "架构建模", "云端化/SaaS", "竞品调研"],
+  },
+  {
+    pattern: /SOME\/IP|DDS|ARXML|ROS2|低代码|代码生成|云平台|售前|招投标|工具链产品经理|平台产品经理/i,
+    tags: ["SOME/IP", "DDS", "云平台基建", "售前交付", "低代码", "招投标"],
+  },
+  {
+    pattern: /AI\s*Agent|RAG|知识库|服务仿真|DevOps|观测|产品总监|团队管理|产品负责人/i,
+    tags: ["AI Agent", "知识库/RAG", "团队管理", "平台体系", "服务仿真", "DevOps", "商业化", "产品定价"],
+  },
+  {
+    pattern: /Groot-Arch|MBSE|SysML|UML|DOORS|PREEvision|SystemWeaver/i,
+    tags: ["系统工程", "MBSE", "架构建模", "平台产品", "国产化替代"],
+  },
+  {
+    pattern: /增长|PLG|SaaS|转化|ARR|A\/B|实验|定价|漏斗/i,
+    tags: ["增长策略", "PLG", "数据分析", "A/B 实验", "商业化"],
+  },
+  {
+    pattern: /CRM|线索|客户成功|销售|Onboarding|onboarding/i,
+    tags: ["CRM", "线索评分", "客户成功", "销售协同", "自助 onboarding"],
+  },
+];
+
+function inferExperienceTags(context: string): string[] {
+  const text = publicText(context);
+  const tags: string[] = [];
+  for (const rule of EXPERIENCE_TAG_RULES) {
+    if (rule.pattern.test(text)) tags.push(...rule.tags);
+  }
+  return tags;
+}
+
+function contextualSkills(
+  values: string[],
+  context: string,
+  fallback: string[] = [],
+  preferExplicit = false,
+): string[] {
+  const inferred = inferExperienceTags(context);
+  const candidates = preferExplicit
+    ? [...values, ...inferred, ...fallback]
+    : [...inferred, ...values, ...fallback];
+  return publicSkills(candidates.filter(Boolean)).slice(0, 8);
+}
+
 function detailOutcome(detail: PublicExperienceDetail): string {
   const block =
     detail.blocks.find((item) => item.label === "产出") ??
@@ -184,6 +237,9 @@ function buildEarlyRows(exploration: EarlyExploration): PublicEarlyRow[] {
 
 function earlyDetail(exploration: EarlyExploration, index: number, total: number): PublicExperienceDetail {
   const companies = exploration.nodes.map((node) => node.company).filter(Boolean).join(" / ");
+  const context = exploration.nodes
+    .flatMap((node) => [node.company, node.position, node.description, ...node.highlights, ...node.skills])
+    .join(" ");
   return {
     id: "internship",
     eyebrow: `经历详情 ${String(index + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`,
@@ -198,7 +254,7 @@ function earlyDetail(exploration: EarlyExploration, index: number, total: number
     ],
     supportBlocks: [],
     reflection: undefined,
-    skills: publicSkills(exploration.skills),
+    skills: contextualSkills(exploration.skills, context, ["需求分析", "用户研究", "后台产品"]),
     earlyRows: buildEarlyRows(exploration),
   };
 }
@@ -208,6 +264,7 @@ function genericDetail(node: TimelineNode, index: number, total: number): Public
   const second = clean(node.highlights[1]);
   const third = clean(node.highlights[2]);
   const company = node.company || "经历";
+  const context = [company, node.position, node.description, ...node.highlights, ...node.skills, node.storyReflection].join(" ");
   return {
     id: node.id,
     eyebrow: `经历详情 ${String(index + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`,
@@ -226,11 +283,12 @@ function genericDetail(node: TimelineNode, index: number, total: number): Public
       { label: "产出结果", value: compact(publicText(third), 76) },
     ].filter((block) => block.value),
     reflection: undefined,
-    skills: publicSkills(node.skills),
+    skills: contextualSkills(node.skills, context, ["产品设计", "协同推进", "结果验证"]),
   };
 }
 
 function jingweiDetail(node: TimelineNode, index: number, total: number): PublicExperienceDetail {
+  const context = [node.company, node.position, node.description, ...node.highlights, ...node.skills].join(" ");
   return {
     id: node.id,
     eyebrow: `经历详情 ${String(index + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`,
@@ -249,7 +307,7 @@ function jingweiDetail(node: TimelineNode, index: number, total: number): Public
       { label: "产出结果", value: "形成复杂系统工具云端化和平台化的产品规划。" },
     ],
     reflection: undefined,
-    skills: publicSkills(node.skills),
+    skills: contextualSkills(node.skills, context, ["通信设计", "诊断系统", "云端化/SaaS"]),
   };
 }
 
@@ -261,6 +319,23 @@ function latestStageDetails(node: TimelineNode, startIndex: number, total: numbe
   const secondPeriod = laterStages.map((stage) => stage.period).filter(Boolean).at(-1) || laterStages[0]?.period || displayPeriod(node.startDate, node.endDate);
   const stage1Title = firstStage?.title || "早期角色";
   const stage2Title = laterStages[0]?.title || "后期角色";
+  const stage1Context = [
+    node.company,
+    stage1Title,
+    firstStage?.responsibility,
+    firstStage?.outcome,
+    firstStage?.reflection,
+    ...node.highlights.filter((item) => /SOME\/IP|DDS|ARXML|ROS2|低代码|售前|招投标|工具链|平台|云/.test(item)),
+  ].join(" ");
+  const stage2Context = [
+    node.company,
+    stage2Title,
+    node.position,
+    node.description,
+    ...node.highlights,
+    ...node.skills,
+    ...laterStages.flatMap((stage) => [stage.teamScale, stage.responsibility, stage.outcome, stage.reflection]),
+  ].join(" ");
   return [
     {
       id: `${node.id}-stage-1`,
@@ -280,7 +355,7 @@ function latestStageDetails(node: TimelineNode, startIndex: number, total: numbe
         { label: "平台沉淀", value: "形成可复用的平台产品能力。" },
       ],
       reflection: undefined,
-      skills: publicSkills([...node.skills, "工具链产品", "平台产品", "项目管理"]).slice(0, 8),
+      skills: contextualSkills(["SOME/IP", "DDS", "云平台基建", "售前交付", "低代码", "招投标"], stage1Context, ["工具链产品", "平台产品"], true),
       isLatest: false,
     },
     {
@@ -302,7 +377,7 @@ function latestStageDetails(node: TimelineNode, startIndex: number, total: numbe
         { label: "项目结果", value: "覆盖多客户项目，服务多人研发团队。" },
       ],
       reflection: undefined,
-      skills: publicSkills([...node.skills, "AI", "知识库", "团队管理"]).slice(0, 8),
+      skills: contextualSkills(["AI Agent", "知识库/RAG", "团队管理", "平台体系", "服务仿真", "DevOps", "商业化", "产品定价"], stage2Context, node.skills, true),
       isLatest: true,
     },
   ];

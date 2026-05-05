@@ -32,6 +32,10 @@ export interface SiteTheme {
     cardBorder: string;
     divider: string;
     groupHoverAccent: string;
+    accentBorder: string;
+    accentSolid: string;
+    accentSolidHover: string;
+    accentLight: string;
   };
   skills: {
     bg: string;
@@ -79,10 +83,14 @@ export const SITE_THEMES: Record<SiteThemeId, SiteTheme> = {
       cardBorder: "border-slate-100",
       divider: "border-slate-100",
       groupHoverAccent: "group-hover:text-emerald-600",
+      accentBorder: "border-emerald-100",
+      accentSolid: "bg-emerald-600",
+      accentSolidHover: "hover:bg-emerald-500",
+      accentLight: "text-emerald-400",
     },
     skills: {
-      bg: "bg-slate-50",
-      text: "text-slate-900",
+      bg: "bg-slate-50/60",
+      text: "text-slate-800",
       tagBg: "bg-slate-100",
       tagBorder: "border-slate-100",
       tagText: "text-slate-500",
@@ -125,13 +133,17 @@ export const SITE_THEMES: Record<SiteThemeId, SiteTheme> = {
       cardBorder: "border-zinc-200",
       divider: "border-zinc-100",
       groupHoverAccent: "group-hover:text-teal-700",
+      accentBorder: "border-teal-100",
+      accentSolid: "bg-teal-600",
+      accentSolidHover: "hover:bg-teal-500",
+      accentLight: "text-teal-400",
     },
     skills: {
-      bg: "bg-zinc-900",
-      text: "text-white",
-      tagBg: "bg-zinc-800",
-      tagBorder: "border-zinc-700",
-      tagText: "text-zinc-300",
+      bg: "bg-zinc-50/60",
+      text: "text-zinc-800",
+      tagBg: "bg-zinc-100",
+      tagBorder: "border-zinc-200",
+      tagText: "text-zinc-600",
     },
     footer: {
       bg: "bg-zinc-50",
@@ -171,13 +183,17 @@ export const SITE_THEMES: Record<SiteThemeId, SiteTheme> = {
       cardBorder: "border-slate-100",
       divider: "border-slate-100",
       groupHoverAccent: "group-hover:text-blue-600",
+      accentBorder: "border-blue-100",
+      accentSolid: "bg-blue-600",
+      accentSolidHover: "hover:bg-blue-500",
+      accentLight: "text-blue-400",
     },
     skills: {
-      bg: "bg-slate-900",
-      text: "text-white",
-      tagBg: "bg-slate-800",
-      tagBorder: "border-slate-700",
-      tagText: "text-slate-300",
+      bg: "bg-slate-50/60",
+      text: "text-slate-800",
+      tagBg: "bg-slate-100",
+      tagBorder: "border-slate-200",
+      tagText: "text-slate-600",
     },
     footer: {
       bg: "bg-slate-50",
@@ -217,13 +233,17 @@ export const SITE_THEMES: Record<SiteThemeId, SiteTheme> = {
       cardBorder: "border-zinc-100",
       divider: "border-zinc-100",
       groupHoverAccent: "group-hover:text-zinc-950",
+      accentBorder: "border-zinc-200",
+      accentSolid: "bg-zinc-900",
+      accentSolidHover: "hover:bg-zinc-800",
+      accentLight: "text-zinc-400",
     },
     skills: {
-      bg: "bg-zinc-50",
-      text: "text-zinc-950",
+      bg: "bg-zinc-50/60",
+      text: "text-zinc-800",
       tagBg: "bg-white",
       tagBorder: "border-zinc-200",
-      tagText: "text-zinc-700",
+      tagText: "text-zinc-600",
     },
     footer: {
       bg: "bg-zinc-50",
@@ -263,13 +283,17 @@ export const SITE_THEMES: Record<SiteThemeId, SiteTheme> = {
       cardBorder: "border-neutral-100",
       divider: "border-neutral-100",
       groupHoverAccent: "group-hover:text-yellow-600",
+      accentBorder: "border-yellow-100",
+      accentSolid: "bg-yellow-600",
+      accentSolidHover: "hover:bg-yellow-500",
+      accentLight: "text-yellow-400",
     },
     skills: {
-      bg: "bg-neutral-900",
-      text: "text-white",
-      tagBg: "bg-neutral-800",
-      tagBorder: "border-neutral-700",
-      tagText: "text-neutral-300",
+      bg: "bg-neutral-50/60",
+      text: "text-neutral-800",
+      tagBg: "bg-neutral-100",
+      tagBorder: "border-neutral-200",
+      tagText: "text-neutral-600",
     },
     footer: {
       bg: "bg-neutral-50",

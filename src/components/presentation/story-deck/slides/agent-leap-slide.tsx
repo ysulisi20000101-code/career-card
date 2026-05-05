@@ -74,7 +74,6 @@ const AGENT_ICONS: Record<string, React.ReactNode> = {
 };
 
 export function AgentLeapSlide({ slide, onOpenOverlay }: Props) {
-  const hasOverlay = slide.overlayIds && slide.overlayIds.length > 0;
   const bullets = slide.bullets ?? [];
   const highlightCallouts = slide.highlightCallouts ?? [];
   const viz = slide.visualizations?.find((item) => item.type === "agent-workflow")?.data ?? slide.visualizations?.[0]?.data;
@@ -180,16 +179,6 @@ export function AgentLeapSlide({ slide, onOpenOverlay }: Props) {
         <AccentCard className="mt10 fu">
           <strong>产品战略：</strong>{strategyInsight}
         </AccentCard>
-      )}
-
-      {hasOverlay && (
-        <button
-          className="fu"
-          onClick={() => onOpenOverlay(slide.overlayIds![0]!)}
-          style={{ marginTop: 12, padding: "8px 14px", border: "1px dashed rgba(107,94,160,.25)", borderRadius: "var(--r)", background: "var(--violet-dim)", fontSize: 11, color: "var(--violet)", fontWeight: 700, cursor: "pointer" }}
-        >
-          查看工作流详情 ↗
-        </button>
       )}
 
       {(slide.phaseTag || slide.summaryLine) && (

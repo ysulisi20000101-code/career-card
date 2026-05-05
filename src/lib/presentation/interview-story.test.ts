@@ -182,11 +182,11 @@ describe("interview story blueprint", () => {
     const draft = generatePresentationDraft(AGENT_MBSE_RESUME);
     const impact = draft.slides.find((slide) => slide.id === "impact")!;
     const commercialCard = impact.cards?.find((card) => /客户|项目/.test(card.title));
-    const teamCard = impact.cards?.find((card) => /团队|协同/.test(card.title));
+    const hero = draft.slides.find((slide) => slide.id === "hero")!;
 
     expect(metrics.teamSize).toContain("10 人");
     expect(metrics.customersProjects).toContain("10+ 客户/项目");
-    expect(teamCard?.body).toContain("10 人");
+    expect(hero.body).toContain("10 人");
     expect(commercialCard?.body).toContain("10+ 客户/项目");
     expect(commercialCard?.body).not.toContain("10 人");
   });
@@ -223,9 +223,9 @@ describe("interview story blueprint", () => {
     const serialized = JSON.stringify(draft);
 
     expect(serialized).not.toMatch(/面试故事|面试表达|给面试官|准备材料/);
-    expect(draft.slides.find((slide) => slide.id === "hero")?.body).toContain("我的产品判断");
+    expect(draft.slides.find((slide) => slide.id === "hero")?.body).toContain("AI Agent 体系建设");
     const resolution = draft.slides.find((slide) => slide.id === "resolution")!;
-    expect(resolution.title).toBe("从工具链产品经理到平台产品负责人 / AI 产品负责人：把复杂系统产品化");
+    expect(resolution.title).toBe("五年后，回到同一张 V 模型图——这不是追赶，是架构代际的更替");
     expect(resolution.title).not.toMatch(/实习|京东|百度|产品设计部/);
   });
 

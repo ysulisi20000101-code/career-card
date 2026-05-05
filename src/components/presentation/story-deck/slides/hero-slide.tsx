@@ -30,11 +30,12 @@ export function HeroSlide({ slide, onOpenOverlay }: Props) {
   return (
     <div className="hero-grid">
       <div>
-        <h1 className="hero-name" style={{ fontSize: "clamp(28px,3.8vw,48px)" }}>{name}</h1>
-        <p style={{ fontSize: "clamp(14px,1.3vw,18px)", color: "var(--gold-bright)", fontWeight: 700, marginTop: 4 }}>
+        <div className="hero-deco-bar fu" />
+        <h1 className="hero-name fu" style={{ fontSize: "clamp(36px,5vw,56px)", letterSpacing: "-0.01em" }}>{name}</h1>
+        <p className="fu" style={{ fontSize: "clamp(15px,1.5vw,20px)", color: "var(--gold-bright)", fontWeight: 700, marginTop: 6, letterSpacing: ".04em" }}>
           {subtitle}
         </p>
-        <p className="hero-subtitle mt12" style={{ maxWidth: "100%" }}>
+        <p className="hero-subtitle mt12 fu" style={{ maxWidth: "100%", fontSize: "clamp(13px,1.2vw,17px)" }}>
           {slide.body}
         </p>
 

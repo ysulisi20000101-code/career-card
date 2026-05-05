@@ -12,24 +12,6 @@ const howItWorks = [
   { icon: Share2, title: "发布分享", description: "一键发布，生成可分享的链接发送给面试官" },
 ];
 
-const trustPoints = [
-  {
-    icon: "🔒",
-    title: "数据自主可控",
-    description: "简历解析在浏览器本地完成，发布内容随时可撤回删除，数据始终在你的掌控之中。",
-  },
-  {
-    icon: "⚡",
-    title: "3 分钟生成网站",
-    description: "AI 自动提取经历、匹配能力、生成叙事，比手动排版快 100 倍。",
-  },
-  {
-    icon: "🔗",
-    title: "随时发布，随时撤回",
-    description: "公开链接可一键撤回，控制谁能看到你的职业信息。",
-  },
-];
-
 export default function HomePage() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-white">
@@ -118,13 +100,13 @@ export default function HomePage() {
               transition={{ delay: 0.18, duration: 0.5 }}
               className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-shadow hover:shadow-lg"
             >
-              <div className="bg-gradient-to-r from-indigo-500 to-violet-600 px-5 py-3.5">
+              <div className="bg-gradient-to-r from-sky-600 to-indigo-600 px-5 py-3.5">
                 <p className="text-xs font-semibold uppercase tracking-wider text-white/70">场景一</p>
                 <p className="mt-0.5 text-base font-semibold text-white">一份简历 · 多个目标站点</p>
               </div>
               <div className="space-y-3 p-5">
                 <div className="flex items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 p-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-sm font-bold text-indigo-600">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sm font-bold text-sky-600">
                     📋
                   </div>
                   <div>
@@ -133,16 +115,16 @@ export default function HomePage() {
                   </div>
                 </div>
                 <div className="flex justify-center">
-                  <ArrowRight className="h-5 w-5 text-indigo-300" />
+                  <ArrowRight className="h-5 w-5 text-sky-300" />
                 </div>
                 <div className="grid gap-2">
-                  <div className="flex items-center gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50/50 px-3 py-2.5">
-                    <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-400" />
-                    <span className="text-sm text-emerald-800">AI Agent 产品经理 → 强调 AI 产品经验、数据思维</span>
+                  <div className="flex items-center gap-2.5 rounded-lg border border-sky-200 bg-sky-50/50 px-3 py-2.5">
+                    <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-sky-400" />
+                    <span className="text-sm text-sky-800">AI Agent 产品经理 → 强调 AI 产品经验、数据思维</span>
                   </div>
-                  <div className="flex items-center gap-2.5 rounded-lg border border-violet-200 bg-violet-50/50 px-3 py-2.5">
-                    <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-violet-400" />
-                    <span className="text-sm text-violet-800">技术产品负责人 → 突出架构理解力、技术视野</span>
+                  <div className="flex items-center gap-2.5 rounded-lg border border-indigo-200 bg-indigo-50/50 px-3 py-2.5">
+                    <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-indigo-400" />
+                    <span className="text-sm text-indigo-800">技术产品负责人 → 突出架构理解力、技术视野</span>
                   </div>
                   <div className="flex items-center gap-2.5 rounded-lg border border-blue-200 bg-blue-50/50 px-3 py-2.5">
                     <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-blue-400" />
@@ -159,13 +141,13 @@ export default function HomePage() {
               transition={{ delay: 0.26, duration: 0.5 }}
               className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-shadow hover:shadow-lg"
             >
-              <div className="bg-gradient-to-r from-violet-500 to-fuchsia-500 px-5 py-3.5">
+              <div className="bg-gradient-to-r from-emerald-500 to-teal-600 px-5 py-3.5">
                 <p className="text-xs font-semibold uppercase tracking-wider text-white/70">场景二</p>
                 <p className="mt-0.5 text-base font-semibold text-white">面试时 · 经历变成故事</p>
               </div>
               <div className="space-y-3 p-5">
                 <div className="flex items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 p-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-sm font-bold text-violet-500">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-sm font-bold text-emerald-600">
                     🎤
                   </div>
                   <div>
@@ -176,11 +158,11 @@ export default function HomePage() {
                 <div className="flex justify-center">
                   <ArrowRight className="h-5 w-5 text-zinc-300" />
                 </div>
-                <div className="space-y-2 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 p-4 text-white">
+                <div className="space-y-2 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 p-4 text-white">
                   <p className="text-xs font-medium uppercase tracking-wider text-white/60">演示稿结构</p>
                   {["开场定位与核心叙事", "关键项目故事线", "能力跃迁与成长弧线", "量化成果与证据链"].map((item, index) => (
                     <div key={item} className="flex items-center gap-3 rounded-lg border border-white/15 bg-white/[0.10] px-3 py-2">
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white text-xs font-bold text-violet-500">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white text-xs font-bold text-emerald-600">
                         {index + 1}
                       </span>
                       <span className="text-sm text-white/90">{item}</span>
@@ -232,12 +214,11 @@ export default function HomePage() {
           >
             你最终会获得
           </motion.h2>
-          <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[
               { icon: "🌐", title: "可公开分享的职业主页", desc: "一个稳定的链接，面试官打开就能看" },
               { icon: "🎤", title: "一套面试讲述结构", desc: "围绕目标岗位的5分钟结构化叙事" },
               { icon: "🎯", title: "多岗位定制版本", desc: "同一份简历，面向不同JD的优化版本" },
-              { icon: "📊", title: "阅读反馈数据", desc: "发布后看到打开次数和联系方式点击" },
             ].map((item) => (
               <motion.div
                 key={item.title}
@@ -254,25 +235,6 @@ export default function HomePage() {
             ))}
           </div>
         </section>
-
-        {/* 信任条 */}
-        <div className="border-t border-zinc-100 bg-zinc-50/80 py-12">
-          <div className="mx-auto max-w-4xl px-6">
-            <div className="grid gap-6 md:grid-cols-3">
-              {trustPoints.map((point) => (
-                <div key={point.title} className="flex items-start gap-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white text-lg shadow-sm">
-                    {point.icon}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-zinc-800">{point.title}</p>
-                    <p className="mt-1 text-sm leading-relaxed text-zinc-500">{point.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
 
         {/* Footer */}
         <footer className="border-t border-zinc-100 bg-white px-6 py-8">

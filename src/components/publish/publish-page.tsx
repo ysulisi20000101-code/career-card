@@ -430,7 +430,12 @@ export function PublishPage({ projectId, siteId, onPublished }: PublishPageProps
 
 function readablePublishError(error?: string): string {
   if (error === "SLUG_TAKEN") return "这个公开地址已经被占用，请换一个。";
-  return "正式发布失败，请稍后重试。";
+  if (error === "PAYLOAD_TOO_LARGE") return "发布数据过大，请尝试精简简历内容后重新发布。";
+  if (error === "INVALID_SITE_DATA") return "发布数据校验失败，请回到编辑页重新保存后再试。";
+  if (error === "INVALID_PUBLISH_PAYLOAD") return "发布数据不完整，请刷新页面后重试。";
+  if (error === "UNAUTHORIZED") return "未授权，请检查 API 密钥设置。";
+  if (error === "NOT_FOUND") return "发布快照不存在，请重新发布。";
+  return `正式发布失败：${error || "未知错误"}`;
 }
 
 function PublishCheckItem({ check }: { check: PublishCheck }) {

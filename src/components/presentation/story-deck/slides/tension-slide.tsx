@@ -25,7 +25,7 @@ function isValidVModelVariant(val: unknown): val is "monopoly" | "complete" {
   return val === "monopoly" || val === "complete";
 }
 
-export function TensionSlide({ slide, overlays, onOpenOverlay, theme }: Props) {
+export function TensionSlide({ slide, onOpenOverlay }: Props) {
   // Parse bullets into timeline items: format "Time：text" or use as-is
   const timelineItems: TimelineItem[] = (slide.bullets ?? []).map((b) => {
     const colonIdx = b.indexOf("：");
@@ -36,24 +36,37 @@ export function TensionSlide({ slide, overlays, onOpenOverlay, theme }: Props) {
   });
 
   // Check for overlays
-  const hasOverlay = slide.overlayIds && slide.overlayIds.length > 0;
+  const firstOverlayId = slide.overlayIds?.[0];
   const viz = slide.visualizations?.[0]?.data;
+  const vModel = (
+    <VModelSVG
+      variant={isValidVModelVariant(viz?.variant) ? viz.variant : "monopoly"}
+      designNodes={isValidVModelNodes(viz?.designNodes) ? viz.designNodes : undefined}
+      testNodes={isValidVModelNodes(viz?.testNodes) ? viz.testNodes : undefined}
+      platformName={typeof viz?.platformName === "string" ? viz.platformName : undefined}
+      platformSubtitle={typeof viz?.platformSubtitle === "string" ? viz.platformSubtitle : undefined}
+      designLabel={typeof viz?.designLabel === "string" ? viz.designLabel : undefined}
+      testLabel={typeof viz?.testLabel === "string" ? viz.testLabel : undefined}
+      caption={typeof viz?.caption === "string" ? viz.caption : undefined}
+    />
+  );
 
   return (
     <div>
       <Eyebrow label={slide.subtitle ?? "The Gap"} />
       <h2 className="h2">{slide.title}</h2>
 
-      <VModelSVG
-        variant={isValidVModelVariant(viz?.variant) ? viz.variant : "monopoly"}
-        designNodes={isValidVModelNodes(viz?.designNodes) ? viz.designNodes : undefined}
-        testNodes={isValidVModelNodes(viz?.testNodes) ? viz.testNodes : undefined}
-        platformName={typeof viz?.platformName === "string" ? viz.platformName : undefined}
-        platformSubtitle={typeof viz?.platformSubtitle === "string" ? viz.platformSubtitle : undefined}
-        designLabel={typeof viz?.designLabel === "string" ? viz.designLabel : undefined}
-        testLabel={typeof viz?.testLabel === "string" ? viz.testLabel : undefined}
-        caption={typeof viz?.caption === "string" ? viz.caption : undefined}
-      />
+      {firstOverlayId ? (
+        <button
+          type="button"
+          className="ov-trigger"
+          aria-label="展开行业断点详情"
+          onClick={() => onOpenOverlay(firstOverlayId)}
+          style={{ appearance: "none", display: "block", width: "100%", border: 0, padding: 0, background: "transparent", color: "inherit", cursor: "pointer", font: "inherit", textAlign: "inherit" }}
+        >
+          {vModel}
+        </button>
+      ) : vModel}
 
       <div className="g2 mt10" style={{ gap: 14 }}>
         <div>
@@ -87,23 +100,6 @@ export function TensionSlide({ slide, overlays, onOpenOverlay, theme }: Props) {
         </AccentCard>
       )}
 
-      {hasOverlay && (
-        <div className="mt6" style={{ opacity: 0.82 }}>
-          {slide.overlayIds!.map((oid) => {
-            const ov = overlays.find((o) => o.id === oid);
-            if (!ov) return null;
-            return (
-              <button
-                key={oid}
-                onClick={() => onOpenOverlay(oid)}
-                style={{ padding: "6px 12px", border: `1px dashed ${theme.colors.violet}32`, borderRadius: "var(--r)", background: "transparent", fontSize: 10.5, color: theme.colors.violet, fontWeight: 700, cursor: "pointer" }}
-              >
-                查看详情：{ov.title} ↗
-              </button>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }

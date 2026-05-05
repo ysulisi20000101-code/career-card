@@ -147,4 +147,16 @@ describe("buildPublicSiteContent", () => {
     expect(content.details.map((detail) => detail.title)).toContain("阶段二：产品负责人 / 产品总监");
     expect(copy).not.toMatch(/候选人|这里合并|可补充|生成|草稿|上传|接触新领域|我换领域/);
   });
+
+  it("assigns contextual tags to each experience instead of reusing one global tag set", () => {
+    const content = buildPublicSiteContent(data);
+    const skillsById = Object.fromEntries(content.details.map((detail) => [detail.id, detail.skills]));
+    const firstTags = content.details.map((detail) => detail.skills[0]).filter(Boolean);
+
+    expect(skillsById.internship).toEqual(expect.arrayContaining(["需求分析", "后台产品"]));
+    expect(skillsById.jingwei).toEqual(expect.arrayContaining(["通信设计", "诊断系统"]));
+    expect(skillsById["gkcs-stage-1"]).toEqual(expect.arrayContaining(["SOME/IP", "云平台基建"]));
+    expect(skillsById["gkcs-stage-2"]).toEqual(expect.arrayContaining(["AI Agent", "知识库/RAG"]));
+    expect(new Set(firstTags).size).toBeGreaterThan(2);
+  });
 });

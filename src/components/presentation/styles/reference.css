@@ -182,6 +182,14 @@
   max-width: 520px;
 }
 
+.ps-root .hero-deco-bar {
+  width: 48px;
+  height: 3px;
+  background: var(--gold-bright);
+  border-radius: 2px;
+  margin-bottom: 16px;
+}
+
 .ps-root .topo-wrap {
   display: flex;
   align-items: center;
@@ -368,6 +376,23 @@
   transition: all .2s;
 }
 
+.ps-root .a-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--violet);
+  opacity: .5;
+}
+
+.ps-root .a-card:nth-child(1)::before { background: var(--violet); }
+.ps-root .a-card:nth-child(2)::before { background: var(--blue); }
+.ps-root .a-card:nth-child(3)::before { background: var(--teal); }
+.ps-root .a-card:nth-child(4)::before { background: var(--gold-bright); }
+.ps-root .a-card:nth-child(5)::before { background: var(--rose); }
+
 .ps-root .a-card:hover {
   box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
   transform: translateY(-1px);
@@ -549,6 +574,11 @@
   font-size: 24px;
   color: var(--t3);
   flex-shrink: 0;
+}
+
+.ps-root .counter {
+  font-variant-numeric: tabular-nums;
+  display: inline-block;
 }
 
 /* ── Overlay trigger ── */

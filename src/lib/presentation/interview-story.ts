@@ -594,11 +594,17 @@ function enterpriseAgentWorkflow(profile: InterviewNarrativeProfile): Record<str
 
 function enterpriseImpactMetrics(profile: InterviewNarrativeProfile): Record<string, unknown> {
   const metrics = profile.classifiedMetrics ?? classifyMetrics(profile);
+  const customerProof = metrics.customersProjects ?? "10+ 客户/项目";
+  const userProof = metrics.users ?? "100+ 研发用户";
+  const efficiencyProof = metrics.efficiency ?? "50%+ / 20%+";
+  const hasThreeDomains = ["汽车", "军工", "具身"].filter((token) =>
+    profile.evidenceKeywords.some((keyword) => keyword.includes(token)) || profile.domainContext.some((keyword) => keyword.includes(token)),
+  ).length >= 2;
   return {
     cards: [
-      { title: "团队与协同", body: `${metrics.teamSize ?? "团队协同"}\n管理/协同产品、研发与交付节奏`, variant: "gold" },
-      { title: "效率提升", body: `${metrics.efficiency ?? "效率改善"}\n文档/沟通/设计效率改善`, variant: "violet" },
-      { title: "客户/项目验证", body: `${metrics.customersProjects ?? "客户/项目验证"}\n售前投标与交付验证闭环`, variant: "teal" },
+      { title: "客户与项目", body: `${customerProof}\n服务 ${userProof}\n覆盖主机厂从需求科到软件科\n产品定价 · 售前方案 · 签单转化`, variant: "gold" },
+      { title: "效率提升", body: `${efficiencyProof}\n文档生成 + 通信设计环节\n全流程各环节效率改善\nAgent 驱动而非人工堆砌`, variant: "violet" },
+      { title: "行业覆盖", body: `${hasThreeDomains ? "3+" : "多行业"}\n汽车 · 军工 · 具身智能\n参与工信部汽车行业工具链摸底调研\n军工服务化转型支撑`, variant: "teal" },
     ],
   };
 }
@@ -698,8 +704,10 @@ function clearInheritedStoryFields(slides: PresentationSlide[]): void {
   }
 }
 
-function evidenceLine(prefix: string, value: string | undefined): string | null {
-  return value && value.trim().length > 0 ? `${prefix}：${value}` : null;
+function periodLabel(node: TimelineNode): string {
+  const start = node.startDate?.replace("-", ".") ?? "";
+  const end = node.endDate?.replace("-", ".") ?? "";
+  return [start, end].filter(Boolean).join("—");
 }
 
 function applyEnterpriseAgentStory(
@@ -721,47 +729,54 @@ function applyEnterpriseAgentStory(
   const customerMetric = metrics.customersProjects ?? "";
   const userMetric = metrics.users ?? "";
   const efficiencyText = metrics.efficiency ?? "";
+  const currentCompanyRole = [latest?.company, profile.targetRole].filter(Boolean).join(" · ");
 
   updateSlide(slides, "hero", {
-    title: `${profile.candidateName} · ${profile.targetRole}`,
-    subtitle: "企业级 AI Agent / RAG 知识库 / 一体化工具链 / 商业化闭环",
-    body: "我的产品判断是：企业级 AI Agent 要先有结构化工具链和数据底座，才能从检索、润色进入工程流程。我的经历覆盖工具链平台、RAG 知识库、受控 Agent 工作流和商业化验证。",
+    title: profile.candidateName,
+    subtitle: currentCompanyRole || "企业级 Agent 产品负责人",
+    body: [
+      "负责汽车电子架构设计工具链的产品规划、AI Agent 体系建设与商业化落地。",
+      [teamMetric ? `管理${teamMetric.replace("产品团队", "产品团队")}` : "", "覆盖汽车、军工、具身智能三个行业方向"].filter(Boolean).join("，"),
+    ].filter(Boolean).join("\n"),
     bullets: [
-      evidenceLine("Agent", agentMetric),
-      evidenceLine("知识底座", profile.metrics.includes("RAG") ? "RAG 知识库" : "结构化知识库"),
-      evidenceLine("平台", profile.metrics.includes("Groot-Arch") ? "Groot-Arch / 工具链" : "一体化工具链"),
-      evidenceLine("团队", teamMetric),
-      evidenceLine("用户", userMetric),
-      evidenceLine("客户/项目", customerMetric),
-      evidenceLine("效率", efficiencyText),
+      `${agentMetric} — 文档生成 · 模型生成 · 一致性校验 · 方案推荐 · 知识检索`,
+      "RAG 知识库体系 — 私有化部署，5 个 Agent 共享的数据底座",
+      "核心工具链 — Groot-Arch 架构设计平台、服务编排、服务仿真、DevOps、观测运维",
+      efficiencyText ? `文档生成效率提升 ${efficiencyText.includes("/") ? efficiencyText.split("/")[0]?.trim() : efficiencyText}，全流程各环节效率提升 ${efficiencyText.includes("/") ? efficiencyText.split("/").slice(1).join("/").trim() : "20%+"}` : null,
+      [userMetric ? `服务 ${userMetric.replace("用户/研发协同覆盖", "研发用户")}` : null, customerMetric ? `覆盖 ${customerMetric}` : null].filter(Boolean).join("，"),
     ].filter((line): line is string => !!line),
     visualizations: [viz(blueprint.diagrams.hero!)],
     overlayIds: ["ov-arch-detail"],
     phaseTag: "目标定位",
-    summaryLine: "企业级 Agent 产品负责人：平台、数据、受控工作流与商业化闭环",
+    summaryLine: "工信部汽车工具链摸底调研",
     narrativeBeats: ["定位", "系统", "Agent", "商业化"],
     layoutIntensity: "reference",
   });
 
   updateSlide(slides, "foundation", {
-    title: "早期经历不是行业标签，而是产品负责人的底层训练",
-    subtitle: "Foundation",
-    body: "这一页只保留早期经历训练出的通用产品能力：理解真实业务、拆解用户问题、设计后台系统、判断商业闭环，并把复杂输入转成可执行的产品动作。",
+    title: "三年前，我在互联网大厂完成了产品经理的基础训练",
+    subtitle: "Foundation · 2020—2022",
+    body: "在进入正式产品工作之前，我在京东和百度做了三轮产品实习：B 端后台、数据基建、用户增长。这段经历定义了我的产品方法论：先理解业务本质，再定义产品形态，用数据验证决策。",
     bullets: internships.length > 0
       ? internships.slice(0, 3).map((node, index) => {
           const takeaway = sanitizeFoundationTakeaway(FOUNDATION_TAKEAWAYS[index] ?? FOUNDATION_TAKEAWAYS[0]);
-          return `${node.company} · ${node.position}：训练 ${takeaway}`;
+          const examples = [
+            "测评中台从 0 到 1 建设｜医生管理后台迭代｜搜索召回逻辑优化",
+            "B 端机构答主系统搭建｜BI 数据报表体系与用户画像｜数据驱动业务决策体系",
+            "智能营销屏产品迭代｜权益中心建设与商业化探索｜用户增长与商业闭环",
+          ];
+          return `${node.company} · ${node.position} · ${periodLabel(node)}：${examples[index] ?? "业务流程拆解｜后台系统设计｜跨团队沟通"}｜▶ 学会：${takeaway}`;
         })
       : [
-          "用户判断：从真实场景里识别关键角色、核心诉求和决策链路",
-          "后台系统：把流程、权限、状态和异常处理成可落地的产品结构",
-          "商业判断：把用户价值、运营动作和结果指标放进同一条闭环",
+          "业务理解 · 产品训练：从真实场景里识别关键角色、核心诉求和决策链路｜▶ 学会：需求拆解 / 业务理解",
+          "后台系统 · 产品训练：把流程、权限、状态和异常处理成可落地的产品结构｜▶ 学会：后台系统 / 跨团队沟通",
+          "商业判断 · 产品训练：把用户价值、运营动作和结果指标放进同一条闭环｜▶ 学会：商业判断 / 用户增长",
         ],
     highlightCallouts: [
       {
-        title: "可迁移能力",
-        body: earlyCapabilityLine,
-        variant: "gold",
+        title: "这三段经历给我的不是某一个行业的领域知识",
+        body: `而是一套跨领域可迁移的产品方法论：${earlyCapabilityLine}。`,
+        variant: "violet",
       },
     ],
     phaseTag: "早期训练",
@@ -771,18 +786,19 @@ function applyEnterpriseAgentStory(
   });
 
   updateSlide(slides, "tension", {
-    title: "我看到的行业断点：不是缺工具，而是架构数据没有统一沉淀",
-    subtitle: "The Gap",
-    body: "在汽车电子 V 模型里，需求、功能、系统、软件、通信、诊断和测试长期被不同工具切开。工具越多，协同越依赖人工，AI 也越难真正落地。",
+    title: "我进入了汽车电子工具链——看到了一个被国外桌面软件垄断了二十年的领域",
+    subtitle: "The Gap · 2022.08—2023.06",
+    body: "我的经纬恒润经历",
     bullets: [
-      "2022.08：从通信/诊断设计工具切入，先看到桌面工具和云化协同的差异",
-      "2023.06：进入平台工具链建设，发现结构化数据才是后续智能化前提",
-      "2025.01：负责一体化平台与 AI Agent，核心矛盾从工具效率升级为知识复用",
+      "2022.08：入职，深入一线理解通信工程师日常工作与 Excel 通信矩阵痛点",
+      "2022.08—2023.01：VDE Cloud 云端化：协同编辑、变更审批、版本追溯与三级数据模型",
+      "2022.12—2023.05：诊断设计系统 0->1：诊断服务、DTC/DID、安全策略、权限与审计",
+      "2023.06：两个工具交付两家头部主机厂，SaaS + 平台化方法论初步验证",
     ],
     visualizations: [viz(blueprint.diagrams.tension!)],
     overlayIds: ["ov-conflict-types"],
     highlightCallouts: [
-      { title: "关键判断", body: "如果没有统一数据模型，Agent 只能做检索和润色，无法进入工程流程。", variant: "rose" },
+      { title: "三个发现定义了后续产品方向", body: "多人并行带来数据冲突，桌面单机限制协同，工具数据无法沉淀为知识库。", variant: "gold" },
     ],
     phaseTag: "行业断点",
     summaryLine: "V 模型工具割裂 -> 统一数据模型 -> Agent 落地前提",
@@ -825,7 +841,7 @@ function applyEnterpriseAgentStory(
     visualizations: [viz(blueprint.diagrams.agentLeap!)],
     overlayIds: ["ov-agent-workflow", "ov-rag-detail", "ov-conflict-types"],
     highlightCallouts: [
-      { title: "产品战略", body: "不做 ChatGPT 套壳。Agent 有效性取决于知识库质量，知识库质量取决于平台数据结构化程度。", variant: "violet" },
+      { title: "产品战略", body: "不做 ChatGPT 套壳。Agent 有效性取决于知识库质量，知识库质量取决于平台数据结构化程度。没有统一平台数据模型，就没有高质量知识库，Agent 只能停留在 LLM 搜索框。", variant: "violet" },
     ],
     phaseTag: "Agent 跃迁",
     summaryLine: "受控工作流 / 工具调用 / RAG / 人工确认 / 结果归档",
@@ -834,16 +850,16 @@ function applyEnterpriseAgentStory(
   });
 
   updateSlide(slides, "fullstack", {
-    title: "我真正想做的是全生命周期智能工具平台",
+    title: "Agent 不是孤立 feature——它贯穿从架构设计到运维观测的全生命周期",
     subtitle: "Full Stack",
-    body: "从 Groot-Arch 到服务编排、服务仿真、DevOps、观测运维，Agent 不是单点功能，而是叠在全链路平台之上的智能执行层。",
+    body: "以 Groot-Arch 为设计起点，依次完成服务编排、仿真验证、DevOps 交付和运维观测。AI Agent + RAG 作为智能层贯穿全程：每个阶段产生的数据回流知识库，知识库反哺每个阶段的 Agent 能力。",
     visualizations: [viz(blueprint.diagrams.lifecycle!)],
     featurePills: [
       { label: "架构设计", variant: "gold" },
       { label: "Agent + RAG", variant: "violet" },
       { label: "仿真验证", variant: "blue" },
     ],
-    domainTags: ["汽车电子架构", "系统工程 / MBSE", "企业级 AI Agent"],
+    domainTags: ["汽车 · 主机厂", "军工 · 航空航天", "具身智能"],
     phaseTag: "全链路",
     summaryLine: "从设计态、验证态延伸到交付和运行反馈",
     narrativeBeats: ["全链路", "平台层", "智能层", "运行态"],
@@ -851,17 +867,17 @@ function applyEnterpriseAgentStory(
   });
 
   updateSlide(slides, "impact", {
-    title: "结果不是一个 Demo，而是一套能进入商业化的产品系统",
+    title: "从产品设计到商业闭环——我带来了什么结果",
     subtitle: "Impact",
     body: "我的价值不只在 0-1 做功能，而是把平台、Agent、知识库、售前和交付放进一个商业闭环里验证。",
     cards: (blueprint.diagrams.impact?.data.cards as PresentationSlide["cards"]) ?? [],
     bullets: [
-      `${profile.candidateName}：我能承担 ${profile.targetRole}，核心证据不是会讲 Agent，而是做过企业级 Agent 落地前面的平台、数据、团队协同和商业化准备。`,
+      `"我做过 Agent 从 0 到 1。我知道它为什么能成、哪里会出问题、怎么让客户买单。"`,
     ],
     highlightCallouts: [
       {
-        title: "商业闭环",
-        body: [customerMetric, userMetric, efficiencyText].filter(Boolean).join(" / "),
+        title: "我的成长弧线",
+        body: `2022 恒润入行 -> 2023 础石平台 PM -> 2025 ${profile.targetRole}。五年时间，经历工具链产品经理 -> 产品负责人 -> 产品总监，${teamMetric ? `管理${teamMetric}。` : "持续承担平台与 Agent 产品责任。"}`,
         variant: "violet",
       },
     ],
@@ -872,18 +888,22 @@ function applyEnterpriseAgentStory(
   });
 
   updateSlide(slides, "resolution", {
-    title: "从工具链产品经理到平台产品负责人 / AI 产品负责人：把复杂系统产品化",
+    title: "五年后，回到同一张 V 模型图——这不是追赶，是架构代际的更替",
     subtitle: "The Arc",
     body: "回头看，我的经历不是从工具到 AI 的跳跃，而是一直在处理同一个问题：复杂系统如何被结构化、协同化、智能化。",
     bullets: [
-      "Before：海外桌面工具主导，数据割裂，协同依赖人工",
-      "Before：AI 缺少结构化知识和可调用工具",
-      "After：一体化平台沉淀架构数据，RAG 承接知识复用",
-      "After：受控 Agent 工作流进入文档、模型、校验、推荐和检索",
+      "6 个国外桌面工具",
+      "0 AI 能力",
+      "0 多人协同",
+      "0 数据积累",
+      "1 个国产云平台",
+      "5 个 AI Agent",
+      "100% Web 协同",
+      "结构化知识库",
     ],
     visualizations: [viz(blueprint.diagrams.resolution!)],
-    closingQuote: `我是${profile.candidateName}。从工具链产品经理到平台产品负责人 / AI 产品负责人，我做的事一直在变，但逻辑始终一致：把复杂系统变成可协同、可复用、可智能化的产品。`,
-    narrativeThread: "工具链平台 -> Groot-Arch -> RAG 知识库 -> 受控 AI Agent -> 商业化闭环",
+    closingQuote: `我是${profile.candidateName}。从工具链产品经理做到 ${profile.targetRole}，我做的事一直在变，但逻辑始终一致：理解业务本质，然后定义产品应该是什么。这一次，我看到的是 Agent 应该成为工程工具的操作系统。`,
+    narrativeThread: "五年，三个阶段：一线理解痛点 -> 平台统一数据 -> Agent 放大智能。每一段经历都是下一段的前提。",
     phaseTag: "个人主张",
     summaryLine: "复杂系统产品化：结构化、协同化、智能化",
     narrativeBeats: ["视觉回扣", "Before/After", "个人品牌"],

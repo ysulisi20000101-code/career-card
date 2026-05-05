@@ -11,7 +11,7 @@ export async function POST(request: Request) {
   try {
     if (request.headers.get("content-length")) {
       const length = Number(request.headers.get("content-length"));
-      if (length > 50_000) {
+      if (length > 500_000) {
         return NextResponse.json({ error: "PAYLOAD_TOO_LARGE" }, { status: 413 });
       }
     }

@@ -16,7 +16,6 @@ export function SlideContainer({ slide, position, children }: SlideContainerProp
     <div
       className={`slide${position === "active" ? " active" : ""}${position === "left" ? " left" : ""}${position === "right" ? " right" : ""}`}
       data-slide={slide.id}
-      style={{ overflowY: "auto", WebkitOverflowScrolling: "touch" }}
     >
       <div className="slide-inner">
         {children}

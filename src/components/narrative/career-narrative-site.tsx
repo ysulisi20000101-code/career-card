@@ -6,23 +6,21 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   ArrowUp,
-  BarChart3,
   BriefcaseBusiness,
   Calendar,
   CheckCircle2,
   ChevronDown,
   GraduationCap,
   Mail,
+  Maximize2,
   Phone,
-  Target,
+  X,
 } from "lucide-react";
 import type { ResumeData } from "@/types";
 import type { PublicExperienceDetail, PublicJourneyNode, PublicOverview } from "@/lib/public-site/content";
 import { buildPublicSiteViewModel } from "@/lib/public-site/view-model";
 import { getTheme, type SiteTheme, type SiteThemeId } from "@/lib/site-styles/theme-config";
 import { cn, formatDate } from "@/lib/utils";
-import SkillMapView from "@/components/skillmap/skill-map-view";
-import ArchitectureView from "@/components/architecture/architecture-view";
 
 interface CareerNarrativeSiteProps {
   data: ResumeData;
@@ -48,11 +46,11 @@ function MotionSection({ children, className, id }: { children: React.ReactNode;
 
 // ─── v5 Designer Hero ───────────────────────────────────────────
 
-function Atmosphere() {
+function Atmosphere({ theme }: { theme: SiteTheme }) {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] rounded-full bg-gradient-to-b from-emerald-50/30 via-transparent to-transparent blur-3xl" />
-      <div className="absolute bottom-1/3 right-1/4 w-[400px] h-[300px] rounded-full bg-gradient-to-t from-emerald-50/25 via-transparent to-transparent blur-3xl" />
+      <div className={cn("absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] rounded-full bg-gradient-to-b via-transparent to-transparent blur-3xl", theme.hero.glowA)} />
+      <div className={cn("absolute bottom-1/3 right-1/4 w-[400px] h-[300px] rounded-full bg-gradient-to-t via-transparent to-transparent blur-3xl", theme.hero.glowB)} />
     </div>
   );
 }
@@ -75,10 +73,86 @@ function ValueCard({ title, body }: { title: string; body: string }) {
   );
 }
 
+function publicProfileText(data: ResumeData): string {
+  return [
+    data.profile.name,
+    data.profile.title,
+    data.profile.summary,
+    data.roleUnderstanding?.targetRoleTitle,
+    data.skillProfile?.roleName,
+    ...data.timeline.flatMap((node) => [
+      node.company,
+      node.position,
+      node.description,
+      node.storyReflection,
+      ...node.highlights,
+      ...node.skills,
+      ...(node.promotionStages ?? []).flatMap((stage) => [
+        stage.title,
+        stage.period,
+        stage.teamScale,
+        stage.responsibility,
+        stage.outcome,
+        stage.reflection,
+      ]),
+    ]),
+    ...data.skills.map((skill) => skill.name),
+    ...data.architecture.flatMap((item) => [item.title, item.description]),
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function isReferenceDesignerProfile(data: ResumeData): boolean {
+  const text = publicProfileText(data);
+  const evidence = [
+    /Groot-Arch/i,
+    /AI\s*Agent/i,
+    /RAG/i,
+    /国科础石/,
+    /工具链/,
+    /SOME\/IP|DDS/,
+    /产品总监|产品负责人/,
+  ];
+  return evidence.filter((pattern) => pattern.test(text)).length >= 2;
+}
+
+function referenceHeroMetrics(fallback: PublicOverview["metrics"]): PublicOverview["metrics"] {
+  const preferred: PublicOverview["metrics"] = [
+    { label: "客户项目", value: "10+", helper: "汽车 / 军工等客户项目" },
+    { label: "协作范围", value: "100+", helper: "研发用户与业务团队支撑" },
+    { label: "效率提升", value: "50%+", helper: "关键环节效率提升" },
+    { label: "AI 工作流", value: "0→1", helper: "受控式 Agent 工作流" },
+  ];
+
+  if (fallback.length >= 4) return preferred;
+  const seen = new Set(preferred.map((metric) => metric.value));
+  for (const metric of fallback) {
+    if (!seen.has(metric.value) && preferred.length < 4) preferred.push(metric);
+  }
+  return preferred.slice(0, 4);
+}
+
+const REFERENCE_VALUE_CARDS = [
+  {
+    title: "企业级 AI Agent 落地",
+    body: "具备任务规划、原生工具调用、多步骤执行、状态管理与人工确认机制设计经验。",
+  },
+  {
+    title: "复杂业务快速抽象",
+    body: "快速切入高门槛业务场景，将专家经验、业务流程和交付要求抽象为可复用产品能力。",
+  },
+  {
+    title: "平台产品与商业闭环",
+    body: "管理 10 人产品团队，覆盖产品规划、重点交付、售前转化与商业化闭环。",
+  },
+] as const;
+
 function DesignerHero({
   data,
   overview,
   primarySkills,
+  theme,
 }: {
   data: ResumeData;
   overview: PublicOverview;
@@ -86,14 +160,19 @@ function DesignerHero({
   primarySkills: string[];
   theme: SiteTheme;
 }) {
-  const valueCards = overview.summaryBullets.slice(0, 3).map((bullet, i) => ({
-    title: primarySkills[i] ?? overview.targetRole,
-    body: bullet,
-  }));
+  const referenceMode = isReferenceDesignerProfile(data);
+  const metrics = referenceMode ? referenceHeroMetrics(overview.metrics) : overview.metrics.slice(0, 4);
+  const valueCards = referenceMode
+    ? REFERENCE_VALUE_CARDS
+    : overview.summaryBullets.slice(0, 3).map((bullet, i) => ({
+        title: primarySkills[i] ?? overview.targetRole,
+        body: bullet,
+      }));
+  const label = referenceMode ? "Candidate Profile / AI Product Lead" : overview.positionLine || overview.targetRole;
 
   return (
     <header id="overview" className="relative overflow-hidden min-h-screen flex items-center bg-gradient-to-b from-neutral-50 via-white to-white">
-      <Atmosphere />
+      <Atmosphere theme={theme} />
       <div className="relative z-10 max-w-6xl mx-auto px-6 py-24 sm:py-32 w-full">
         {/* Label */}
         <motion.div
@@ -101,9 +180,9 @@ function DesignerHero({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
         >
-          <span className="inline-flex items-center gap-2 text-xs font-medium tracking-[0.15em] text-emerald-600 uppercase">
-            <span className="h-1 w-6 bg-emerald-200 rounded-full" />
-            {overview.positionLine || overview.targetRole}
+          <span className={cn("inline-flex items-center gap-2 text-xs font-medium tracking-[0.15em] uppercase", theme.section.accent)}>
+            <span className={cn("h-1 w-6 rounded-full", theme.section.accentBg)} />
+            {label}
           </span>
         </motion.div>
 
@@ -119,6 +198,19 @@ function DesignerHero({
           </h1>
         </motion.div>
 
+        {referenceMode && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+            className="mt-5"
+          >
+            <span className={cn("inline-flex rounded-full px-4 py-2 text-sm font-medium", theme.section.accentBg, theme.section.accentText)}>
+              AI 产品负责人 · 平台产品 / Agent 落地 / 复杂业务抽象
+            </span>
+          </motion.div>
+        )}
+
         {/* One-liner */}
         <motion.div
           initial={{ opacity: 0, y: 28 }}
@@ -127,22 +219,32 @@ function DesignerHero({
           className="mt-6 max-w-2xl"
         >
           <p className="text-xl sm:text-2xl text-slate-500 font-light leading-relaxed">
-            <span className="text-slate-700 font-normal">{overview.targetRole}</span>
-            {overview.summaryBullets[0] && (
-              <> — {overview.summaryBullets[0]}</>
+            {referenceMode ? (
+              <>
+                AI 产品负责人 / 平台产品负责人。
+                <br className="hidden sm:block" />
+                <span className="text-slate-700 font-normal">
+                  擅长将复杂业务流程抽象为平台能力、AI Agent 工作流与可落地的商业化方案。
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="text-slate-700 font-normal">{overview.targetRole}</span>
+                {overview.summaryBullets[0] && <> — {overview.summaryBullets[0]}</>}
+              </>
             )}
           </p>
         </motion.div>
 
         {/* Metrics */}
-        {overview.metrics.length >= 2 && (
+        {metrics.length >= 2 && (
           <motion.div
             initial={{ opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.17, ease: [0.16, 1, 0.3, 1] }}
             className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-xl"
           >
-            {overview.metrics.slice(0, 4).map((metric, i) => (
+            {metrics.map((metric, i) => (
               <motion.div
                 key={`${metric.label}-${metric.value}`}
                 initial={{ opacity: 0, y: 16 }}
@@ -210,7 +312,7 @@ function DesignerHero({
           transition={{ duration: 0.7, delay: 0.5 }}
           className="mt-20 text-center"
         >
-          <p className="text-xs tracking-[0.2em] text-slate-300 uppercase">滚动了解经历</p>
+          <p className="text-xs tracking-[0.2em] text-slate-300 uppercase">{referenceMode ? "查看关键经历" : "滚动了解经历"}</p>
           <ChevronDown className="mt-3 mx-auto h-4 w-4 text-slate-300 animate-bounce" />
         </motion.div>
       </div>
@@ -220,23 +322,39 @@ function DesignerHero({
 
 // ─── v5 Growth Rail ─────────────────────────────────────────────
 
-const PHASE_LABELS = ["起步期", "成长期", "突破期"] as const;
+const PHASE_LABELS = ["实习期", "成长期", "突破期"] as const;
 
 function phaseLabel(index: number, total: number): string {
   if (index === total - 1) return "当前";
   return PHASE_LABELS[index] ?? PHASE_LABELS[PHASE_LABELS.length - 1];
 }
 
-function GrowthRail({ items }: { items: PublicJourneyNode[] }) {
+const REFERENCE_JOURNEY = [
+  { title: "产品实习生", keyword: "京东健康 · 百度 · 京东" },
+  { title: "工具链产品经理", keyword: "经纬恒润" },
+  { title: "平台产品经理", keyword: "国科础石" },
+  { title: "产品负责人 / 总监", keyword: "国科础石 · 10人团队" },
+] as const;
+
+function referenceJourneyLabel(item: PublicJourneyNode, index: number, field: "title" | "keyword", referenceMode: boolean): string {
+  if (!referenceMode) return item[field];
+  return REFERENCE_JOURNEY[index]?.[field] ?? item[field];
+}
+
+function GrowthRail({ items, theme, referenceMode }: { items: PublicJourneyNode[]; theme: SiteTheme; referenceMode: boolean }) {
   const count = items.length;
 
   return (
     <section className="bg-neutral-50 px-4 py-20 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto">
-        <p className="text-xs font-medium tracking-[0.15em] text-emerald-600 uppercase mb-2">成长路径</p>
-        <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900">从起点到当前</h2>
+        <p className={cn("text-xs font-medium tracking-[0.15em] uppercase mb-2", theme.section.accent)}>成长路径</p>
+        <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900">
+          {referenceMode ? "从互联网产品基础到 AI 平台负责人" : "从起点到当前"}
+        </h2>
         <p className="mt-3 text-sm text-slate-500 max-w-lg">
-          {count} 段经历组成职业成长路径，点击跳转查看各阶段详情。
+          {referenceMode
+            ? "经历互联网产品基础训练、汽车/工业软件平台建设与企业级 AI 能力落地，逐步从单点产品执行成长为平台体系负责人。"
+            : `${count} 段经历组成职业成长路径，点击跳转查看各阶段详情。`}
         </p>
 
         {/* Desktop horizontal */}
@@ -255,21 +373,23 @@ function GrowthRail({ items }: { items: PublicJourneyNode[] }) {
                     className={cn(
                       "flex items-center justify-center rounded-full text-sm font-bold mb-4 transition-all duration-300 group-hover:scale-115 group-hover:shadow-[0_0_0_6px_rgba(0,0,0,0.08)]",
                       isLatest
-                        ? "w-12 h-12 bg-emerald-600 text-white shadow-lg shadow-emerald-300/20"
-                        : "w-10 h-10 bg-white border-2 border-emerald-100 text-emerald-600",
+                        ? cn("w-12 h-12 text-white shadow-lg", theme.section.accentSolid, "shadow-emerald-300/20")
+                        : cn("w-10 h-10 bg-white border-2", theme.section.accentBorder, theme.section.accentText),
                     )}
                   >
                     {idx + 1}
                   </div>
                   {isLatest && (
-                    <span className="rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-medium px-2 py-0.5 mb-1">当前</span>
+                    <span className={cn("rounded-full text-[10px] font-medium px-2 py-0.5 mb-1", theme.section.accentBg, theme.section.accentText)}>当前</span>
                   )}
-                  <p className="text-[11px] font-medium text-emerald-600">{phaseLabel(idx, count)}</p>
+                  <p className={cn("text-[11px] font-medium", theme.section.accent)}>{phaseLabel(idx, count)}</p>
                   <p className="text-xs text-slate-400 mt-0.5">{item.period}</p>
-                  <p className="mt-1.5 text-sm font-semibold text-slate-800 group-hover:text-emerald-600 transition-colors text-center leading-tight">
-                    {item.title}
+                  <p className={cn("mt-1.5 text-sm font-semibold text-slate-800 transition-colors text-center leading-tight", theme.section.groupHoverAccent)}>
+                    {referenceJourneyLabel(item, idx, "title", referenceMode)}
                   </p>
-                  <p className="mt-0.5 text-xs text-slate-400 text-center leading-relaxed max-w-[140px]">{item.keyword}</p>
+                  <p className="mt-0.5 text-xs text-slate-400 text-center leading-relaxed max-w-[140px]">
+                    {referenceJourneyLabel(item, idx, "keyword", referenceMode)}
+                  </p>
                 </a>
               );
             })}
@@ -287,25 +407,27 @@ function GrowthRail({ items }: { items: PublicJourneyNode[] }) {
                 className={cn(
                   "group relative block pl-8",
                   idx < count - 1 && "pb-6",
-                  isLatest ? "border-l-2 border-emerald-400" : "border-l-2 border-emerald-100",
+                  isLatest
+                    ? cn("border-l-2", theme.section.accentLight?.replace("text-", "border-") || "border-emerald-400")
+                    : cn("border-l-2", theme.section.accentBorder),
                 )}
               >
                 <div
                   className={cn(
                     "absolute left-0 top-0 -translate-x-1/2 flex items-center justify-center rounded-full text-xs font-bold",
                     isLatest
-                      ? "w-8 h-8 bg-emerald-600 text-white shadow-md"
-                      : "w-7 h-7 bg-white border-2 border-emerald-100 text-emerald-600",
+                      ? cn("w-8 h-8 text-white shadow-md", theme.section.accentSolid)
+                      : cn("w-7 h-7 bg-white border-2", theme.section.accentBorder, theme.section.accentText),
                   )}
                 >
                   {idx + 1}
                 </div>
                 {isLatest && (
-                  <span className="inline-block rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-medium px-2 py-0.5 mb-1">当前</span>
+                  <span className={cn("inline-block rounded-full text-[10px] font-medium px-2 py-0.5 mb-1", theme.section.accentBg, theme.section.accentText)}>当前</span>
                 )}
                 <p className="text-xs text-slate-400">{item.period}</p>
-                <p className="mt-1 text-sm font-semibold text-slate-800">{item.title}</p>
-                <p className="text-xs text-slate-400">{item.keyword}</p>
+                <p className="mt-1 text-sm font-semibold text-slate-800">{referenceJourneyLabel(item, idx, "title", referenceMode)}</p>
+                <p className="text-xs text-slate-400">{referenceJourneyLabel(item, idx, "keyword", referenceMode)}</p>
               </a>
             );
           })}
@@ -343,6 +465,90 @@ function EarlyRows({ rows }: { rows?: PublicExperienceDetail["earlyRows"] }) {
   );
 }
 
+function tagStyle(index: number, total: number, isFirst: boolean, theme: SiteTheme): string {
+  const isLatest = index === total - 1;
+  if (isLatest && isFirst) return "bg-slate-900 text-white font-medium";
+  if (isFirst) return cn(theme.section.accentBg, theme.section.accentText, "font-medium");
+  return "bg-slate-100 text-slate-500";
+}
+
+function InternshipDetail({
+  detail,
+  index,
+  total,
+  theme,
+}: {
+  detail: PublicExperienceDetail;
+  index: number;
+  total: number;
+  theme: SiteTheme;
+}) {
+  return (
+    <MotionSection
+      id={`experience-${detail.id}`}
+      className="relative scroll-mt-14 bg-white px-4 py-16 sm:px-6 lg:px-8"
+    >
+      <div className={cn("absolute top-0 left-0 right-0 h-[3px]", theme.section.accentSolid)} />
+
+      <div className="max-w-5xl mx-auto">
+        <div className="flex items-center gap-3 mb-6">
+          <span className={cn("flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold", theme.section.accentBg, theme.section.accentText)}>
+            {index + 1}
+          </span>
+          <span className={cn("text-xs font-medium tracking-[0.12em] uppercase", theme.section.accent)}>经历详情</span>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
+          <div>
+            <h2 className="text-3xl font-semibold tracking-tight text-slate-900">{detail.title}</h2>
+            <p className="mt-2 text-sm text-slate-400">{detail.period} · 三段产品实习</p>
+            <p className="mt-4 max-w-lg text-sm leading-7 text-slate-600">
+              在三家不同业务场景的互联网公司参与后台产品、用户产品和运营工具相关工作。
+              这段经历的价值不在行业标签，而在于训练了需求拆解、业务理解、用户问题判断和跨团队沟通的通用产品能力。
+            </p>
+          </div>
+
+          {detail.earlyRows?.length ? (
+            <div className="space-y-3">
+              {detail.earlyRows.map((row) => (
+                <div key={`${row.company}-${row.role}`} className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                  <p className="text-sm font-semibold text-slate-800">{row.company}</p>
+                  <p className="mt-0.5 text-xs text-slate-400">{row.role}</p>
+                  <p className="mt-2 text-xs leading-5 text-slate-500">{row.summary}</p>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="mt-6 grid gap-3 md:grid-cols-3">
+          {[
+            { label: "业务理解", value: "把真实业务流程拆成可执行的页面、规则和数据口径。" },
+            { label: "用户问题", value: "从问诊、权益、商品和后台场景里理解用户路径。" },
+            { label: "后台系统", value: "建立对权限、流程、看板和运营机制的产品感觉。" },
+          ].map((block) => (
+            <DetailBlock key={block.label} label={block.label} value={block.value} />
+          ))}
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-5">
+          <p className="mb-3 text-xs font-semibold text-slate-500">可迁移能力</p>
+          <div className="flex flex-wrap gap-1.5">
+            {detail.skills.map((skill, i) => (
+              <span
+                key={skill}
+                className={cn("text-[11px] rounded-full px-2.5 py-1", tagStyle(index, total, i === 0, theme))}
+              >
+                {skill}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </MotionSection>
+  );
+}
+
 function ExperienceDetail({
   detail,
   index,
@@ -356,9 +562,10 @@ function ExperienceDetail({
 }) {
   const isLast = index === total - 1;
   const bg = index % 2 === 0 ? "bg-white" : "bg-neutral-50";
-  const accentBar = isLast
-    ? "bg-gradient-to-r from-[#064e3b] via-[#047857] to-[#34d399]"
-    : "bg-gradient-to-r from-[#065f46] via-[#059669] to-[#6ee7b7]";
+
+  if (detail.id === "internship") {
+    return <InternshipDetail detail={detail} index={index} total={total} theme={theme} />;
+  }
 
   return (
     <MotionSection
@@ -366,7 +573,7 @@ function ExperienceDetail({
       className={cn("relative scroll-mt-14 px-4 py-16 sm:px-6 lg:px-8", bg)}
     >
       {/* Accent bar */}
-      <div className={cn("absolute top-0 left-0 right-0 h-[3px]", accentBar)} />
+      <div className={cn("absolute top-0 left-0 right-0 h-[3px]", theme.section.accentSolid)} />
 
       <div className="max-w-5xl mx-auto">
         {/* Header with number */}
@@ -375,16 +582,16 @@ function ExperienceDetail({
             className={cn(
               "flex items-center justify-center rounded-full text-xs font-bold shrink-0",
               isLast
-                ? "w-10 h-10 bg-emerald-600 text-white text-sm shadow-md shadow-emerald-300/20"
-                : "w-8 h-8 bg-emerald-50 text-emerald-600",
+                ? cn("w-10 h-10 text-white text-sm shadow-md shadow-emerald-300/20", theme.section.accentSolid)
+                : cn("w-8 h-8", theme.section.accentBg, theme.section.accentText),
             )}
           >
             {index + 1}
           </span>
           <div>
-            <span className="text-xs font-medium tracking-[0.12em] text-emerald-600 uppercase">经历详情</span>
+            <span className={cn("text-xs font-medium tracking-[0.12em] uppercase", theme.section.accent)}>经历详情</span>
             {isLast && (
-              <span className="ml-3 rounded-full bg-emerald-600 text-white text-[10px] font-medium px-2.5 py-0.5">
+              <span className={cn("ml-3 rounded-full text-white text-[10px] font-medium px-2.5 py-0.5", theme.section.accentSolid)}>
                 最新重点经历
               </span>
             )}
@@ -433,18 +640,13 @@ function ExperienceDetail({
               <p className="mt-3 text-sm leading-7 text-slate-700">{detail.reflection}</p>
             </div>
           )}
-          <div className={cn("rounded-2xl border p-5", isLast ? "border-slate-200 bg-white" : "border-slate-200 bg-white")}>
+          <div className="rounded-2xl border border-slate-200 bg-white p-5">
             <p className="mb-3 text-xs font-semibold text-slate-500">关联能力</p>
             <div className="flex flex-wrap gap-1.5">
-              {detail.skills.map((skill) => (
+              {detail.skills.map((skill, i) => (
                 <span
                   key={skill}
-                  className={cn(
-                    "text-[11px] rounded-full px-2.5 py-1",
-                    isLast
-                      ? "bg-slate-900 text-white font-medium"
-                      : "bg-slate-100 text-slate-500",
-                  )}
+                  className={cn("text-[11px] rounded-full px-2.5 py-1", tagStyle(index, total, i === 0, theme))}
                 >
                   {skill}
                 </span>
@@ -459,65 +661,582 @@ function ExperienceDetail({
   );
 }
 
-// ─── v5 Capability Summary ─────────────────────────────────────
+// ─── v5 Core Projects ──────────────────────────────────────────
+
+const INDUSTRY_LABELS: Record<string, string> = { internet: "互联网", automotive: "汽车", finance: "金融" };
+const TYPE_LABELS: Record<string, string> = { business: "业务产品", technical: "技术平台" };
+
+const REFERENCE_PROJECTS = [
+  {
+    num: "01",
+    eyebrow: "核心单品负责人",
+    title: "Groot-Arch 架构设计工具",
+    description:
+      "面向复杂装备研发的系统工程平台，覆盖需求、功能、系统、通信、诊断、软件六大模块，体现我对高复杂度业务流程的平台化抽象能力。",
+    bullets: [
+      "统一需求、架构、通信、诊断与软件设计数据模型",
+      "对标 DOORS、EA、PREEvision、SystemWeaver 等工具生态",
+      "支撑文档驱动向模型驱动转型",
+      "参与工信部汽车工具链摸底调研",
+    ],
+  },
+] as const;
+
+type ReferenceProject = (typeof REFERENCE_PROJECTS)[number];
+
+const ARCH_DESIGN_ITEMS = [
+  ["需求管理", "IBM DOORS / Polarion"],
+  ["功能设计", "Sparx EA / PREEvision"],
+  ["系统设计", "PREEvision / SystemWeaver"],
+  ["通信设计", "CANdb++ / SOME-IP"],
+  ["诊断设计", "CANdelaStudio / UDS"],
+] as const;
+
+const ARCH_VERIFY_ITEMS = [
+  ["仿真验证", "HIL / SIL / 服务仿真"],
+  ["验收测试", "CANoe / Indigo"],
+  ["系统测试", "CANoe / dSPACE"],
+  ["集成测试", "TSMaster"],
+  ["部件测试", "CANoe.DiVa"],
+] as const;
+
+const ARCH_PIPELINE_ITEMS = ["需求", "功能", "系统", "通信", "诊断", "软件"] as const;
+
+function ArchitectureStack({ title, subtitle, items, tone }: { title: string; subtitle: string; items: readonly (readonly [string, string])[]; tone: "design" | "verify" }) {
+  return (
+    <div>
+      <div className="mb-3 text-center">
+        <p className={cn("text-[11px] font-bold", tone === "design" ? "text-emerald-700" : "text-indigo-600")}>{title}</p>
+        <p className="mt-0.5 text-[10px] text-slate-400">{subtitle}</p>
+      </div>
+      <div className="space-y-2">
+        {items.map(([name, meta], index) => {
+          const highlighted = tone === "design" ? index >= 3 : index === 0;
+          return (
+            <div
+              key={name}
+              className={cn(
+                "rounded-xl border px-3 py-2 shadow-sm",
+                highlighted
+                  ? tone === "design"
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                    : "border-cyan-200 bg-cyan-50 text-cyan-800"
+                  : "border-slate-100 bg-slate-50 text-slate-500",
+              )}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-xs font-semibold">{name}</p>
+                  <p className="mt-0.5 text-[10px] leading-relaxed opacity-75">{meta}</p>
+                </div>
+                {tone === "design" && highlighted && (
+                  <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-700">国产 ✓</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ReferenceProjectVisual({ expanded = false }: { expanded?: boolean }) {
+  return (
+    <div
+      className={cn(
+        "relative z-20 w-full rounded-2xl border border-slate-100 bg-white text-slate-900 shadow-xl shadow-slate-900/10",
+        expanded ? "p-5 sm:p-7" : "p-4",
+      )}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-4">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-600">Groot-Arch Architecture Platform</p>
+          <h4 className="mt-1 text-lg font-semibold tracking-tight text-slate-900">架构协同数据底座</h4>
+        </div>
+        <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700">
+          文档驱动 → 模型驱动
+        </span>
+      </div>
+
+      <div className={cn("mt-5 grid gap-4", expanded ? "lg:grid-cols-[1fr_0.76fr_1fr]" : "xl:grid-cols-[1fr_0.76fr_1fr]")}>
+        <ArchitectureStack title="设计域：工具割裂" subtitle="需求 / 功能 / 系统 / 通信 / 诊断" items={ARCH_DESIGN_ITEMS} tone="design" />
+
+        <div className="flex flex-col justify-center">
+          <div className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white px-4 py-5 text-center shadow-sm">
+            <p className="text-xs font-bold text-amber-700">Groot-Arch 架构协同平台</p>
+            <p className="mt-1 text-[10px] leading-relaxed text-amber-700/75">统一模型 / 数据源头 / 协同闭环</p>
+            <div className="mt-4 grid grid-cols-3 gap-1.5">
+              {ARCH_PIPELINE_ITEMS.map((item) => (
+                <span key={item} className="rounded-lg bg-white px-2 py-1 text-[10px] font-medium text-slate-500 shadow-sm">
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="mx-auto h-10 w-px bg-gradient-to-b from-amber-200 to-emerald-200" />
+          <div className="rounded-2xl border border-dashed border-emerald-200 bg-emerald-50/60 px-3 py-3 text-center">
+            <p className="text-[11px] font-semibold text-emerald-700">AI / RAG 可调用资产</p>
+            <p className="mt-1 text-[10px] text-emerald-700/70">项目文档、架构模型、设计规范沉淀为结构化知识</p>
+          </div>
+        </div>
+
+        <ArchitectureStack title="验证域：链路后置" subtitle="仿真 / 验收 / 系统 / 集成 / 部件" items={ARCH_VERIFY_ITEMS} tone="verify" />
+      </div>
+
+      <div className="mt-5 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+        <div className="grid gap-2 text-center text-[10px] font-medium text-slate-500 sm:grid-cols-5">
+          {["需求追溯", "架构建模", "服务设计", "仿真验证", "持续交付"].map((item, i) => (
+            <div key={item} className="flex items-center justify-center gap-2">
+              <span className={cn("h-1.5 w-1.5 rounded-full", i === 0 ? "bg-emerald-500" : "bg-slate-300")} />
+              {item}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ReferenceProjects({ theme }: { theme: SiteTheme }) {
+  const [activeProject, setActiveProject] = useState<ReferenceProject | null>(null);
+
+  useEffect(() => {
+    if (!activeProject) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setActiveProject(null);
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [activeProject]);
+
+  return (
+    <section id="section-projects" className="bg-white scroll-mt-14 px-4 py-20 sm:px-6 lg:px-8 border-t border-slate-50">
+      <div className="max-w-5xl mx-auto">
+        <p className={cn("text-xs font-medium tracking-[0.15em] uppercase mb-2", theme.section.accent)}>代表项目与核心成果</p>
+        <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900">代表项目与核心成果</h2>
+        <p className="mt-3 text-sm text-slate-500 max-w-2xl">
+          以下项目集中呈现我在复杂业务抽象、平台产品设计、企业级 AI Agent 落地与商业化转化方面的代表性实践。
+        </p>
+
+        {REFERENCE_PROJECTS.map((project) => (
+          <MotionSection key={project.num} className="mt-12 rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white overflow-hidden transition-colors hover:border-emerald-200">
+            <div className="grid lg:grid-cols-[0.92fr_1.08fr]">
+              <div className="p-6 sm:p-8 flex flex-col justify-center">
+                <div className="flex items-center gap-3 mb-2">
+                  <span className={cn("flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold shrink-0 text-white", theme.section.accentSolid)}>
+                    {project.num}
+                  </span>
+                  <span className={cn("text-[11px] font-medium uppercase tracking-wider", theme.section.accent)}>{project.eyebrow}</span>
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-semibold text-slate-900 mt-2">{project.title}</h3>
+                <p className="mt-2 text-sm text-slate-500 leading-relaxed max-w-lg">{project.description}</p>
+
+                <div className="mt-5 grid gap-2 sm:grid-cols-2">
+                  {project.bullets.map((item) => (
+                    <div key={item} className="flex gap-2">
+                      <CheckCircle2 className={cn("h-4 w-4 mt-0.5 shrink-0", theme.section.accentLight)} />
+                      <span className="text-xs text-slate-600">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setActiveProject(project)}
+                className="group/project relative isolate flex min-h-[420px] cursor-zoom-in items-center justify-center overflow-hidden border-l border-slate-100 bg-[linear-gradient(145deg,#ffffff_0%,#f8fffc_100%)] p-3 text-left outline-none transition focus-visible:ring-2 focus-visible:ring-emerald-500 sm:p-4"
+                aria-label={`点击查看「${project.title}」大图`}
+              >
+                <span className="pointer-events-none absolute inset-2 z-10 rounded-[22px] bg-gradient-to-br from-emerald-200/35 via-transparent to-emerald-700/10 opacity-70 transition-opacity duration-300 group-hover/project:opacity-100" />
+                <span className="pointer-events-none absolute inset-x-6 bottom-5 z-0 h-9 rounded-full bg-emerald-800/20 blur-2xl" />
+                <span className="pointer-events-none absolute right-4 top-4 z-30 inline-flex translate-y-[-4px] items-center gap-1.5 rounded-full border border-slate-200 bg-white/90 px-3 py-2 text-xs font-semibold text-emerald-700 opacity-0 shadow-lg shadow-slate-900/5 backdrop-blur transition duration-250 group-hover/project:translate-y-0 group-hover/project:opacity-100 sm:opacity-0">
+                  <Maximize2 className="h-3.5 w-3.5" />
+                  点击查看项目大图
+                </span>
+                <div className="relative z-20 w-full transition duration-450 group-hover/project:scale-[1.012]">
+                  <ReferenceProjectVisual />
+                </div>
+              </button>
+            </div>
+          </MotionSection>
+        ))}
+      </div>
+
+      {activeProject && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/75 p-3 backdrop-blur-md sm:p-7"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="project-lightbox-title"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setActiveProject(null);
+          }}
+        >
+          <div className="flex max-h-[92vh] w-[min(94vw,1380px)] flex-col overflow-hidden rounded-[26px] border border-white/40 bg-white/95 shadow-[0_30px_90px_rgba(0,0,0,0.34)]">
+            <div className="flex items-center justify-between gap-4 border-b border-slate-200/70 bg-gradient-to-b from-white to-slate-50/80 px-4 py-3 sm:px-5">
+              <p id="project-lightbox-title" className="truncate text-sm font-bold text-slate-900">
+                {activeProject.title}
+              </p>
+              <button
+                type="button"
+                onClick={() => setActiveProject(null)}
+                className="inline-flex h-9 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 transition hover:border-emerald-800 hover:bg-emerald-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+              >
+                关闭
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="overflow-auto bg-[radial-gradient(circle_at_50%_0%,rgba(16,185,129,.08),transparent_36%)] p-3 sm:p-5">
+              <ReferenceProjectVisual expanded />
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function CoreProjects({
+  data,
+  theme,
+}: {
+  data: ResumeData;
+  theme: SiteTheme;
+}) {
+  if (isReferenceDesignerProfile(data)) return <ReferenceProjects theme={theme} />;
+
+  const modules = (data.architecture ?? []).filter((m) => !m.parentId);
+  if (modules.length === 0) return null;
+
+  function relatedHighlights(relatedIds: string[]): string[] {
+    const items: string[] = [];
+    for (const tid of relatedIds) {
+      const node = data.timeline.find((t) => t.id === tid);
+      if (node) {
+        for (const h of node.highlights) {
+          if (items.length >= 4) break;
+          items.push(h);
+        }
+      }
+      if (items.length >= 4) break;
+    }
+    return items;
+  }
+
+  function relatedSkills(relatedIds: string[]): string[] {
+    const names = new Set<string>();
+    for (const tid of relatedIds) {
+      const node = data.timeline.find((t) => t.id === tid);
+      if (node) node.skills.forEach((s) => names.add(s));
+    }
+    return [...names].slice(0, 7);
+  }
+
+  function moduleSubtitle(mod: (typeof modules)[0]): string {
+    const industry = INDUSTRY_LABELS[mod.industry] ?? "";
+    const type = TYPE_LABELS[mod.type] ?? "";
+    if (industry && type) return `${industry} · ${type}`;
+    return type || industry || "核心产品";
+  }
+
+  return (
+    <section id="section-projects" className="bg-white scroll-mt-14 px-4 py-20 sm:px-6 lg:px-8 border-t border-slate-50">
+      <div className="max-w-5xl mx-auto">
+        <p className={cn("text-xs font-medium tracking-[0.15em] uppercase mb-2", theme.section.accent)}>核心项目</p>
+        <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900">
+          从 0 到 1 落地的产品体系
+        </h2>
+        <p className="mt-3 text-sm text-slate-500 max-w-2xl">
+          覆盖{modules.map((m) => m.title).join("、")}等方向，承担从产品定位、架构设计到交付的完整职责。
+        </p>
+
+        {modules.map((mod, idx) => {
+          const highlights = relatedHighlights(mod.relatedTimelineIds);
+          const skills = relatedSkills(mod.relatedTimelineIds);
+          const num = String(idx + 1).padStart(2, "0");
+          const children = (mod.children ?? []).slice(0, 6);
+
+          return (
+            <MotionSection key={mod.id} className="mt-6 rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white overflow-hidden">
+              <div className="grid lg:grid-cols-[1fr_360px]">
+                {/* Left: content */}
+                <div className="p-6 sm:p-8 flex flex-col justify-center">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className={cn("flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold shrink-0", theme.section.accentSolid, "text-white")}>
+                      {num}
+                    </span>
+                    <span className={cn("text-[11px] font-medium uppercase tracking-wider", theme.section.accent)}>
+                      {moduleSubtitle(mod)}
+                    </span>
+                  </div>
+                  <h3 className="text-2xl sm:text-3xl font-semibold text-slate-900 mt-2">{mod.title}</h3>
+                  <p className="mt-2 text-sm text-slate-500 leading-relaxed max-w-lg">{mod.description}</p>
+
+                  {/* Bullet points from timeline highlights */}
+                  {highlights.length > 0 && (
+                    <div className="mt-5 grid gap-2 sm:grid-cols-2">
+                      {highlights.map((h, i) => (
+                        <div key={i} className="flex gap-2">
+                          <CheckCircle2 className={cn("h-4 w-4 mt-0.5 shrink-0", theme.section.accentLight)} />
+                          <span className="text-xs text-slate-600">{h}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Tags */}
+                  {skills.length > 0 && (
+                    <div className="mt-5 flex flex-wrap gap-1.5">
+                      {skills.map((skill, i) => (
+                        <span
+                          key={skill}
+                          className={cn(
+                            "text-[11px] rounded-full px-2.5 py-1",
+                            i === 0
+                              ? cn(theme.section.accentBg, theme.section.accentText, "font-medium")
+                              : "bg-slate-100 text-slate-500",
+                          )}
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Right: visual — sub-module breakdown */}
+                <div className={cn(
+                  "relative flex items-center justify-center p-4 border-l border-slate-100 overflow-hidden",
+                  "bg-gradient-to-br",
+                  theme.hero.glowA.replace(/\[0\.\d+\]/, "[0.06]"),
+                  "via-transparent to-transparent",
+                )}>
+                  <div className="relative z-10 w-full max-w-[280px]">
+                    <div className="text-center mb-6">
+                      <span className={cn("text-5xl font-bold tracking-tight", theme.section.accentLight)}>{num}</span>
+                      <p className={cn("mt-1 text-xs font-semibold", theme.section.accent)}>{moduleSubtitle(mod)}</p>
+                    </div>
+
+                    {children.length > 0 && (
+                      <div className="space-y-2">
+                        {children.map((child, ci) => (
+                          <div
+                            key={child.id}
+                            className={cn(
+                              "rounded-xl px-4 py-2.5 text-xs font-medium border transition-all",
+                              ci === 0
+                                ? cn(theme.section.accentBg, theme.section.accentBorder, theme.section.accentText)
+                                : "bg-white/70 border-slate-100 text-slate-500",
+                            )}
+                          >
+                            {child.title}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {mod.relatedTimelineIds.length > 0 && (
+                      <p className="mt-4 text-center text-[11px] text-slate-400">
+                        {mod.relatedTimelineIds.length} 段经历与此项目关联
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </MotionSection>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+// ─── v5 Capability Radar (Progress Bars) ───────────────────────
+
+interface SkillBar {
+  name: string;
+  level: number;
+  percent: number;
+}
+
+const BUSINESS_KEYWORDS = ["产品", "平台", "业务", "架构", "系统", "管理", "工具链", "AI", "数据", "研发", "团队"];
+
+function skillPriority(skill: { name: string; level: number }): number {
+  let score = skill.level * 10;
+  for (const kw of BUSINESS_KEYWORDS) {
+    if (skill.name.includes(kw)) score += 15;
+  }
+  return score;
+}
+
+function buildSkillBars(data: ResumeData): { top: SkillBar[]; overflow: SkillBar[] } {
+  const skills = (data.skills ?? [])
+    .filter((s) => s.category !== "root" && s.level > 0)
+    .map((s) => ({
+      name: s.name,
+      level: s.level,
+      percent: s.level === 5 ? 95 : s.level === 4 ? 85 : s.level === 3 ? 75 : s.level === 2 ? 55 : 35,
+    }))
+    .sort((a, b) => skillPriority(b) - skillPriority(a));
+
+  const top = skills.slice(0, 6);
+  const overflow = skills.slice(6);
+  return { top, overflow };
+}
+
+function ProgressBar({ name, percent, theme, delay }: { name: string; percent: number; theme: SiteTheme; delay: number }) {
+  return (
+    <div>
+      <div className="flex justify-between text-sm mb-2">
+        <span className="text-slate-600">{name}</span>
+        <span className={cn("text-xs font-medium", theme.section.accent)}>
+          {percent}%
+        </span>
+      </div>
+      <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
+        <motion.div
+          className={cn("h-full rounded-full", theme.section.accentSolid)}
+          initial={{ width: 0 }}
+          whileInView={{ width: `${percent}%` }}
+          viewport={{ once: true }}
+          transition={{ duration: 1.2, delay, ease: [0.16, 1, 0.3, 1] }}
+        />
+      </div>
+    </div>
+  );
+}
+
+const REFERENCE_SKILL_COLUMNS = [
+  {
+    title: "产品能力",
+    bars: [
+      { name: "平台产品架构", percent: 95 },
+      { name: "复杂业务抽象", percent: 92 },
+      { name: "工具链产品设计", percent: 90 },
+      { name: "AI Agent 工作流", percent: 80 },
+      { name: "团队管理（10人）", percent: 80 },
+    ],
+  },
+  {
+    title: "领域知识 & 商业能力",
+    bars: [
+      { name: "汽车电子电气架构", percent: 85 },
+      { name: "通信协议（SOME/IP, DDS）", percent: 82 },
+      { name: "ToB 商业闭环", percent: 82 },
+      { name: "云平台基建", percent: 80 },
+      { name: "诊断系统（DoIP, UDS）", percent: 80 },
+    ],
+  },
+] as const;
 
 function CapabilitySummary({
   data,
   primarySkills,
-  activeTimelineId,
-  hasArchitectureSignal,
   theme,
 }: {
   data: ResumeData;
   primarySkills: string[];
-  activeTimelineId: string | null;
-  hasArchitectureSignal: boolean;
   theme: SiteTheme;
 }) {
+  const referenceMode = isReferenceDesignerProfile(data);
+  const { top, overflow } = buildSkillBars(data);
+  const hasBars = top.length > 0;
+
   return (
     <MotionSection id="capability-summary" className="bg-white px-4 py-20 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto">
-        <p className="text-xs font-medium tracking-[0.15em] text-emerald-600 uppercase mb-2">能力摘要</p>
+        <p className={cn("text-xs font-medium tracking-[0.15em] uppercase mb-2", theme.section.accent)}>能力结构</p>
         <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900">从经历里沉淀出的工作方式</h2>
         <p className="mt-3 text-sm text-slate-500 max-w-lg">
-          这里保留能力结构、强项来源和对应经历，便于快速理解我的工作方式。
+          这些能力的评估基于实际交付的项目类型、独立承担的角色范围和在团队中的定位。
         </p>
 
-        {/* Skill tags */}
-        <div className="mt-6 flex flex-wrap gap-1.5">
-          {primarySkills.map((skill) => (
-            <span key={skill} className="text-[11px] rounded-full bg-slate-100 px-2.5 py-1 text-slate-500">{skill}</span>
-          ))}
-        </div>
-
-        {/* Skill map + Architecture */}
-        <div className="mt-8 grid gap-4 lg:grid-cols-2">
-          <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
-            <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-800">
-              <BarChart3 className={cn("h-4 w-4", theme.section.accent)} />
-              能力结构
-            </div>
-            <div className="h-[420px] overflow-hidden rounded-xl bg-white">
-              <SkillMapView data={data} activeTimelineId={activeTimelineId} className="min-h-[420px]" />
-            </div>
+        {referenceMode ? (
+          <div className="mt-10 grid gap-8 lg:grid-cols-2">
+            {REFERENCE_SKILL_COLUMNS.map((column, columnIndex) => (
+              <div key={column.title} className={cn("rounded-2xl border p-6", theme.section.cardBorder, theme.skills.bg)}>
+                <p className="text-sm font-semibold text-slate-800 mb-6">{column.title}</p>
+                <div className="space-y-5">
+                  {column.bars.map((bar, i) => (
+                    <ProgressBar
+                      key={bar.name}
+                      name={bar.name}
+                      percent={bar.percent}
+                      theme={theme}
+                      delay={(columnIndex * column.bars.length + i) * 0.08}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
-          {hasArchitectureSignal ? (
-            <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
-              <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-800">
-                <Target className={cn("h-4 w-4", theme.section.accent)} />
-                业务结构
+        ) : hasBars ? (
+          <>
+            <div className="mt-10 grid gap-8 lg:grid-cols-2">
+              <div className={cn("rounded-2xl border p-6", theme.section.cardBorder, theme.skills.bg)}>
+                <p className="text-sm font-semibold text-slate-800 mb-6">核心能力</p>
+                <div className="space-y-5">
+                  {top.filter((_, i) => i % 2 === 0).map((bar, i) => (
+                    <ProgressBar key={bar.name} name={bar.name} percent={bar.percent} theme={theme} delay={i * 0.08} />
+                  ))}
+                </div>
               </div>
-              <div className="h-[420px] overflow-hidden rounded-xl bg-white">
-                <ArchitectureView data={data} activeTimelineId={activeTimelineId} />
+              <div className={cn("rounded-2xl border p-6", theme.section.cardBorder, theme.skills.bg)}>
+                <p className="text-sm font-semibold text-slate-800 mb-6">核心能力</p>
+                <div className="space-y-5">
+                  {top.filter((_, i) => i % 2 === 1).map((bar, i) => (
+                    <ProgressBar key={bar.name} name={bar.name} percent={bar.percent} theme={theme} delay={(top.length / 2 + i) * 0.08} />
+                  ))}
+                </div>
               </div>
             </div>
-          ) : null}
-        </div>
 
-        {/* Education — inline row */}
+            {overflow.length > 0 && (
+              <details className="mt-6 group">
+                <summary className="cursor-pointer text-sm font-medium text-slate-500 hover:text-slate-700 transition-colors">
+                  展开更多技能（{overflow.length} 项）
+                </summary>
+                <div className="mt-4 grid gap-8 lg:grid-cols-2">
+                  <div className={cn("rounded-2xl border p-6", theme.section.cardBorder, theme.skills.bg)}>
+                    <div className="space-y-5">
+                      {overflow.filter((_, i) => i % 2 === 0).map((bar, i) => (
+                        <ProgressBar key={bar.name} name={bar.name} percent={bar.percent} theme={theme} delay={i * 0.06} />
+                      ))}
+                    </div>
+                  </div>
+                  {overflow.filter((_, i) => i % 2 === 1).length > 0 && (
+                    <div className={cn("rounded-2xl border p-6", theme.section.cardBorder, theme.skills.bg)}>
+                      <div className="space-y-5">
+                        {overflow.filter((_, i) => i % 2 === 1).map((bar, i) => (
+                          <ProgressBar key={bar.name} name={bar.name} percent={bar.percent} theme={theme} delay={(overflow.length / 2 + i) * 0.06} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </details>
+            )}
+          </>
+        ) : (
+          <div className="mt-6 flex flex-wrap gap-1.5">
+            {primarySkills.map((skill) => (
+              <span key={skill} className="text-[11px] rounded-full bg-slate-100 px-2.5 py-1 text-slate-500">{skill}</span>
+            ))}
+          </div>
+        )}
+
         {data.education.length > 0 && (
-          <div className="mt-8 rounded-2xl border border-slate-100 bg-slate-50/60 px-6 py-5 flex flex-wrap items-center gap-3">
-            <GraduationCap className="h-5 w-5 text-emerald-500 shrink-0" />
+          <div className={cn("mt-8 rounded-2xl border px-6 py-5 flex flex-wrap items-center gap-3", theme.section.cardBorder, theme.skills.bg)}>
+            <GraduationCap className={cn("h-5 w-5 shrink-0", theme.section.accent)} />
             {data.education.map((edu, i) => (
               <span key={edu.id} className="text-base text-slate-800 font-medium">
                 {i > 0 && <span className="text-slate-300 mx-2">|</span>}
@@ -540,16 +1259,19 @@ function MiniNav({
   data,
   overview,
   journey,
+  theme,
+  referenceMode,
 }: {
   data: ResumeData;
   overview: PublicOverview;
   journey: PublicJourneyNode[];
+  theme: SiteTheme;
+  referenceMode: boolean;
 }) {
   const [visible, setVisible] = useState(false);
   const heroRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    // Find the header element after mount
     heroRef.current = document.querySelector("header");
     let heroBottom = 0;
 
@@ -575,24 +1297,29 @@ function MiniNav({
   return (
     <nav
       className={cn(
-        "fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-100 transition-transform duration-350",
+        "fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-100 transition-transform",
         visible ? "translate-y-0" : "-translate-y-full",
       )}
-      style={{ transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)" }}
+      style={{ transitionDuration: "350ms", transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)" }}
     >
-      <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
-        <span className="text-sm font-semibold text-slate-800">{overview.name}</span>
-        <div className="flex items-center gap-5 text-xs text-slate-500">
-          {journey.slice(0, 4).map((item) => (
-            <a key={item.id} href={item.href} className="hover:text-emerald-600 transition-colors">
-              {item.title.length > 8 ? item.title.slice(0, 8) + "…" : item.title}
+      <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between gap-4">
+        <span className="shrink-0 text-sm font-semibold text-slate-800">{overview.name}</span>
+        <div className="hidden items-center gap-5 text-xs text-slate-500 sm:flex">
+          {journey.slice(0, 4).map((item, idx) => (
+            <a key={item.id} href={item.href} className={cn("transition-colors", theme.section.groupHoverAccent)}>
+              {referenceMode
+                ? ["实习", "经纬恒润", "国科础石·PM", "国科础石·负责人"][idx] ?? item.title
+                : item.title.length > 8 ? item.title.slice(0, 8) + "…" : item.title}
             </a>
           ))}
+          {(referenceMode || data.architecture.length > 0) && (
+            <a href="#section-projects" className={cn("transition-colors", theme.section.groupHoverAccent)}>项目</a>
+          )}
         </div>
         {data.profile.email && (
           <a
             href={`mailto:${data.profile.email}`}
-            className="text-xs rounded-full bg-emerald-600 text-white px-3 py-1.5 font-medium hover:bg-emerald-500 transition-colors"
+            className={cn("shrink-0 text-xs rounded-full text-white px-3 py-1.5 font-medium transition-colors", theme.section.accentSolid, theme.section.accentSolidHover)}
           >
             联系我
           </a>
@@ -611,13 +1338,11 @@ export function CareerNarrativeSite({ data, showFooter = true, siteThemeId }: Ca
     journey,
     details,
     primarySkills,
-    activeTimelineId,
-    hasArchitectureSignal,
-    publicSiteTemplate,
   } = viewModel;
 
   const resolvedThemeId = siteThemeId || (data.siteThemeId as SiteThemeId) || "emerald-designer";
   const theme = getTheme(resolvedThemeId);
+  const referenceMode = isReferenceDesignerProfile(data);
 
   const [showBackToTop, setShowBackToTop] = useState(false);
 
@@ -633,36 +1358,24 @@ export function CareerNarrativeSite({ data, showFooter = true, siteThemeId }: Ca
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
-      {/* Sticky mini nav */}
-      <MiniNav data={data} overview={overview} journey={journey} />
+      <MiniNav data={data} overview={overview} journey={journey} theme={theme} referenceMode={referenceMode} />
+      <DesignerHero data={data} overview={overview} journey={journey} primarySkills={primarySkills} theme={theme} />
+      <GrowthRail items={journey} theme={theme} referenceMode={referenceMode} />
 
-      {/* Hero — always use designer layout for emerald-designer theme */}
-      {publicSiteTemplate === "minimal-growth" ? (
-        <DesignerHero data={data} overview={overview} journey={journey} primarySkills={primarySkills} theme={theme} />
-      ) : (
-        <DesignerHero data={data} overview={overview} journey={journey} primarySkills={primarySkills} theme={theme} />
-      )}
-
-      {/* Growth Rail */}
-      <GrowthRail items={journey} />
-
-      {/* Experience Details */}
       <div id="experience-details">
         {details.map((detail, i) => (
           <ExperienceDetail key={detail.id} detail={detail} index={i} total={details.length} theme={theme} />
         ))}
       </div>
 
-      {/* Capability Summary */}
+      <CoreProjects data={data} theme={theme} />
+
       <CapabilitySummary
         data={data}
         primarySkills={primarySkills}
-        activeTimelineId={activeTimelineId}
-        hasArchitectureSignal={hasArchitectureSignal}
         theme={theme}
       />
 
-      {/* Back to top */}
       {showBackToTop && (
         <button
           type="button"
@@ -674,13 +1387,12 @@ export function CareerNarrativeSite({ data, showFooter = true, siteThemeId }: Ca
         </button>
       )}
 
-      {/* Footer */}
       {showFooter && (
         <footer className="border-t border-slate-100 bg-neutral-50 px-6 py-12 text-center">
           <p className="text-sm font-medium text-slate-700">
             {data.profile.name} ·{" "}
             {data.profile.email && (
-              <a href={`mailto:${data.profile.email}`} className="hover:text-emerald-600 transition-colors">
+              <a href={`mailto:${data.profile.email}`} className={cn("transition-colors", theme.section.groupHoverAccent)}>
                 {data.profile.email}
               </a>
             )}
@@ -688,7 +1400,7 @@ export function CareerNarrativeSite({ data, showFooter = true, siteThemeId }: Ca
           </p>
           <p className="mt-2 text-xs text-slate-400">
             由{" "}
-            <Link href="/" className="font-semibold text-emerald-600 hover:text-emerald-700 transition-colors">
+            <Link href="/" className={cn("font-semibold transition-colors", theme.section.accent, theme.section.groupHoverAccent)}>
               Career Card
             </Link>{" "}
             提供技术支持
