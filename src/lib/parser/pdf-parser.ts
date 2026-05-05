@@ -27,8 +27,6 @@ let workerInitialized = false;
  * copy placed by the `postbuild` script; in dev the bundler-based URL works.
  */
 function getWorkerSrc(): string {
-  // Always prefer public/ copy (committed to repo, always available).
-  // Falls back to bundled URL in dev if public/ copy is missing.
   if (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
     return "/pdf.worker.min.mjs";
   }
@@ -37,6 +35,20 @@ function getWorkerSrc(): string {
   } catch {
     return "/pdf.worker.min.mjs";
   }
+}
+
+/**
+ * Fetch worker script and create a blob URL with correct MIME type.
+ *
+ * Some platforms (EdgeOne) may serve .mjs files with an incorrect Content-Type
+ * that prevents the browser from loading them as a worker. Creating a blob URL
+ * with `application/javascript` bypasses this.
+ */
+async function resolveWorkerBlobUrl(src: string): Promise<string> {
+  const res = await fetch(src);
+  if (!res.ok) throw new Error(`Worker 脚本请求失败 (${res.status})`);
+  const code = await res.text();
+  return URL.createObjectURL(new Blob([code], { type: "application/javascript" }));
 }
 
 interface TextChunk {
@@ -125,7 +137,8 @@ async function ensureWorker(): Promise<void> {
   try {
     const pdfjs = await import("pdfjs-dist");
     if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-      pdfjs.GlobalWorkerOptions.workerSrc = getWorkerSrc();
+      const src = getWorkerSrc();
+      pdfjs.GlobalWorkerOptions.workerSrc = await resolveWorkerBlobUrl(src);
     }
     workerInitialized = true;
   } catch (err) {
