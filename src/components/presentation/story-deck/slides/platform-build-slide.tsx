@@ -28,8 +28,8 @@ export function PlatformBuildSlide({ slide, onOpenOverlay }: Props) {
       <div
         className={`quad mt12${hasOverlay ? " ov-trigger" : ""}`}
         onClick={hasOverlay ? () => onOpenOverlay(slide.overlayIds![0]!) : undefined}
+        style={{ maxWidth: 880, margin: "12px auto 0" }}
       >
-        {hasOverlay && <span className="ov-badge">↗ 点击展开平台分层详情</span>}
         {bullets.slice(0, 4).map((bullet, i) => {
           const colonIdx = bullet.indexOf("：");
           const label = colonIdx > 0 ? bullet.slice(0, colonIdx) : bullet;

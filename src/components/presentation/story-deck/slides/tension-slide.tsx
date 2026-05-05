@@ -88,7 +88,7 @@ export function TensionSlide({ slide, overlays, onOpenOverlay, theme }: Props) {
       )}
 
       {hasOverlay && (
-        <div className="mt12">
+        <div className="mt6" style={{ opacity: 0.82 }}>
           {slide.overlayIds!.map((oid) => {
             const ov = overlays.find((o) => o.id === oid);
             if (!ov) return null;
@@ -96,7 +96,7 @@ export function TensionSlide({ slide, overlays, onOpenOverlay, theme }: Props) {
               <button
                 key={oid}
                 onClick={() => onOpenOverlay(oid)}
-                style={{ padding: "8px 14px", border: `1px dashed ${theme.colors.violet}40`, borderRadius: "var(--r)", background: theme.colors.violetDim, fontSize: 11, color: theme.colors.violet, fontWeight: 700, cursor: "pointer" }}
+                style={{ padding: "6px 12px", border: `1px dashed ${theme.colors.violet}32`, borderRadius: "var(--r)", background: "transparent", fontSize: 10.5, color: theme.colors.violet, fontWeight: 700, cursor: "pointer" }}
               >
                 查看详情：{ov.title} ↗
               </button>

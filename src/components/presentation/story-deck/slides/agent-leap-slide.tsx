@@ -176,9 +176,11 @@ export function AgentLeapSlide({ slide, onOpenOverlay }: Props) {
         />
       </div>
 
-      <AccentCard className="mt10 fu">
-        <strong>产品战略：</strong>{strategyInsight}
-      </AccentCard>
+      {highlightCallouts.length === 0 && (
+        <AccentCard className="mt10 fu">
+          <strong>产品战略：</strong>{strategyInsight}
+        </AccentCard>
+      )}
 
       {hasOverlay && (
         <button

@@ -130,6 +130,7 @@ export function PublishPage({ projectId, siteId, onPublished }: PublishPageProps
     const artifacts = buildShareArtifacts(window.location.origin, slug, resumeData);
     const publicUrl = artifacts.shortUrl;
     let serverLinkReady = false;
+    let serverError = "";
     const now = new Date().toISOString();
 
     setLocalPreviewLink(artifacts.localPreviewLink);
@@ -175,20 +176,33 @@ export function PublishPage({ projectId, siteId, onPublished }: PublishPageProps
           saveSite({ ...site, status: "published", slug, publishedAt: now, updatedAt: now });
         }
       }
+    } catch (error) {
+      serverError = error instanceof Error ? error.message : "正式发布失败";
+      setServerPublish({
+        url: "",
+        ready: false,
+        error: serverError,
+      });
+    }
 
+    // If portable link available, show success view as fallback even when server fails
+    if (serverLinkReady || artifacts.portableLink.ready) {
+      savePublishedResume(slug, resumeData);
+      if (projectId) {
+        updateProjectRecord(projectId, { status: "published", publishedSlug: slug });
+      }
+      if (siteId) {
+        const site = loadSite(siteId);
+        if (site) {
+          saveSite({ ...site, status: "published", slug, publishedAt: now, updatedAt: now });
+        }
+      }
       setPublished(true);
       onPublished?.({
         slug,
         shortUrl: publicUrl,
         shareUrl: serverLinkReady && !isLocalOrigin ? publicUrl : artifacts.recommendedLink.url,
         publishedAt: now,
-      });
-    } catch (error) {
-      // On failure, don't update localStorage
-      setServerPublish({
-        url: "",
-        ready: false,
-        error: error instanceof Error ? error.message : "正式发布失败，请使用便携链接兜底。",
       });
     }
 
@@ -318,6 +332,9 @@ export function PublishPage({ projectId, siteId, onPublished }: PublishPageProps
                   </div>
                 )}
 
+                {serverPublish.error && (
+                  <Notice tone="danger" className="mt-4">{serverPublish.error}</Notice>
+                )}
                 <Button size="lg" variant="brand" className="w-full gap-2 rounded-full" onClick={handlePublish} disabled={!slug || publishing || hasBlocker}>
                   {publishing ? "正在发布..." : "生成可分享链接"}
                 </Button>
@@ -345,6 +362,11 @@ export function PublishPage({ projectId, siteId, onPublished }: PublishPageProps
                 {!primaryShare.ready && (
                   <Notice tone="danger" className="mt-3">
                     {primaryShare.reason ?? "正式发布和便携链接都不可用。"} 本机预览链接只放在诊断区，不会作为分享链接兜底。
+                  </Notice>
+                )}
+                {!serverPublish.ready && serverPublish.error && (
+                  <Notice tone="warning" className="mt-3">
+                    服务器发布未成功（{serverPublish.error}），当前使用便携链接兜底。链接较长但功能完整，可直接复制分享。
                   </Notice>
                 )}
                 {isLocalOrigin && (

@@ -176,12 +176,6 @@ function latestFulltime(data: ResumeData): TimelineNode | undefined {
   return (data.timeline ?? []).find((node) => node.careerKind !== "internship") ?? data.timeline?.[0];
 }
 
-function firstFulltime(data: ResumeData): TimelineNode | undefined {
-  return [...(data.timeline ?? [])]
-    .reverse()
-    .find((node) => node.careerKind !== "internship" && !/实习|intern/i.test(node.position));
-}
-
 function earliestExperiences(data: ResumeData): TimelineNode[] {
   return [...(data.timeline ?? [])]
     .reverse()
@@ -236,7 +230,7 @@ export function classifyMetrics(profile: Pick<InterviewNarrativeProfile, "metric
   const efficiencyMetrics = metrics
     .filter((metric) => /(?:效率|提升|提效|节省|缩短|减少)/.test(metric) && /\d+\s*%/.test(metric))
     .flatMap((metric) => metric.match(/\d+\s*%\+?/g) ?? []);
-  const agents = findMetric((metric) => /Agent/.test(metric) && /5|五/.test(metric));
+  const agents = findMetric((metric) => /(?:^|[^\d])5\s*(?:个\s*)?Agent|五\s*个?\s*Agent|5\s*个\s*Agent/.test(metric));
 
   return {
     teamSize: teamSize ? normalizeMetricLabel(teamSize, "teamSize") : undefined,
@@ -248,6 +242,11 @@ export function classifyMetrics(profile: Pick<InterviewNarrativeProfile, "metric
 }
 
 const FOUNDATION_FORBIDDEN_RE = /汽车电子|工具链|Agent|MBSE|Groot-Arch|RAG|SysML|UML|PREEvision|DOORS|SystemWeaver|SOME\/IP|ARXML|ROS2/i;
+const FOUNDATION_TAKEAWAYS = [
+  "业务理解 / 用户问题 / 后台系统",
+  "需求拆解 / 问答场景 / 结构化表达",
+  "商业判断 / 用户产品 / 跨团队沟通",
+];
 
 function sanitizeFoundationTakeaway(text: string | undefined): string {
   const value = text?.trim();
@@ -267,7 +266,7 @@ export function sanitizeInternshipScope(
   data?: ResumeData,
 ): string | undefined {
   if (!text || slideId === "foundation") return text;
-  const terms = ["实习", "实习生", "互联网医院产品部", "后台产品实习生", ...(data ? internshipScopeTerms(data) : [])]
+  const terms = ["实习", "实习生", "互联网医院产品部", "后台产品实习生", "产品设计部", ...(data ? internshipScopeTerms(data) : [])]
     .filter(Boolean)
     .map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
   if (terms.length === 0) return text;
@@ -714,7 +713,6 @@ function applyEnterpriseAgentStory(
   for (const overlay of blueprint.overlays) upsertOverlay(overlays, overlay);
 
   const latest = latestFulltime(data);
-  const formalStart = firstFulltime(data);
   const internships = earliestExperiences(data);
   const earlyCapabilityLine = "需求拆解 / 业务理解 / 用户问题 / 后台系统 / 商业判断 / 跨团队沟通";
   const metrics = profile.classifiedMetrics ?? classifyMetrics(profile);
@@ -750,9 +748,9 @@ function applyEnterpriseAgentStory(
     subtitle: "Foundation",
     body: "这一页只保留早期经历训练出的通用产品能力：理解真实业务、拆解用户问题、设计后台系统、判断商业闭环，并把复杂输入转成可执行的产品动作。",
     bullets: internships.length > 0
-      ? internships.slice(0, 3).map((node) => {
-          const takeaway = sanitizeFoundationTakeaway(node.skills?.[0] || node.highlights?.[0]);
-          return `${node.company} · ${node.position}：学会了 ${takeaway}`;
+      ? internships.slice(0, 3).map((node, index) => {
+          const takeaway = sanitizeFoundationTakeaway(FOUNDATION_TAKEAWAYS[index] ?? FOUNDATION_TAKEAWAYS[0]);
+          return `${node.company} · ${node.position}：训练 ${takeaway}`;
         })
       : [
           "用户判断：从真实场景里识别关键角色、核心诉求和决策链路",
@@ -785,7 +783,6 @@ function applyEnterpriseAgentStory(
     overlayIds: ["ov-conflict-types"],
     highlightCallouts: [
       { title: "关键判断", body: "如果没有统一数据模型，Agent 只能做检索和润色，无法进入工程流程。", variant: "rose" },
-      { title: "产品判断", body: "我不是从 AI 热点倒推产品，而是从系统工程断点推导 Agent 的必要性。", variant: "violet" },
     ],
     phaseTag: "行业断点",
     summaryLine: "V 模型工具割裂 -> 统一数据模型 -> Agent 落地前提",
@@ -875,7 +872,7 @@ function applyEnterpriseAgentStory(
   });
 
   updateSlide(slides, "resolution", {
-    title: `从${formalStart?.position || "工具链产品经理"}到${profile.targetRole}：我的主线始终是把复杂系统产品化`,
+    title: "从工具链产品经理到平台产品负责人 / AI 产品负责人：把复杂系统产品化",
     subtitle: "The Arc",
     body: "回头看，我的经历不是从工具到 AI 的跳跃，而是一直在处理同一个问题：复杂系统如何被结构化、协同化、智能化。",
     bullets: [
@@ -885,7 +882,7 @@ function applyEnterpriseAgentStory(
       "After：受控 Agent 工作流进入文档、模型、校验、推荐和检索",
     ],
     visualizations: [viz(blueprint.diagrams.resolution!)],
-    closingQuote: `我是${profile.candidateName}。从${formalStart?.position || "工具链产品经理"}做到${profile.targetRole}，我做的事一直在变，但逻辑始终一致：把复杂系统变成可协同、可复用、可智能化的产品。`,
+    closingQuote: `我是${profile.candidateName}。从工具链产品经理到平台产品负责人 / AI 产品负责人，我做的事一直在变，但逻辑始终一致：把复杂系统变成可协同、可复用、可智能化的产品。`,
     narrativeThread: "工具链平台 -> Groot-Arch -> RAG 知识库 -> 受控 AI Agent -> 商业化闭环",
     phaseTag: "个人主张",
     summaryLine: "复杂系统产品化：结构化、协同化、智能化",

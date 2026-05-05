@@ -11,18 +11,18 @@ import { PresentationShell } from "@/components/presentation/story-deck/presenta
 
 export function InterviewDemoShell() {
   const router = useRouter();
-  const [draft, setDraft] = useState<PresentationDraft | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
+  const [{ draft, error }] = useState<{ draft: PresentationDraft | null; error: string | null }>(() => {
     try {
       const generated = generatePresentationDraft(mockInterviewResumeData);
-      setDraft(generated);
+      return { draft: generated, error: null };
     } catch (err) {
       console.error("[career-card] Interview demo generation failed:", err);
-      setError(err instanceof Error ? err.message : "生成演示稿失败，请刷新重试");
+      return {
+        draft: null,
+        error: err instanceof Error ? err.message : "生成演示稿失败，请刷新重试",
+      };
     }
-  }, []);
+  });
 
   // Clean up demo data from localStorage on unmount
   useEffect(() => {

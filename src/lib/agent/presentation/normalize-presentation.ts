@@ -189,8 +189,12 @@ function stripIncompatibleLabelFields(
 }
 
 const META_NARRATIVE_RE = /面试故事|面试表达|给面试官|准备材料/;
-const INTERNSHIP_SCOPE_RE = /实习|实习生|京东健康|互联网医院产品部|后台产品实习生|百度|京东/;
+const INTERNSHIP_SCOPE_RE = /实习|实习生|京东健康|互联网医院产品部|后台产品实习生|产品设计部|百度|京东/;
 const TEAM_SIZE_RE = /(?:约\s*)?10\s*人|10\s*个\s*人/;
+const NUMERIC_RE = /\d+\s*(?:%|\+|人|个|家|项)?/;
+const EFFICIENCY_CARD_RE = /效率|提升|提效|节省|缩短|减少/;
+const COMMERCIAL_CARD_RE = /客户|项目|售前|投标|交付|验证/;
+const TEAM_CARD_RE = /团队|协同|管理|带领/;
 
 function slideAllowsInternship(slide: PresentationSlide): boolean {
   return slide.id === "foundation";
@@ -214,6 +218,23 @@ function cardsUseTeamSizeAsCommercialProof(cards: PresentationSlide["cards"]): b
   return Boolean(cards?.some((card) =>
     /商业|客户|项目|验证/.test(card.title) && TEAM_SIZE_RE.test(`${card.title}\n${card.body}`),
   ));
+}
+
+function cardsContainUngroundedMetrics(cards: PresentationSlide["cards"]): boolean {
+  return Boolean(cards?.some((card) => {
+    const text = `${card.title}\n${card.body}`;
+    if (!NUMERIC_RE.test(text)) return false;
+    if (/%/.test(text)) return !EFFICIENCY_CARD_RE.test(text);
+    if (/客户|项目/.test(text)) return !COMMERCIAL_CARD_RE.test(text);
+    if (/人/.test(text)) return !TEAM_CARD_RE.test(text);
+    return false;
+  }));
+}
+
+function cardIntroducesNewNumbers(slide: PresentationSlide, cards: PresentationSlide["cards"]): boolean {
+  const baselineNumbers = new Set(JSON.stringify(slide).match(/\d+\s*(?:%|\+|人|个|家|项)?/g) ?? []);
+  const nextNumbers = JSON.stringify(cards).match(/\d+\s*(?:%|\+|人|个|家|项)?/g) ?? [];
+  return nextNumbers.some((num) => !baselineNumbers.has(num));
 }
 
 function sanitizeAudienceUpdate(
@@ -245,7 +266,11 @@ function sanitizeAudienceUpdate(
   }
 
   if (cleaned.cards) {
-    cleaned.cards = cardsUseTeamSizeAsCommercialProof(cleaned.cards) ? undefined : cleaned.cards;
+    cleaned.cards = cardsUseTeamSizeAsCommercialProof(cleaned.cards)
+      || cardsContainUngroundedMetrics(cleaned.cards)
+      || cardIntroducesNewNumbers(slide, cleaned.cards)
+      ? undefined
+      : cleaned.cards;
   }
 
   for (const key of Object.keys(cleaned) as Array<keyof SlideEnhancementUpdate>) {

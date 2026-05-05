@@ -18,7 +18,7 @@ export default function NewPersonalProjectPage() {
     createdRef.current = true;
     try {
       const record = createProjectRecord("personal", "职业档案草稿");
-      setLatestId(record.id);
+      queueMicrotask(() => setLatestId(record.id));
       window.location.href = `/workspace/personal/${record.id}/edit`;
     } catch (err) {
       console.error("[career-card] Failed to create personal project:", err);
@@ -26,7 +26,7 @@ export default function NewPersonalProjectPage() {
       const records = listProjectRecords();
       const personal = records.filter((r) => r.type === "personal");
       if (personal.length > 0) {
-        setLatestId(personal[0].id);
+        queueMicrotask(() => setLatestId(personal[0].id));
       }
       queueMicrotask(() => setError(true));
     }

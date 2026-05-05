@@ -20,14 +20,14 @@ export default function NewInterviewProjectPage() {
       const now = new Date();
       const name = `面试演示 ${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
       const record = createProjectRecord("interview", name);
-      setLatestId(record.id);
+      queueMicrotask(() => setLatestId(record.id));
       window.location.href = `/workspace/interview/${record.id}/edit`;
     } catch (err) {
       console.error("[career-card] Failed to create interview project:", err);
       const records = listProjectRecords();
       const interviews = records.filter((r) => r.type === "interview");
       if (interviews.length > 0) {
-        setLatestId(interviews[0].id);
+        queueMicrotask(() => setLatestId(interviews[0].id));
       }
       queueMicrotask(() => setError(true));
     }

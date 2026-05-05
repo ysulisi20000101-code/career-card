@@ -141,7 +141,7 @@ describe("interview story blueprint", () => {
     const profile = buildInterviewNarrativeProfile(AGENT_MBSE_RESUME);
     expect(profile.presetId).toBe("enterprise-ai-agent-mbse");
     expect(profile.evidenceKeywords).toContain("Groot-Arch");
-    expect(profile.metrics).toContain("50%+");
+    expect(profile.metrics.some((metric) => metric.includes("50%+"))).toBe(true);
   });
 
   it("renders the reference-style 8-slide arc for the matching resume", () => {
@@ -191,6 +191,23 @@ describe("interview story blueprint", () => {
     expect(commercialCard?.body).not.toContain("10 人");
   });
 
+  it("does not classify unrelated numbers as business metrics", () => {
+    const metrics = classifyMetrics({
+      metrics: [
+        "7 类冲突场景：功能触发、执行时序、网络通信",
+        "第 3 页 / 8 页",
+        "2025.01：负责一体化平台与 AI Agent",
+        "文档沟通效率提升 50%+",
+        "支撑 12 客户售前投标与交付验证",
+      ],
+    });
+
+    expect(metrics.efficiency).toBe("50%+");
+    expect(metrics.customersProjects).toBe("12 个客户/项目");
+    expect(JSON.stringify(metrics)).not.toContain("7");
+    expect(JSON.stringify(metrics)).not.toContain("2025");
+  });
+
   it("keeps internships only on the foundation slide", () => {
     const draft = generatePresentationDraft(AGENT_MBSE_RESUME);
     const foundation = draft.slides.find((slide) => slide.id === "foundation")!;
@@ -198,7 +215,7 @@ describe("interview story blueprint", () => {
 
     expect(JSON.stringify(foundation)).toMatch(/京东健康|百度|实习/);
     expect(JSON.stringify(foundation)).not.toMatch(/汽车电子|工具链|Agent|MBSE|Groot-Arch|RAG/);
-    expect(JSON.stringify(laterSlides)).not.toMatch(/京东健康|百度|实习生|互联网医院产品部/);
+    expect(JSON.stringify(laterSlides)).not.toMatch(/京东健康|百度|实习生|互联网医院产品部|产品设计部/);
   });
 
   it("generates audience-facing copy without self-prep meta narrative", () => {
@@ -207,7 +224,9 @@ describe("interview story blueprint", () => {
 
     expect(serialized).not.toMatch(/面试故事|面试表达|给面试官|准备材料/);
     expect(draft.slides.find((slide) => slide.id === "hero")?.body).toContain("我的产品判断");
-    expect(draft.slides.find((slide) => slide.id === "resolution")?.title).not.toMatch(/实习|京东|百度/);
+    const resolution = draft.slides.find((slide) => slide.id === "resolution")!;
+    expect(resolution.title).toBe("从工具链产品经理到平台产品负责人 / AI 产品负责人：把复杂系统产品化");
+    expect(resolution.title).not.toMatch(/实习|京东|百度|产品设计部/);
   });
 
   it("does not leak the Agent/MBSE preset into generic resumes", () => {
@@ -298,6 +317,24 @@ describe("presentation enhancement normalizer", () => {
           id: "impact",
           cards: [
             { title: "商业验证", body: "10 人\n客户/项目/售前投标闭环", variant: "teal" },
+          ],
+        },
+      ],
+    });
+    const impact = merged.slides.find((slide) => slide.id === "impact")!;
+
+    expect(impact.cards).toEqual(originalCards);
+  });
+
+  it("rejects metric cards that introduce unsupported numbers", () => {
+    const baseline = generatePresentationDraft(AGENT_MBSE_RESUME);
+    const originalCards = baseline.slides.find((slide) => slide.id === "impact")!.cards;
+    const merged = mergePresentationEnhancements(baseline, {
+      slides: [
+        {
+          id: "impact",
+          cards: [
+            { title: "效率提升", body: "7% / 1%\n文档/沟通/设计效率改善", variant: "violet" },
           ],
         },
       ],
