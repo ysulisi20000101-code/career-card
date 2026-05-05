@@ -1,4 +1,4 @@
-export type SiteThemeId = "warm-business" | "cool-tech" | "minimal-white" | "dark-elegant";
+export type SiteThemeId = "emerald-designer" | "warm-business" | "cool-tech" | "minimal-white" | "dark-elegant";
 
 export interface SiteTheme {
   id: SiteThemeId;
@@ -48,6 +48,52 @@ export interface SiteTheme {
 }
 
 export const SITE_THEMES: Record<SiteThemeId, SiteTheme> = {
+  "emerald-designer": {
+    id: "emerald-designer",
+    name: "翠绿设计",
+    description: "v5 设计师版 — 全屏 Hero + 翠绿点缀 + 交替背景节奏",
+    preview: "🍃",
+    hero: {
+      bg: "bg-gradient-to-r from-emerald-950 via-slate-950 to-emerald-950",
+      text: "text-white",
+      accent: "text-emerald-400",
+      accentText: "text-emerald-300",
+      badge: "border-emerald-500/30 bg-emerald-500/10",
+      badgeText: "text-emerald-400",
+      tag: "border-white/10 bg-white/[0.08]",
+      tagText: "text-white/60",
+      strengthBg: "bg-white/[0.06]",
+      strengthBorder: "border-white/10",
+      strengthText: "text-white/60",
+      glowA: "from-emerald-500/[0.12]",
+      glowB: "from-emerald-400/[0.08]",
+    },
+    section: {
+      bg: "bg-white",
+      text: "text-slate-900",
+      muted: "text-slate-500",
+      accent: "text-emerald-600",
+      accentBg: "bg-emerald-50",
+      accentText: "text-emerald-600",
+      cardBg: "bg-white",
+      cardBorder: "border-slate-100",
+      divider: "border-slate-100",
+      groupHoverAccent: "group-hover:text-emerald-600",
+    },
+    skills: {
+      bg: "bg-slate-50",
+      text: "text-slate-900",
+      tagBg: "bg-slate-100",
+      tagBorder: "border-slate-100",
+      tagText: "text-slate-500",
+    },
+    footer: {
+      bg: "bg-neutral-50",
+      text: "text-slate-900",
+      muted: "text-slate-400",
+    },
+  },
+
   "warm-business": {
     id: "warm-business",
     name: "暖调商务",
@@ -234,7 +280,7 @@ export const SITE_THEMES: Record<SiteThemeId, SiteTheme> = {
 };
 
 export function getTheme(id: string): SiteTheme {
-  return SITE_THEMES[id as SiteThemeId] ?? SITE_THEMES["warm-business"];
+  return SITE_THEMES[id as SiteThemeId] ?? SITE_THEMES["emerald-designer"];
 }
 
 export function getAllThemes(): SiteTheme[] {
