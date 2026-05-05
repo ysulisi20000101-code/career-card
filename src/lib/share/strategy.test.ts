@@ -66,7 +66,7 @@ describe("share strategy", () => {
     expect(resolved).toBeNull();
   });
 
-  it("does not downgrade an oversized portable link to a local-only share link", () => {
+  it("marks oversized portable link as too-long but still ready for sharing", () => {
     const data = structuredClone(mockResumeData);
     data.profile.summary = "长期负责复杂产品规划、团队协作和客户交付。".repeat(500);
 
@@ -79,11 +79,12 @@ describe("share strategy", () => {
     });
 
     expect(artifacts.portableUrlTooLong).toBe(true);
-    expect(artifacts.localPreviewLink.capability).toBe("localOnly");
-    expect(primary.capability).toBe("unavailable");
+    expect(artifacts.canRenderPortableQr).toBe(false);
+    expect(artifacts.portableLink.ready).toBe(true);
+    expect(primary.capability).toBe("portable");
   });
 
-  it("prefers a server link when it is ready and accessible", () => {
+  it("prefers portable link over server link when both are available", () => {
     const artifacts = buildShareArtifacts("https://example.com", "demo", smallResumeData);
 
     const primary = choosePrimaryShareLink({
@@ -93,7 +94,7 @@ describe("share strategy", () => {
       portableLink: artifacts.portableLink,
     });
 
-    expect(primary.capability).toBe("server");
-    expect(primary.url).toBe("https://example.com/p/demo");
+    expect(artifacts.portableLink.ready).toBe(true);
+    expect(primary.capability).toBe("portable");
   });
 });

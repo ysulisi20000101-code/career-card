@@ -53,19 +53,20 @@ export function buildShareArtifacts(
     ready: true,
     reason: "本机预览依赖当前设备或当前开发地址，不能保证跨设备访问。",
   };
-  const portableLink: ShareLinkState =
-    portableUrlReady && !portableUrlTooLong
-      ? {
-          capability: "portable",
-          url: portableUrl,
-          ready: true,
-          reason: "链接内携带发布快照，可在没有本机数据的浏览器中打开。",
-        }
-      : unavailable(
-          portableUrlTooLong
-            ? "便携链接超过稳定分享长度，请使用正式发布链接或减少发布内容。"
-            : "便携链接生成失败，请重新发布或使用正式发布链接。",
-        );
+  // Portable link is always available if encode/decode round-trip succeeds,
+  // regardless of QR length. serverless platforms may route GET to a
+  // different instance, so the portable (hash-embedded) link is the
+  // most reliable cross-device sharing method.
+  const portableLink: ShareLinkState = portableUrlReady
+    ? {
+        capability: "portable",
+        url: portableUrl,
+        ready: true,
+        reason: portableUrlTooLong
+          ? "链接内携带完整数据，可跨设备打开（含 QR 码的提示见下方）。"
+          : "链接内携带发布快照，可在没有本机数据的浏览器中打开。",
+      }
+    : unavailable("便携链接生成失败，请重新发布或使用正式发布链接。");
 
   return {
     shortUrl: base,
@@ -86,6 +87,9 @@ export function choosePrimaryShareLink(params: {
   serverAccessible: boolean;
   portableLink: ShareLinkState;
 }): ShareLinkState {
+  // Prefer portable link on serverless platforms where GET may hit a
+  // different instance than POST, making server-side storage unreliable.
+  if (params.portableLink.ready) return params.portableLink;
   if (params.serverReady && params.serverAccessible && params.serverUrl) {
     return {
       capability: "server",
@@ -94,7 +98,6 @@ export function choosePrimaryShareLink(params: {
       reason: "服务端保存发布快照，可跨设备稳定访问。",
     };
   }
-  if (params.portableLink.ready) return params.portableLink;
   return unavailable(params.portableLink.reason ?? "暂无可跨设备访问的分享链接。");
 }
 

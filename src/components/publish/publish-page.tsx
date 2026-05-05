@@ -146,12 +146,13 @@ export function PublishPage({ projectId, siteId, onPublished }: PublishPageProps
           data: resumeData,
         }),
       });
-      const payload = (await response.json()) as { error?: string };
+      const payload = (await response.json()) as { error?: string; site?: unknown };
       if (!response.ok) throw new Error(readablePublishError(payload.error));
 
-      const verify = await fetch(`/api/published-sites/${slug}`, { cache: "no-store" });
-      if (!verify.ok) throw new Error("发布快照校验失败");
       serverLinkReady = true;
+
+      // Best-effort verify (may hit different serverless instance on Vercel/EdgeOne)
+      fetch(`/api/published-sites/${slug}`, { cache: "no-store" }).catch(() => {});
 
       // API is source of truth; update localStorage as cache after success
       savePublishedResume(slug, resumeData);
