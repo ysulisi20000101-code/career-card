@@ -1,14 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { createProjectRecord } from "@/lib/projects/registry";
 import { BrandLogo } from "@/components/shell/brand-logo";
 
 export default function NewInterviewProjectPage() {
-  const router = useRouter();
   const [error, setError] = useState(false);
   const createdRef = useRef(false);
 
@@ -19,11 +17,12 @@ export default function NewInterviewProjectPage() {
       const now = new Date();
       const name = `面试演示 ${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
       const record = createProjectRecord("interview", name);
-      router.replace(`/workspace/interview/${record.id}/edit`);
-    } catch {
+      window.location.href = `/workspace/interview/${record.id}/edit`;
+    } catch (err) {
+      console.error("[career-card] Failed to create interview project:", err);
       queueMicrotask(() => setError(true));
     }
-  }, [router]);
+  }, []);
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-zinc-50 via-white to-white">

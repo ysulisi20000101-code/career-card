@@ -1,14 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { createProjectRecord } from "@/lib/projects/registry";
 import { BrandLogo } from "@/components/shell/brand-logo";
 
 export default function NewPersonalProjectPage() {
-  const router = useRouter();
   const createdRef = useRef(false);
   const [error, setError] = useState(false);
 
@@ -17,11 +15,13 @@ export default function NewPersonalProjectPage() {
     createdRef.current = true;
     try {
       const record = createProjectRecord("personal", "职业档案草稿");
-      router.replace(`/workspace/personal/${record.id}/edit`);
-    } catch {
+      // Use full page navigation instead of client-side routing for reliability on EdgeOne
+      window.location.href = `/workspace/personal/${record.id}/edit`;
+    } catch (err) {
+      console.error("[career-card] Failed to create personal project:", err);
       queueMicrotask(() => setError(true));
     }
-  }, [router]);
+  }, []);
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-zinc-50 via-white to-white">

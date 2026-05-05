@@ -143,10 +143,6 @@ function extractEvidencePhrases(corpus: string): string[] {
     "5 个 Agent",
     "RAG",
     "Groot-Arch",
-    "50%+",
-    "20%+",
-    "100+",
-    "10+",
     "工信部",
     "SOME/IP",
     "ARXML",
@@ -161,14 +157,19 @@ function extractEvidencePhrases(corpus: string): string[] {
     "VDE",
   ];
   const phrases = preferred.filter((phrase) => corpus.includes(phrase));
-  const numberMatches = corpus.match(
-    /(?:约|近|超过|超)?\s*\d+\s*(?:%|\+)?\s*(?:人产品团队|产品团队|研发用户|用户|客户\/项目|客户|项目|团队|Agent|个|家|人|项|类|年|倍)?/g,
-  ) ?? [];
-  for (const metric of numberMatches) {
-    const normalized = metric.trim();
-    if (normalized && !phrases.includes(normalized)) phrases.push(normalized);
+
+  const evidenceSentences = corpus
+    .split(/[\n，,、。；;.!！?？]+/)
+    .map((item) => item.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+  const metricEvidenceRe = /\d+\s*(?:%|\+)?|\d+\s*(?:人|个|家|项|类|年|倍)/;
+  const semanticRe = /效率|提升|提效|节省|缩短|减少|团队|管理|协同|带领|客户|项目|售前|投标|交付|验证|用户|研发|Agent/i;
+  for (const sentence of evidenceSentences) {
+    if (metricEvidenceRe.test(sentence) && semanticRe.test(sentence) && !phrases.includes(sentence)) {
+      phrases.push(sentence);
+    }
   }
-  return phrases.slice(0, 16);
+  return phrases.slice(0, 32);
 }
 
 function latestFulltime(data: ResumeData): TimelineNode | undefined {
@@ -206,10 +207,15 @@ export interface ClassifiedInterviewMetrics {
 
 function normalizeMetricLabel(metric: string, kind: keyof ClassifiedInterviewMetrics): string {
   const compact = metric.replace(/\s+/g, " ").trim();
-  if (kind === "teamSize" && /10\s*(?:人|个)/.test(compact)) return "约 10 人产品团队";
-  if (kind === "users" && /100/.test(compact)) return "100+ 用户/研发协同覆盖";
-  if (kind === "customersProjects" && /10/.test(compact)) return "10+ 客户/项目";
-  if (kind === "agents" && /5/.test(compact)) return "5 个 Agent 场景";
+  const number = compact.match(/(?:约|近|超过|超)?\s*\d+\s*(?:\+|%|人|个|家|项)?/)?.[0]?.replace(/\s+/g, " ").trim();
+  if (!number) return compact;
+  if (kind === "teamSize") return `${number.includes("人") ? number : `${number} 人`}产品团队`.replace(/人人/, "人");
+  if (kind === "users") return `${number.includes("用户") ? number : `${number} 用户/研发协同覆盖`}`;
+  if (kind === "customersProjects") {
+    const normalized = number.includes("+") ? number : number.replace(/(?:个|家|项)?$/, "");
+    return `${normalized} 个客户/项目`.replace("+ 个", "+ ");
+  }
+  if (kind === "agents") return `${number.includes("个") ? number : `${number} 个`} Agent 场景`.replace(/个 个/, "个");
   return compact;
 }
 
@@ -217,20 +223,26 @@ export function classifyMetrics(profile: Pick<InterviewNarrativeProfile, "metric
   const metrics = profile.metrics ?? [];
   const findMetric = (predicate: (metric: string) => boolean) => metrics.find(predicate);
   const teamSize = findMetric((metric) =>
-    /团队|管理|协同|带领|产品团队/.test(metric) || (/10\s*人/.test(metric) && !/客户|项目|用户/.test(metric)),
+    /(?:团队|管理|协同|带领|产品团队)/.test(metric) && /(?:约|近|超过|超)?\s*\d+\s*(?:人|个)?/.test(metric),
   );
-  const users = findMetric((metric) => /用户|研发/.test(metric) || /100\s*\+?/.test(metric));
+  const users = findMetric((metric) =>
+    /(?:用户|研发)/.test(metric) && /(?:约|近|超过|超)?\s*\d+\s*\+?/.test(metric),
+  );
   const customersProjects = findMetric((metric) =>
-    /客户|项目|售前|投标|交付/.test(metric) || (/10\s*\+/.test(metric) && !/人|团队/.test(metric)),
+    /(?:客户|项目|售前|投标|交付|验证)/.test(metric) && /(?:约|近|超过|超)?\s*\d+\s*\+?/.test(metric) && !/(?:人|团队|用户|研发)/.test(metric),
+  ) ?? findMetric((metric) =>
+    /(?:客户|项目|售前|投标|交付|验证)/.test(metric) && /(?:约|近|超过|超)?\s*\d+\s*\+?/.test(metric),
   );
-  const efficiencyMetrics = metrics.filter((metric) => /%|效率|提升/.test(metric));
+  const efficiencyMetrics = metrics
+    .filter((metric) => /(?:效率|提升|提效|节省|缩短|减少)/.test(metric) && /\d+\s*%/.test(metric))
+    .flatMap((metric) => metric.match(/\d+\s*%\+?/g) ?? []);
   const agents = findMetric((metric) => /Agent/.test(metric) && /5|五/.test(metric));
 
   return {
     teamSize: teamSize ? normalizeMetricLabel(teamSize, "teamSize") : undefined,
     users: users ? normalizeMetricLabel(users, "users") : undefined,
     customersProjects: customersProjects ? normalizeMetricLabel(customersProjects, "customersProjects") : undefined,
-    efficiency: efficiencyMetrics.length > 0 ? efficiencyMetrics.join(" / ") : undefined,
+    efficiency: efficiencyMetrics.length > 0 ? [...new Set(efficiencyMetrics)].join(" / ") : undefined,
     agents: agents ? normalizeMetricLabel(agents, "agents") : undefined,
   };
 }
@@ -278,6 +290,7 @@ function enforceInternshipScope(slides: PresentationSlide[], data: ResumeData): 
     slide.summaryLine = sanitizeInternshipScope(slide.id, slide.summaryLine, data);
     slide.closingQuote = sanitizeInternshipScope(slide.id, slide.closingQuote, data);
     slide.narrativeThread = sanitizeInternshipScope(slide.id, slide.narrativeThread, data);
+    slide.speakerNotes = sanitizeInternshipScope(slide.id, slide.speakerNotes, data);
     slide.bullets = slide.bullets
       ?.map((bullet) => sanitizeInternshipScope(slide.id, bullet, data))
       .filter((bullet): bullet is string => Boolean(bullet));
@@ -584,9 +597,9 @@ function enterpriseImpactMetrics(profile: InterviewNarrativeProfile): Record<str
   const metrics = profile.classifiedMetrics ?? classifyMetrics(profile);
   return {
     cards: [
-      { title: "团队与协同", body: `${metrics.teamSize ?? "约 10 人产品团队"}\n管理/协同产品、研发与交付节奏`, variant: "gold" },
-      { title: "效率提升", body: `${metrics.efficiency ?? "效率提升"}\n文档/沟通/设计效率改善`, variant: "violet" },
-      { title: "客户/项目验证", body: `${metrics.customersProjects ?? "10+ 客户/项目"}\n售前投标与交付验证闭环`, variant: "teal" },
+      { title: "团队与协同", body: `${metrics.teamSize ?? "团队协同"}\n管理/协同产品、研发与交付节奏`, variant: "gold" },
+      { title: "效率提升", body: `${metrics.efficiency ?? "效率改善"}\n文档/沟通/设计效率改善`, variant: "violet" },
+      { title: "客户/项目验证", body: `${metrics.customersProjects ?? "客户/项目验证"}\n售前投标与交付验证闭环`, variant: "teal" },
     ],
   };
 }
@@ -709,9 +722,7 @@ function applyEnterpriseAgentStory(
   const teamMetric = metrics.teamSize ?? "";
   const customerMetric = metrics.customersProjects ?? "";
   const userMetric = metrics.users ?? "";
-  const efficiencyText = metrics.efficiency ?? [hasMetric(profile, "50") ? "50%+" : "", hasMetric(profile, "20") ? "20%+" : ""]
-    .filter(Boolean)
-    .join(" / ");
+  const efficiencyText = metrics.efficiency ?? "";
 
   updateSlide(slides, "hero", {
     title: `${profile.candidateName} · ${profile.targetRole}`,
@@ -723,7 +734,7 @@ function applyEnterpriseAgentStory(
       evidenceLine("平台", profile.metrics.includes("Groot-Arch") ? "Groot-Arch / 工具链" : "一体化工具链"),
       evidenceLine("团队", teamMetric),
       evidenceLine("用户", userMetric),
-      evidenceLine("客户项目", customerMetric),
+      evidenceLine("客户/项目", customerMetric),
       evidenceLine("效率", efficiencyText),
     ].filter((line): line is string => !!line),
     visualizations: [viz(blueprint.diagrams.hero!)],

@@ -27,16 +27,16 @@ let workerInitialized = false;
  * copy placed by the `postbuild` script; in dev the bundler-based URL works.
  */
 function getWorkerSrc(): string {
-  if (typeof window !== "undefined") {
-    const host = window.location.hostname;
-    if (host !== "localhost" && host !== "127.0.0.1") {
-      return "/pdf.worker.min.mjs";
-    }
+  // Always prefer public/ copy (committed to repo, always available).
+  // Falls back to bundled URL in dev if public/ copy is missing.
+  if (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+    return "/pdf.worker.min.mjs";
   }
-  return new URL(
-    "pdfjs-dist/build/pdf.worker.min.mjs",
-    import.meta.url,
-  ).toString();
+  try {
+    return new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
+  } catch {
+    return "/pdf.worker.min.mjs";
+  }
 }
 
 interface TextChunk {

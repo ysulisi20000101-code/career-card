@@ -13,6 +13,7 @@ const eslintConfig = defineConfig([
     ".vercel/**",
     "out/**",
     "build/**",
+    "public/pdf.worker.min.mjs",
     "next-env.d.ts",
     "**/._*",
     "._*",
