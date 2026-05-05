@@ -28,15 +28,41 @@ async function withFileLock<T>(filePath: string, fn: () => Promise<T>): Promise<
   }
 }
 
-// JSON File Adapter (本地开发)
+// JSON File Adapter (本地开发 / serverless fallback)
 const JSON_FILE_STORE_KEY = ".data/published-sites.json";
+
+let _storeBaseDir: string | null = null;
+
+async function getStoreBaseDir(): Promise<string> {
+  if (_storeBaseDir) return _storeBaseDir;
+  const fs = await import("node:fs/promises");
+  const path = await import("node:path");
+  // Try project-local .data first (local dev)
+  const cwdDir = path.join(process.cwd(), ".data");
+  try {
+    await fs.mkdir(cwdDir, { recursive: true });
+    // verify writable
+    const testFile = path.join(cwdDir, ".write-test");
+    await fs.writeFile(testFile, "ok", "utf8");
+    await fs.unlink(testFile);
+    _storeBaseDir = cwdDir;
+    return _storeBaseDir;
+  } catch {
+    // Fallback to /tmp for serverless platforms (Vercel / EdgeOne)
+    const tmpDir = path.join("/tmp", ".data");
+    await fs.mkdir(tmpDir, { recursive: true });
+    _storeBaseDir = tmpDir;
+    return _storeBaseDir;
+  }
+}
 
 class JsonFileAdapter implements StorageAdapter {
   private async readStore(): Promise<Record<string, PublishedSiteRecord>> {
     try {
       const fs = await import("node:fs/promises");
       const path = await import("node:path");
-      const STORE_FILE = path.join(process.cwd(), ".data", "published-sites.json");
+      const baseDir = await getStoreBaseDir();
+      const STORE_FILE = path.join(baseDir, "published-sites.json");
       const raw = await fs.readFile(STORE_FILE, "utf8");
       const parsed = JSON.parse(raw) as Record<string, PublishedSiteRecord>;
       return parsed && typeof parsed === "object" ? parsed : {};
@@ -48,9 +74,9 @@ class JsonFileAdapter implements StorageAdapter {
   private async writeStore(store: Record<string, PublishedSiteRecord>): Promise<void> {
     const fs = await import("node:fs/promises");
     const path = await import("node:path");
-    const STORE_DIR = path.join(process.cwd(), ".data");
-    const STORE_FILE = path.join(STORE_DIR, "published-sites.json");
-    await fs.mkdir(STORE_DIR, { recursive: true });
+    const baseDir = await getStoreBaseDir();
+    const STORE_FILE = path.join(baseDir, "published-sites.json");
+    await fs.mkdir(baseDir, { recursive: true });
     await fs.writeFile(STORE_FILE, JSON.stringify(store, null, 2), "utf8");
   }
 
