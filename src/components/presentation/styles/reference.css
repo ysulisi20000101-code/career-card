@@ -404,20 +404,30 @@
 
 /* ── RAG Flow ── */
 .ps-root .rag-flow {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(138px, 1fr));
+  align-items: stretch;
+  gap: 8px 14px;
+  justify-content: stretch;
   font-size: var(--fs-sm);
+  width: 100%;
+}
+
+.ps-root .rag-step {
+  position: relative;
+  min-width: 0;
+  display: flex;
 }
 
 .ps-root .rag-block {
-  padding: 10px 14px;
+  width: 100%;
+  min-width: 0;
+  padding: 9px 10px;
   border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--surface);
   text-align: center;
+  overflow-wrap: anywhere;
 }
 
 .ps-root .rag-block .rag-title {
@@ -431,12 +441,16 @@
   font-size: var(--fs-xs);
   color: var(--t3);
   line-height: 1.45;
+  white-space: pre-line;
 }
 
 .ps-root .rag-arrow {
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
   color: var(--t3);
   font-size: 14px;
-  flex-shrink: 0;
 }
 
 /* ── Pipeline ── */
@@ -676,7 +690,7 @@
   .ps-root .g2 { grid-template-columns: 1fr; }
   .ps-root .hero-grid { gap: 20px; }
   .ps-root .hero-name { font-size: var(--fs-2xl); }
-  .ps-root .rag-flow { flex-direction: column; }
+  .ps-root .rag-flow { grid-template-columns: 1fr; }
   .ps-root .rag-arrow { display: none; }
   .ps-root .ba-arrow { transform: rotate(90deg); }
   .ps-root .pl-wrap svg { min-width: 600px; }

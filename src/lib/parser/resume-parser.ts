@@ -38,7 +38,7 @@ const SECTION_HEADERS: Record<keyof Sections, string[]> = {
   work: ["工作经历", "工作经验", "任职经历", "实习经历", "实习经验", "experience", "work experience"],
   project: ["核心项目经历", "项目经历", "项目经验", "项目实践", "产品项目", "projects"],
   education: ["教育背景", "教育经历", "教育信息", "education"],
-  skills: ["技能证书", "技能", "专业技能", "职业技能", "核心能力", "产品技能", "工具技能", "skills"],
+  skills: ["技能证书", "技能", "专业技能", "职业技能", "产品技能", "工具技能", "skills"],
 };
 
 function emptySections(): Sections {
@@ -59,10 +59,38 @@ function repairChineseSpacing(value: string): string {
     .trim();
 }
 
+/**
+ * PDF text extraction often produces very few line breaks.
+ * Insert newlines before section headers and experience boundaries.
+ */
+function reflowSections(text: string): string {
+  const headers = [
+    "\u6838\u5fc3\u9879\u76ee\u7ecf\u5386", "\u9879\u76ee\u7ecf\u5386", "\u9879\u76ee\u7ecf\u9a8c", "\u9879\u76ee\u5b9e\u8df5", "\u4ea7\u54c1\u9879\u76ee",
+    "\u5de5\u4f5c\u7ecf\u5386", "\u5de5\u4f5c\u7ecf\u9a8c", "\u4efb\u804c\u7ecf\u5386",
+    "\u5b9e\u4e60\u7ecf\u5386", "\u5b9e\u4e60\u7ecf\u9a8c",
+    "\u6559\u80b2\u80cc\u666f", "\u6559\u80b2\u7ecf\u5386", "\u6559\u80b2\u4fe1\u606f",
+    "\u4e2a\u4eba\u7b80\u4ecb", "\u4e2a\u4eba\u4f18\u52bf", "\u81ea\u6211\u8bc4\u4ef7", "\u81ea\u6211\u4ecb\u7ecd",
+    "\u6280\u80fd\u8bc1\u4e66", "\u4e13\u4e1a\u6280\u80fd", "\u804c\u4e1a\u6280\u80fd", "\u4ea7\u54c1\u6280\u80fd", "\u5de5\u5177\u6280\u80fd",
+    "\u4e2a\u4eba\u4fe1\u606f", "\u57fa\u672c\u4fe1\u606f", "\u8054\u7cfb\u65b9\u5f0f", "\u6c42\u804c\u610f\u5411",
+  ];
+  let result = text;
+  for (const h of headers) {
+    const escaped = h.replace(/[.*+?${}()|[\]\\]/g, "\\$&");
+    const re = new RegExp("([^\\n])(" + escaped + ")\\s*", "g");
+    result = result.replace(re, "$1\n$2\n");
+  }
+  // Break at experience boundaries: Chinese company\uff5crole followed by YYYY.MM\u2014
+  result = result.replace(
+    /([\u4e00-\u9fff\w]{2,}[\uff5c|][^\n]{2,80}?)(\d{4}\.\d{2}\s*[\u2014\-\u81f3]\s*(?:\u81f3\u4eca|\d{4}))/g,
+    "\n$1$2"
+  );
+  return result;
+}
+
 function cleanText(rawText: string): string {
-  return rawText
+  return reflowSections(rawText
     .replace(/\u00a0/g, " ")
-    .replace(/\r/g, "\n")
+    .replace(/\r/g, "\n"))
     .split(/\n+/)
     .map(repairChineseSpacing)
     .filter(Boolean)
@@ -85,7 +113,7 @@ function normalizeHeader(line: string): string {
 function detectHeader(line: string): keyof Sections | null {
   const normalized = normalizeHeader(line);
   for (const [key, hints] of Object.entries(SECTION_HEADERS) as [keyof Sections, string[]][]) {
-    if (hints.some((hint) => normalized === normalizeHeader(hint))) return key;
+    if (hints.some((hint) => { const nHint = normalizeHeader(hint); return normalized === nHint || normalized.startsWith(nHint); })) return key;
   }
   return null;
 }
@@ -116,6 +144,11 @@ function pickName(lines: string[], fileName: string): string {
     const leading = cleaned.match(/^([\u4e00-\u9fa5]{2,4})(?:\s|$)/);
     if (leading && cleaned.length <= 24 && !EMAIL_RE.test(cleaned) && !PHONE_RE.test(cleaned)) {
       return leading[1];
+    }
+    // Name glued to following token by repairChineseSpacing (e.g. "\u674e\u9526\u6d9b\u90ae\u7bb1\uff1a")
+    const delimiterName = cleaned.match(/^([\u4e00-\u9fa5]{2,4})(?:\u90ae\u7bb1|\u7535\u8bdd|\u624b\u673a|\uff1a|:|\s|$)/);
+    if (delimiterName) {
+      return delimiterName[1];
     }
     const gluedTitle = cleaned.match(
       /^([\u4e00-\u9fa5]{2,4})(?:产品|运营|设计|前端|后端|数据|项目|工程|销售|市场|算法|测试|求职)/,
@@ -152,7 +185,12 @@ function extractDateRange(line: string): { startDate: string; endDate: string; r
 }
 
 function removeDateRange(line: string): string {
-  return line.replace(DATE_RANGE_RE, "").replace(/[|｜]+$/g, "").trim();
+  let header = line.replace(DATE_RANGE_RE, "").replace(/[|｜]+$/g, "").trim();
+  if (header.length > 90) {
+    const trunc = header.split(/[•·]|阶段[一二三四五六七八九十\d]/)[0];
+    if (trunc.trim()) header = trunc.trim();
+  }
+  return header;
 }
 
 function formatPeriodFromRange(range: { startDate: string; endDate: string } | null): string {

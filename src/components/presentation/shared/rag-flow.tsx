@@ -17,8 +17,8 @@ export function RagFlow({ blocks, footer, className }: RagFlowProps) {
     <div className={className}>
       <div className="rag-flow">
         {blocks.map((block, i) => (
-          <span key={i}>
-            {i > 0 && <span className="rag-arrow">→</span>}
+          <div className="rag-step" key={i}>
+            {i > 0 && <span aria-hidden className="rag-arrow">→</span>}
             <span
               className="rag-block"
               style={
@@ -35,7 +35,7 @@ export function RagFlow({ blocks, footer, className }: RagFlowProps) {
               </div>
               <div className="rag-items">{block.items}</div>
             </span>
-          </span>
+          </div>
         ))}
       </div>
       {footer && (

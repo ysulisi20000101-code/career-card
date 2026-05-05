@@ -19,6 +19,26 @@ export class ParseError extends Error {
 
 let workerInitialized = false;
 
+/**
+ * Resolve pdfjs worker URL.
+ *
+ * In production (EdgeOne etc.), `import.meta.url`-based resolution may produce
+ * hashed paths that the platform doesn't serve correctly. We prefer the public/
+ * copy placed by the `postbuild` script; in dev the bundler-based URL works.
+ */
+function getWorkerSrc(): string {
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    if (host !== "localhost" && host !== "127.0.0.1") {
+      return "/pdf.worker.min.mjs";
+    }
+  }
+  return new URL(
+    "pdfjs-dist/build/pdf.worker.min.mjs",
+    import.meta.url,
+  ).toString();
+}
+
 interface TextChunk {
   text: string;
   x: number;
@@ -105,10 +125,7 @@ async function ensureWorker(): Promise<void> {
   try {
     const pdfjs = await import("pdfjs-dist");
     if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-      pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-        "pdfjs-dist/build/pdf.worker.min.mjs",
-        import.meta.url,
-      ).toString();
+      pdfjs.GlobalWorkerOptions.workerSrc = getWorkerSrc();
     }
     workerInitialized = true;
   } catch (err) {

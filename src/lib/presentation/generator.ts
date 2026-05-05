@@ -1,5 +1,6 @@
 import type { ResumeData, TimelineNode } from "@/types";
 import type { PresentationDraft, PresentationSlide, PresentationOverlay } from "./types";
+import { applyInterviewStoryBlueprint } from "./interview-story";
 import { getResumeRevision } from "@/lib/public-narrative/from-draft";
 import { getOrderedTimeline } from "@/lib/timeline/order";
 
@@ -130,7 +131,7 @@ export function generatePresentationDraft(data: ResumeData): PresentationDraft {
     sourceRefs: [],
   });
 
-  return {
+  const draft: PresentationDraft = {
     id: safeRandomId(),
     schemaVersion: 1,
     sourceResumeRevision: getResumeRevision(data),
@@ -142,6 +143,7 @@ export function generatePresentationDraft(data: ResumeData): PresentationDraft {
     createdAt: now,
     updatedAt: now,
   };
+  return applyInterviewStoryBlueprint(draft, data);
 }
 
 // ─── Slide Builders ────────────────────────────────────────────────

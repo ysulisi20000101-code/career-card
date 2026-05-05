@@ -1,12 +1,14 @@
 "use client";
 
+import { generateId } from "@/lib/utils";
+
 const SESSION_KEY = "career-card:event-session";
 
 function getEventSessionId(): string {
   if (typeof window === "undefined") return "server";
   const existing = window.localStorage.getItem(SESSION_KEY);
   if (existing) return existing;
-  const next = crypto.randomUUID();
+  const next = generateId();
   window.localStorage.setItem(SESSION_KEY, next);
   return next;
 }

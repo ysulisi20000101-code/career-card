@@ -41,9 +41,15 @@ yarn-error.log*
 # vercel
 .vercel
 
+# edgeone generated deployment output
+.edgeone/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Generated build artifacts
+/public/pdf.worker.min.mjs
 
 # Local HTML design drafts (keep untracked)
 /design-preview.html

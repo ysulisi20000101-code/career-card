@@ -2,6 +2,7 @@
 
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   ArrowUp,
@@ -645,9 +646,9 @@ export function CareerNarrativeSite({ data, showFooter = true, siteThemeId }: Ca
         <footer className="border-t border-zinc-200 bg-white px-6 py-10 text-center">
           <p className="text-sm font-medium text-zinc-700">
             由{" "}
-            <a href="/" className="font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">
+            <Link href="/" className="font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">
               Career Card
-            </a>{" "}
+            </Link>{" "}
             提供技术支持
           </p>
           <p className="mt-2 text-xs text-zinc-400">简历变职业网站，面试变故事演示</p>

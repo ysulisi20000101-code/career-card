@@ -12,6 +12,7 @@ function stripSlide(slide: PresentationSlide): Record<string, unknown> {
     "title", "subtitle", "body", "bullets", "visualizations",
     "phaseTag", "summaryLine", "highlightCallouts", "cards",
     "closingQuote", "narrativeThread", "featurePills", "domainTags",
+    "narrativeBeats", "layoutIntensity", "overlayComposition",
     "speakerNotes", "overlayIds",
   ];
   for (const key of copyFields) {
@@ -35,6 +36,8 @@ export function buildPresentationEnhancePrompt(
 ): string {
   const resumeSummary = buildResumeDataSummary(data);
   const strippedSlides = baseline.slides.map(stripSlide);
+  const narrativeProfile = baseline.narrativeProfile;
+  const storyBlueprint = baseline.storyBlueprint;
   const strippedOverlays = baseline.overlays.map((o) => ({
     id: o.id,
     title: o.title,
@@ -46,6 +49,8 @@ export function buildPresentationEnhancePrompt(
     "You are a career narrative editor for an 8-slide interview presentation.",
     "Given a deterministic baseline generated from resume data, improve text quality,",
     "narrative structure, strategic framing, and visualization data.",
+    "The baseline may already contain a structured narrativeProfile and",
+    "storyBlueprint. Treat them as the controlled source of layout/diagram intent.",
     "",
     "=== CRITICAL RULES (violation = invalid output) ===",
     "",
@@ -57,6 +62,8 @@ export function buildPresentationEnhancePrompt(
     "",
     "R1: 8 slides fixed arc. Kinds: hero, foundation, tension, platform_build,",
     "    agent_leap, lifecycle, impact, resolution. Do NOT add/remove slides.",
+    "    Keep the reference arc: Hero -> Foundation -> Tension -> Platform Build ->",
+    "    Agent Leap -> Lifecycle -> Impact -> Resolution.",
     "",
     "R2: Every slide needs a phaseTag (time anchor like '2020.12—2021.03') and",
     "    at least 2 quantified metrics in body/bullets. Dates MUST be yyyy.mm format.",
@@ -105,10 +112,17 @@ export function buildPresentationEnhancePrompt(
     "Return ONE JSON object. Only include fields you are changing.",
     "Omit fields that are already good. The output shape:",
     '{ "slides": [{ "id": "hero", ...fields }], "overlays": [{ "id": "...", ...fields }] }',
+    "Allowed slide fields are text fields plus: visualizations, narrativeBeats,",
+    "layoutIntensity, overlayComposition, cards, highlightCallouts, featurePills,",
+    "domainTags. Never output raw HTML, raw SVG, JavaScript, CSS, or React code.",
     "",
     "For visualizations, generate structured JSON data (NOT raw SVG strings):",
     "v-model: { type:'v-model', data:{ variant, designNodes:[{name,tool,domestic}],",
     "  testNodes:[{name,tool,color}], platformName, platformSubtitle, caption }}",
+    "hero-architecture: { type:'hero-architecture', data:{ agents, ragLabel,",
+    "  ragSubtitle, ragBlocks, toolchainLabel, toolchainSubtitle, toolchainBlocks }}",
+    "agent-workflow: { type:'agent-workflow', data:{ agents, workflowLabel,",
+    "  workflowSteps, ragBlocks, ragFooter, strategyInsight, conflictTypes }}",
     "pipeline: { type:'pipeline', data:{ stages:[{name,subtitle,bullets,agentNote,color}],",
     "  agentLayerLabel, ragLabel }}",
   ].join("\n");
@@ -123,6 +137,16 @@ export function buildPresentationEnhancePrompt(
     `targetRole: ${baseline.targetRole}`,
     `template: ${baseline.template}`,
     `themeId: ${baseline.themeId}`,
+    "narrativeProfile:",
+    JSON.stringify(narrativeProfile ?? null, null, 2),
+    "storyBlueprint:",
+    JSON.stringify(storyBlueprint
+      ? {
+          presetId: storyBlueprint.presetId,
+          slideArc: storyBlueprint.slideArc,
+          diagrams: Object.fromEntries(Object.entries(storyBlueprint.diagrams).map(([key, value]) => [key, value.type])),
+        }
+      : null, null, 2),
     "slides:",
     JSON.stringify(strippedSlides, null, 2),
     "overlays:",

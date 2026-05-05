@@ -4,6 +4,7 @@ import type { ProjectRecord, PersonalSiteData, InterviewProjectData } from "@/ty
 import type { ResumeData } from "@/types";
 import type { PersonalSite } from "@/types/site";
 import { resumeDataToPersonal } from "@/lib/projects/adapters";
+import { generateId } from "@/lib/utils";
 import {
   deletePresentationDraft,
   loadPresentationDraft,
@@ -74,7 +75,7 @@ function migrateLegacyEditorData() {
   const existing = safeParse<ProjectRecord[]>(window.localStorage.getItem(REGISTRY_KEY)) ?? [];
   if (existing.length === 0) {
     const record: ProjectRecord = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       type: "personal",
       title: "迁移的职业档案草稿",
       status: "draft",
@@ -100,7 +101,7 @@ export function upsertProjectRecord(record: ProjectRecord): void {
 export function createProjectRecord(type: "personal" | "interview", title: string): ProjectRecord {
   const trimmed = title.trim().slice(0, 100);
   const record: ProjectRecord = {
-    id: crypto.randomUUID(),
+    id: generateId(),
     type,
     title: trimmed || (type === "personal" ? "职业档案草稿" : "面试演示"),
     status: "draft",
@@ -181,7 +182,7 @@ export function duplicateProjectRecord(id: string): ProjectRecord | null {
   const existing = records.find((item) => item.id === id);
   if (!existing) return null;
 
-  const newId = crypto.randomUUID();
+  const newId = generateId();
   const duplicated: ProjectRecord = {
     ...existing,
     id: newId,
@@ -204,7 +205,7 @@ export function duplicateProjectRecord(id: string): ProjectRecord | null {
   const newSiteIds: string[] = [];
   const oldSites = listSitesByProject(id);
   for (const oldSite of oldSites) {
-    const newSiteId = crypto.randomUUID();
+    const newSiteId = generateId();
     const newSite: PersonalSite = {
       ...oldSite,
       id: newSiteId,
@@ -242,7 +243,7 @@ export function duplicateProjectRecord(id: string): ProjectRecord | null {
     if (sourceInterview?.presentationDraftId) {
       const originalDraft = loadPresentationDraft(sourceInterview.presentationDraftId);
       if (originalDraft) {
-        const newDraft = { ...originalDraft, id: crypto.randomUUID(), createdAt: nowIso(), updatedAt: nowIso() };
+        const newDraft = { ...originalDraft, id: generateId(), createdAt: nowIso(), updatedAt: nowIso() };
         savePresentationDraft(newDraft);
         const duplicatedData = safeParse<InterviewProjectData>(window.localStorage.getItem(targetKey));
         if (duplicatedData) {
@@ -354,7 +355,7 @@ export function createSite(
 ): PersonalSite {
   const now = nowIso();
   const site: PersonalSite = {
-    id: crypto.randomUUID(),
+    id: generateId(),
     projectId,
     targetRole: params.targetRole?.trim().slice(0, 80) || "目标岗位待确认",
     draft: null,
@@ -412,7 +413,7 @@ export function migrateProjectToMultiSite(projectId: string): void {
   // Create a default site from legacy data
   const now = nowIso();
   const site: PersonalSite = {
-    id: crypto.randomUUID(),
+    id: generateId(),
     projectId,
     targetRole,
     draft: null,

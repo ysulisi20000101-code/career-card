@@ -21,6 +21,10 @@ interface PresentationShellProps {
   onExit: () => void;
 }
 
+export function resolveOpenOverlayId(id: string, overlays: PresentationOverlay[]): string | null {
+  return overlays.some((overlay) => overlay.id === id) ? id : null;
+}
+
 function OverlayContent({ overlay }: { overlay: PresentationOverlay }) {
   switch (overlay.kind) {
     case "agent-workflow":
@@ -65,12 +69,12 @@ export function PresentationShell({ draft: initialDraft, onExit }: PresentationS
 
   const goTo = useCallback(
     (index: number) => {
-      if (index === safeCurrent || index < 0 || index >= total || locked || activeOverlayId) return;
+      if (index === safeCurrent || index < 0 || index >= total || locked || activeOverlay) return;
       setLocked(true);
       setCurrent(index);
       setTimeout(() => setLocked(false), NAV_LOCK_TIMEOUT_MS);
     },
-    [safeCurrent, total, locked, activeOverlayId],
+    [safeCurrent, total, locked, activeOverlay],
   );
 
   const goNext = useCallback(() => goTo(safeCurrent + 1), [safeCurrent, goTo]);
@@ -83,7 +87,7 @@ export function PresentationShell({ draft: initialDraft, onExit }: PresentationS
         return;
       }
       if (e.key === "Escape") {
-        if (activeOverlayId) {
+        if (activeOverlay) {
           setActiveOverlayId(null);
         } else if (showNotes) {
           setShowNotes(false);
@@ -100,7 +104,7 @@ export function PresentationShell({ draft: initialDraft, onExit }: PresentationS
         setShowNotes((v) => !v);
       }
     },
-    [activeOverlayId, onExit, goNext, goPrev, showNotes, showEditor],
+    [activeOverlay, onExit, goNext, goPrev, showNotes, showEditor],
   );
 
   useEffect(() => {
@@ -113,8 +117,9 @@ export function PresentationShell({ draft: initialDraft, onExit }: PresentationS
   }, [handleKeyDown]);
 
   const openOverlay = useCallback((id: string) => {
-    setActiveOverlayId(id);
-  }, []);
+    const nextOverlayId = resolveOpenOverlayId(id, overlays);
+    if (nextOverlayId) setActiveOverlayId(nextOverlayId);
+  }, [overlays]);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartRef.current = e.touches[0]?.clientX ?? 0;
@@ -371,7 +376,7 @@ export function PresentationShell({ draft: initialDraft, onExit }: PresentationS
       </div>
 
       {/* Overlay */}
-      <OverlayShell open={!!activeOverlayId} onClose={() => setActiveOverlayId(null)}>
+      <OverlayShell open={!!activeOverlay} onClose={() => setActiveOverlayId(null)}>
         {activeOverlay ? <OverlayContent overlay={activeOverlay} /> : null}
       </OverlayShell>
 

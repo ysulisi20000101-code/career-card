@@ -22,9 +22,10 @@ function isValidToolchainArray(val: unknown): val is HeroToolchainBlock[] {
 }
 
 export function HeroSlide({ slide, onOpenOverlay }: Props) {
-  const name = slide.title?.split("：")[0] ?? slide.title ?? "";
+  const name = slide.title?.split(/\s*[：·]\s*/)[0] ?? slide.title ?? "";
   const subtitle = slide.subtitle ?? "";
-  const viz = slide.visualizations?.[0]?.data;
+  const viz = slide.visualizations?.find((item) => item.type === "hero-architecture")?.data ?? slide.visualizations?.[0]?.data;
+  const archOverlayId = slide.overlayIds?.find((id) => id.includes("arch")) ?? "ov-arch-detail";
 
   return (
     <div className="hero-grid">
@@ -55,12 +56,32 @@ export function HeroSlide({ slide, onOpenOverlay }: Props) {
           ))}
         </div>
 
-        <div className="fu" style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: "var(--t3)" }}>
-          <PhaseBadge variant="pm">工信部汽车工具链摸底调研</PhaseBadge>
-        </div>
+        {(slide.phaseTag || slide.summaryLine || slide.narrativeBeats?.length) && (
+          <div className="fu" style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: "var(--t3)", flexWrap: "wrap" }}>
+            <PhaseBadge variant="pm">{slide.phaseTag ?? slide.narrativeBeats?.[0] ?? "Interview Story"}</PhaseBadge>
+            {slide.summaryLine && <span>{slide.summaryLine}</span>}
+          </div>
+        )}
       </div>
 
-      <div onClick={() => onOpenOverlay("ov-arch-detail")}>
+      <button
+        type="button"
+        aria-label="展开架构详情"
+        title="展开架构详情"
+        onClick={() => onOpenOverlay(archOverlayId)}
+        style={{
+          appearance: "none",
+          display: "block",
+          width: "100%",
+          padding: 0,
+          border: "none",
+          background: "transparent",
+          color: "inherit",
+          cursor: "pointer",
+          font: "inherit",
+          textAlign: "inherit",
+        }}
+      >
         <HeroArchitecture
           agents={isValidAgentArray(viz?.agents) ? viz.agents : undefined}
           ragLabel={typeof viz?.ragLabel === "string" ? viz.ragLabel : undefined}
@@ -70,7 +91,7 @@ export function HeroSlide({ slide, onOpenOverlay }: Props) {
           toolchainSubtitle={typeof viz?.toolchainSubtitle === "string" ? viz.toolchainSubtitle : undefined}
           toolchainBlocks={isValidToolchainArray(viz?.toolchainBlocks) ? viz.toolchainBlocks : undefined}
         />
-      </div>
+      </button>
     </div>
   );
 }

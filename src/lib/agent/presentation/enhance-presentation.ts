@@ -1,9 +1,10 @@
 import type { ResumeData } from "@/types";
 import type { PresentationDraft } from "@/lib/presentation/types";
+import { applyInterviewStoryBlueprint } from "@/lib/presentation/interview-story";
 import { getFirstAvailableProviderConfig } from "@/lib/agent/provider";
 import { buildPresentationEnhancePrompt } from "./build-prompt";
 import { normalizeEnhancementOutput, mergePresentationEnhancements, scanForFabrication } from "./normalize-presentation";
-import type { PresentationEnhancementResult, ValidationIssue, EnhancementTrace } from "./types";
+import type { PresentationEnhancementResult, ValidationIssue } from "./types";
 
 const PRESENTATION_TIMEOUT_MS = 40_000; // longer timeout for full 8-slide generation
 const RETRY_DELAYS_MS = [1_000, 2_000];
@@ -41,25 +42,24 @@ export async function enhancePresentationDraft(
   data: ResumeData,
 ): Promise<PresentationEnhancementResult> {
   const issues: ValidationIssue[] = [];
+  const groundedBaseline = applyInterviewStoryBlueprint(baseline, data);
 
   const providerResult = getFirstAvailableProviderConfig();
   if (!providerResult) {
     return {
-      draft: baseline,
+      draft: groundedBaseline,
       issues,
-      trace: { provider: "none", status: "fallback", note: "No LLM provider configured." },
+      trace: { provider: "none", status: "fallback", note: "No LLM provider configured; used deterministic story blueprint." },
     };
   }
 
   const { config, provider } = providerResult;
 
-  // We try the full provider chain ourselves (not just the first one)
-  const providers: Array<{ config: typeof config; provider: string }> = [providerResult];
   // Fallback chain: we only use the first available provider from the priority list.
   // If it fails after retries, we return baseline — the provider chain is exhausted.
   // (Full multi-provider failover requires per-provider configs which adds complexity.)
 
-  const promptContent = buildPresentationEnhancePrompt(baseline, data);
+  const promptContent = buildPresentationEnhancePrompt(groundedBaseline, data);
 
   // Try the primary provider with retries
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
@@ -110,13 +110,13 @@ export async function enhancePresentationDraft(
       if (!normalized) {
         // LLM returned valid JSON but no usable updates — return baseline
         return {
-          draft: baseline,
+          draft: groundedBaseline,
           issues,
           trace: { provider, status: "fallback", note: "LLM returned no valid slide updates." },
         };
       }
 
-      let merged = mergePresentationEnhancements(baseline, normalized);
+      const merged = mergePresentationEnhancements(groundedBaseline, normalized);
 
       // Rule 0 scan
       const rule0Issues = scanForFabrication(merged, data);
@@ -138,8 +138,8 @@ export async function enhancePresentationDraft(
 
   // All retries exhausted
   return {
-    draft: baseline,
+    draft: groundedBaseline,
     issues,
-    trace: { provider, status: "exhausted", note: "All retry attempts failed." },
+    trace: { provider, status: "exhausted", note: "All retry attempts failed; used deterministic story blueprint." },
   };
 }

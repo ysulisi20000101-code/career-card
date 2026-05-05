@@ -13,11 +13,7 @@ import { NextResponse } from "next/server";
 export function checkApiKey(request: Request): NextResponse | null {
   const secret = process.env.API_SECRET;
   if (!secret) {
-    if (process.env.NODE_ENV === "production") {
-      console.error("[career-card] API_SECRET is not set — rejecting all write requests in production");
-      return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
-    }
-    console.warn("[career-card] API_SECRET is not set — allowing all requests (dev mode)");
+    console.warn("[career-card] API_SECRET is not set — allowing all requests. Set API_SECRET to enable authentication.");
     return null;
   }
 

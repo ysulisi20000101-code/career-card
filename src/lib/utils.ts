@@ -5,8 +5,21 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+function uuidV4(): string {
+  // crypto.randomUUID() requires secure context (HTTPS). EdgeOne preview may be HTTP.
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    try {
+      return crypto.randomUUID();
+    } catch { /* fall through */ }
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
 export function generateId(): string {
-  return crypto.randomUUID();
+  return uuidV4();
 }
 
 export function formatDate(dateStr: string): string {

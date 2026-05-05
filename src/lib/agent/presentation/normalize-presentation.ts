@@ -11,14 +11,49 @@ const ALLOWED_SLIDE_FIELDS: Array<keyof SlideEnhancementUpdate> = [
   "id", "title", "subtitle", "body", "bullets", "visualizations",
   "phaseTag", "summaryLine", "highlightCallouts", "cards",
   "closingQuote", "narrativeThread", "featurePills",
-  "domainTags", "speakerNotes",
+  "domainTags", "narrativeBeats", "layoutIntensity", "overlayComposition", "speakerNotes",
 ];
 
 const VALID_CARD_VARIANTS = new Set(["gold", "teal", "violet", "blue", "rose", "green", "cyan"]);
-const VALID_VIZ_TYPES = new Set(["v-model", "pipeline", "orbit", "custom"]);
+const VALID_VIZ_TYPES = new Set([
+  "hero-architecture",
+  "v-model",
+  "pipeline",
+  "platform-quadrants",
+  "agent-workflow",
+  "rag-flow",
+  "impact-metrics",
+  "orbit",
+  "custom",
+]);
+const VALID_LAYOUT_INTENSITY = new Set(["standard", "dense", "reference"]);
+const TAG_RULES: Record<string, { phase: string[]; beats: string[]; domainTagsAllowed?: boolean; featurePillsAllowed?: boolean }> = {
+  hero: { phase: ["目标", "定位", "开场"], beats: ["定位", "系统", "证据", "目标", "Agent", "商业化"], domainTagsAllowed: true },
+  foundation: { phase: ["早期", "训练", "底座", "能力"], beats: ["早期", "训练", "底座", "迁移", "方法", "元能力"] },
+  tension: { phase: ["行业", "断点", "矛盾", "问题"], beats: ["行业", "矛盾", "断点", "工具", "割裂", "机会", "前提"] },
+  "platform-build": { phase: ["平台", "数据", "结构化"], beats: ["平台", "结构化", "协同", "交付", "商业验证"] },
+  "agent-leap": { phase: ["Agent", "跃迁", "智能"], beats: ["Agent", "跃迁", "受控", "工作流", "RAG", "反直觉", "证据"] },
+  fullstack: { phase: ["全链路", "生命周期", "方法"], beats: ["全链路", "平台层", "智能层", "运行态", "复用", "方法"], domainTagsAllowed: true, featurePillsAllowed: true },
+  lifecycle: { phase: ["全链路", "生命周期", "方法"], beats: ["全链路", "平台层", "智能层", "运行态", "复用", "方法"], domainTagsAllowed: true, featurePillsAllowed: true },
+  impact: { phase: ["结果", "商业", "验证", "影响"], beats: ["结果", "用户", "效率", "客户", "商业化", "指标", "验证"] },
+  resolution: { phase: ["主张", "闭环", "总结"], beats: ["回扣", "闭环", "主张", "个人品牌", "Before/After", "视觉回扣"] },
+};
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+
+function containsExecutableMarkup(value: unknown): boolean {
+  if (typeof value === "string") {
+    return /<\s*(script|svg|style|html|body|iframe)\b|javascript:|function\s+\w*\s*\(|=>\s*\{|import\s+.+from\s+/i.test(value);
+  }
+  if (Array.isArray(value)) return value.some(containsExecutableMarkup);
+  if (!isRecord(value)) return false;
+  for (const [key, child] of Object.entries(value)) {
+    if (/^(html|svg|rawSvg|script|javascript|css|jsx|tsx|reactCode)$/i.test(key)) return true;
+    if (containsExecutableMarkup(child)) return true;
+  }
+  return false;
 }
 
 // ─── Field-level validators ──────────────────────────────────────────
@@ -26,6 +61,7 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 function validateStringField(val: unknown, maxLen: number): string | undefined {
   if (val === undefined) return undefined;
   if (typeof val !== "string") return undefined;
+  if (containsExecutableMarkup(val)) return undefined;
   return val.trim().slice(0, maxLen);
 }
 
@@ -41,7 +77,31 @@ function validateVisualizations(val: unknown): PresentationSlide["visualizations
     if (!isRecord(item)) continue;
     const type = String(item.type ?? "");
     if (!VALID_VIZ_TYPES.has(type)) continue;
+    if (containsExecutableMarkup(item.data)) continue;
     result.push({ type: type as PresentationSlide["visualizations"] extends Array<infer T> ? T extends { type: infer U } ? U : never : never, data: item.data as Record<string, unknown> ?? {} });
+  }
+  return result.length > 0 ? result : undefined;
+}
+
+function validateOverlayComposition(val: unknown): PresentationSlide["overlayComposition"] | undefined {
+  if (!Array.isArray(val)) return undefined;
+  const result: NonNullable<PresentationSlide["overlayComposition"]> = [];
+  for (const item of val) {
+    if (!isRecord(item)) continue;
+    const id = typeof item.id === "string" ? item.id.trim().slice(0, 80) : "";
+    const kind = typeof item.kind === "string" ? item.kind.trim().slice(0, 40) : "";
+    const title = typeof item.title === "string" ? item.title.trim().slice(0, 120) : "";
+    if (!id || !kind || !title) continue;
+    const sections = Array.isArray(item.sections)
+      ? item.sections.filter(isRecord).map((section) => ({
+          title: typeof section.title === "string" ? section.title.trim().slice(0, 80) : "",
+          body: typeof section.body === "string" ? section.body.trim().slice(0, 400) : "",
+          tone: typeof section.tone === "string" && VALID_CARD_VARIANTS.has(section.tone)
+            ? section.tone as "gold" | "teal" | "violet" | "blue" | "rose" | "green" | "cyan"
+            : undefined,
+        })).filter((section) => section.title && section.body).slice(0, 6)
+      : undefined;
+    result.push({ id, kind, title, sections });
   }
   return result.length > 0 ? result : undefined;
 }
@@ -96,6 +156,105 @@ function validateDomainTags(val: unknown): string[] | undefined {
   return tags.length > 0 ? tags : undefined;
 }
 
+function containsAny(value: string, tokens: string[]): boolean {
+  return tokens.some((token) => value.toLowerCase().includes(token.toLowerCase()));
+}
+
+export function isSlideLabelUpdateCompatible(
+  slide: Pick<PresentationSlide, "id" | "kind">,
+  update: Pick<SlideEnhancementUpdate, "phaseTag" | "domainTags" | "featurePills" | "narrativeBeats">,
+): boolean {
+  const rule = TAG_RULES[slide.id] ?? TAG_RULES[slide.kind];
+  if (!rule) return true;
+
+  if (update.phaseTag && !containsAny(update.phaseTag, rule.phase)) return false;
+  if (update.narrativeBeats?.length && !update.narrativeBeats.every((beat) => containsAny(beat, rule.beats))) return false;
+  if (update.domainTags?.length && !rule.domainTagsAllowed) return false;
+  if (update.featurePills?.length && !rule.featurePillsAllowed) return false;
+
+  return true;
+}
+
+function stripIncompatibleLabelFields(
+  slide: PresentationSlide,
+  update: SlideEnhancementUpdate,
+): SlideEnhancementUpdate {
+  if (isSlideLabelUpdateCompatible(slide, update)) return update;
+  const cleaned = { ...update };
+  delete cleaned.phaseTag;
+  delete cleaned.domainTags;
+  delete cleaned.featurePills;
+  delete cleaned.narrativeBeats;
+  return cleaned;
+}
+
+const META_NARRATIVE_RE = /面试故事|面试表达|给面试官|准备材料/;
+const INTERNSHIP_SCOPE_RE = /实习|实习生|京东健康|互联网医院产品部|后台产品实习生|百度|京东/;
+const TEAM_SIZE_RE = /(?:约\s*)?10\s*人|10\s*个\s*人/;
+
+function slideAllowsInternship(slide: PresentationSlide): boolean {
+  return slide.id === "foundation";
+}
+
+function sanitizeAudienceText(slide: PresentationSlide, value: string | undefined): string | undefined {
+  if (!value) return value;
+  if (META_NARRATIVE_RE.test(value)) return undefined;
+  if (!slideAllowsInternship(slide) && INTERNSHIP_SCOPE_RE.test(value)) return undefined;
+  return value;
+}
+
+function sanitizeAudienceStringArray(slide: PresentationSlide, values: string[] | undefined): string[] | undefined {
+  const cleaned = values
+    ?.map((value) => sanitizeAudienceText(slide, value))
+    .filter((value): value is string => Boolean(value));
+  return cleaned && cleaned.length > 0 ? cleaned : undefined;
+}
+
+function cardsUseTeamSizeAsCommercialProof(cards: PresentationSlide["cards"]): boolean {
+  return Boolean(cards?.some((card) =>
+    /商业|客户|项目|验证/.test(card.title) && TEAM_SIZE_RE.test(`${card.title}\n${card.body}`),
+  ));
+}
+
+function sanitizeAudienceUpdate(
+  slide: PresentationSlide,
+  update: SlideEnhancementUpdate,
+): SlideEnhancementUpdate {
+  const cleaned = { ...update };
+  cleaned.title = sanitizeAudienceText(slide, cleaned.title);
+  cleaned.subtitle = sanitizeAudienceText(slide, cleaned.subtitle);
+  cleaned.body = sanitizeAudienceText(slide, cleaned.body);
+  cleaned.phaseTag = sanitizeAudienceText(slide, cleaned.phaseTag);
+  cleaned.summaryLine = sanitizeAudienceText(slide, cleaned.summaryLine);
+  cleaned.closingQuote = sanitizeAudienceText(slide, cleaned.closingQuote);
+  cleaned.narrativeThread = sanitizeAudienceText(slide, cleaned.narrativeThread);
+  cleaned.speakerNotes = sanitizeAudienceText(slide, cleaned.speakerNotes);
+  cleaned.bullets = sanitizeAudienceStringArray(slide, cleaned.bullets);
+  cleaned.domainTags = sanitizeAudienceStringArray(slide, cleaned.domainTags);
+  cleaned.narrativeBeats = sanitizeAudienceStringArray(slide, cleaned.narrativeBeats);
+
+  if (cleaned.highlightCallouts) {
+    const callouts = cleaned.highlightCallouts
+      .map((callout) => ({
+        ...callout,
+        title: sanitizeAudienceText(slide, callout.title) ?? callout.title,
+        body: sanitizeAudienceText(slide, callout.body) ?? "",
+      }))
+      .filter((callout) => callout.body.length > 0);
+    cleaned.highlightCallouts = callouts.length > 0 ? callouts : undefined;
+  }
+
+  if (cleaned.cards) {
+    cleaned.cards = cardsUseTeamSizeAsCommercialProof(cleaned.cards) ? undefined : cleaned.cards;
+  }
+
+  for (const key of Object.keys(cleaned) as Array<keyof SlideEnhancementUpdate>) {
+    if (key !== "id" && cleaned[key] === undefined) delete cleaned[key];
+  }
+
+  return Object.keys(cleaned).length > 1 ? cleaned : { id: update.id };
+}
+
 // ─── Slide enhancement validator ─────────────────────────────────────
 
 function validateSlideUpdate(raw: Record<string, unknown>): SlideEnhancementUpdate | null {
@@ -132,10 +291,25 @@ function validateSlideUpdate(raw: Record<string, unknown>): SlideEnhancementUpda
       case "domainTags":
         update.domainTags = validateDomainTags(val);
         break;
+      case "narrativeBeats":
+        update.narrativeBeats = validateDomainTags(val);
+        break;
+      case "layoutIntensity":
+        update.layoutIntensity = typeof val === "string" && VALID_LAYOUT_INTENSITY.has(val)
+          ? val as PresentationSlide["layoutIntensity"]
+          : undefined;
+        break;
+      case "overlayComposition":
+        update.overlayComposition = validateOverlayComposition(val);
+        break;
       case "speakerNotes":
         update.speakerNotes = typeof val === "string" ? val.trim().slice(0, 500) : undefined;
         break;
     }
+  }
+
+  for (const key of Object.keys(update) as Array<keyof SlideEnhancementUpdate>) {
+    if (key !== "id" && update[key] === undefined) delete update[key];
   }
 
   // Must have at least one modifiable field beyond id
@@ -204,22 +378,26 @@ export function mergePresentationEnhancements(
       const idx = merged.slides.findIndex((s) => s.id === update.id);
       if (idx === -1) continue;
       const existing = merged.slides[idx]!;
+      const safeUpdate = sanitizeAudienceUpdate(existing, stripIncompatibleLabelFields(existing, update));
 
       // Only overwrite if the new value is non-empty
-      if (update.title !== undefined) existing.title = update.title;
-      if (update.subtitle !== undefined) existing.subtitle = update.subtitle;
-      if (update.body !== undefined) existing.body = update.body;
-      if (update.bullets !== undefined) existing.bullets = update.bullets;
-      if (update.visualizations !== undefined) existing.visualizations = update.visualizations;
-      if (update.phaseTag !== undefined) existing.phaseTag = update.phaseTag;
-      if (update.summaryLine !== undefined) existing.summaryLine = update.summaryLine;
-      if (update.highlightCallouts !== undefined) existing.highlightCallouts = update.highlightCallouts;
-      if (update.cards !== undefined) existing.cards = update.cards;
-      if (update.closingQuote !== undefined) existing.closingQuote = update.closingQuote;
-      if (update.narrativeThread !== undefined) existing.narrativeThread = update.narrativeThread;
-      if (update.featurePills !== undefined) existing.featurePills = update.featurePills;
-      if (update.domainTags !== undefined) existing.domainTags = update.domainTags;
-      if (update.speakerNotes !== undefined) existing.speakerNotes = update.speakerNotes;
+      if (safeUpdate.title !== undefined) existing.title = safeUpdate.title;
+      if (safeUpdate.subtitle !== undefined) existing.subtitle = safeUpdate.subtitle;
+      if (safeUpdate.body !== undefined) existing.body = safeUpdate.body;
+      if (safeUpdate.bullets !== undefined) existing.bullets = safeUpdate.bullets;
+      if (safeUpdate.visualizations !== undefined) existing.visualizations = safeUpdate.visualizations;
+      if (safeUpdate.phaseTag !== undefined) existing.phaseTag = safeUpdate.phaseTag;
+      if (safeUpdate.summaryLine !== undefined) existing.summaryLine = safeUpdate.summaryLine;
+      if (safeUpdate.highlightCallouts !== undefined) existing.highlightCallouts = safeUpdate.highlightCallouts;
+      if (safeUpdate.cards !== undefined) existing.cards = safeUpdate.cards;
+      if (safeUpdate.closingQuote !== undefined) existing.closingQuote = safeUpdate.closingQuote;
+      if (safeUpdate.narrativeThread !== undefined) existing.narrativeThread = safeUpdate.narrativeThread;
+      if (safeUpdate.featurePills !== undefined) existing.featurePills = safeUpdate.featurePills;
+      if (safeUpdate.domainTags !== undefined) existing.domainTags = safeUpdate.domainTags;
+      if (safeUpdate.narrativeBeats !== undefined) existing.narrativeBeats = safeUpdate.narrativeBeats;
+      if (safeUpdate.layoutIntensity !== undefined) existing.layoutIntensity = safeUpdate.layoutIntensity;
+      if (safeUpdate.overlayComposition !== undefined) existing.overlayComposition = safeUpdate.overlayComposition;
+      if (safeUpdate.speakerNotes !== undefined) existing.speakerNotes = safeUpdate.speakerNotes;
     }
   }
 

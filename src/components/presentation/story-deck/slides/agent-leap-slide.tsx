@@ -14,12 +14,27 @@ interface Props {
   theme: PresentationTheme;
 }
 
-const AGENT_CONFIGS = [
-  { color: "#6b5ea0", nameColor: "var(--violet)", icon: "doc", name: "文档生成 Agent", scene: "FDS/SSTS 初稿自动生成", metric: "效率提升 50%+" },
-  { color: "#3d7fb8", nameColor: "var(--blue)", icon: "model", name: "模型生成 Agent", scene: "UML/SysML 草稿生成", metric: "建模从天级到小时级" },
-  { color: "#1a7d62", nameColor: "var(--teal)", icon: "check", name: "一致性校验 Agent", scene: "跨文档/模型自动校验", metric: "覆盖 50+ 子场景" },
-  { color: "#a07018", nameColor: "var(--gold-bright)", icon: "search", name: "方案推荐 Agent", scene: "历史项目方案匹配", metric: "经验可检索可复用" },
-  { color: "#b85d6a", nameColor: "var(--rose)", icon: "settings", name: "知识检索 Agent", scene: "跨项目知识统一检索", metric: "私有化部署·军工合规" },
+interface AgentWorkflowItem {
+  color: string;
+  nameColor?: string;
+  icon?: string;
+  name: string;
+  scene: string;
+  metric: string;
+}
+
+interface RagBlockSpec {
+  title: string;
+  items: string;
+  highlighted?: boolean;
+}
+
+const GENERIC_AGENT_CONFIGS: AgentWorkflowItem[] = [
+  { color: "#6b5ea0", nameColor: "var(--violet)", icon: "doc", name: "问题定义 Agent", scene: "把目标岗位拆成表达任务", metric: "结构化输入" },
+  { color: "#3d7fb8", nameColor: "var(--blue)", icon: "model", name: "证据整理 Agent", scene: "从简历抽取项目事实", metric: "事实可追溯" },
+  { color: "#1a7d62", nameColor: "var(--teal)", icon: "check", name: "一致性校验 Agent", scene: "校验公司、指标、项目名", metric: "避免编造" },
+  { color: "#a07018", nameColor: "var(--gold-bright)", icon: "search", name: "叙事编排 Agent", scene: "组织八页叙事节奏", metric: "表达可复用" },
+  { color: "#b85d6a", nameColor: "var(--rose)", icon: "settings", name: "复盘优化 Agent", scene: "根据目标岗位调整表达", metric: "岗位导向" },
 ];
 
 const AGENT_ICONS: Record<string, React.ReactNode> = {
@@ -62,6 +77,30 @@ export function AgentLeapSlide({ slide, onOpenOverlay }: Props) {
   const hasOverlay = slide.overlayIds && slide.overlayIds.length > 0;
   const bullets = slide.bullets ?? [];
   const highlightCallouts = slide.highlightCallouts ?? [];
+  const viz = slide.visualizations?.find((item) => item.type === "agent-workflow")?.data ?? slide.visualizations?.[0]?.data;
+  const configItems = Array.isArray(viz?.agents) && viz.agents.length > 0
+    ? (viz.agents as AgentWorkflowItem[])
+    : GENERIC_AGENT_CONFIGS;
+  const workflowLabel = typeof viz?.workflowLabel === "string" ? viz.workflowLabel : "受控 Agent 工作流";
+  const workflowSteps = Array.isArray(viz?.workflowSteps) && viz.workflowSteps.length > 0
+    ? (viz.workflowSteps as string[])
+    : ["任务规划", "工具调用", "多步执行", "状态管理", "人工确认", "结果归档"];
+  const ragBlocks = Array.isArray(viz?.ragBlocks) && viz.ragBlocks.length > 0
+    ? (viz.ragBlocks as RagBlockSpec[])
+    : [
+        { title: "数据层", items: "简历事实 / 项目证据\n岗位目标 / 用户补充" },
+        { title: "处理层", items: "证据抽取 / 语义归类\n结构化蓝图生成" },
+        { title: "校验层", items: "指标 / 公司 / 项目名校验", highlighted: true },
+        { title: "表达层", items: "八页叙事 / 图形数据\n投屏表达" },
+      ];
+  const ragFooter = typeof viz?.ragFooter === "string" ? viz.ragFooter : "只使用简历和用户确认事实，避免生成不可追溯内容";
+  const strategyInsight = typeof viz?.strategyInsight === "string"
+    ? viz.strategyInsight
+    : "Agent 的价值不在自由发挥，而在把目标、证据、结构和校验放进同一个受控流程。";
+  const conflictLabel = typeof viz?.conflictLabel === "string" ? viz.conflictLabel : "校验场景";
+  const conflictTypes = Array.isArray(viz?.conflictTypes) && viz.conflictTypes.length > 0
+    ? (viz.conflictTypes as string[])
+    : ["事实一致性", "指标可追溯", "项目名校验", "岗位匹配", "表达完整性"];
 
   // Parse agent bullets: "Label：Desc"
   const agentItems = bullets.map((b) => {
@@ -91,22 +130,22 @@ export function AgentLeapSlide({ slide, onOpenOverlay }: Props) {
         onClick={() => onOpenOverlay("ov-agent-workflow")}
         style={{ marginTop: 8, padding: "8px 14px", border: "1px dashed var(--border-s)", borderRadius: "var(--r)", background: "rgba(107,94,160,.03)", textAlign: "center" as const }}
       >
-        <span style={{ fontWeight: 700, fontSize: 11, color: "var(--violet)" }}>受控式 Agent 工作流</span>
-        <span style={{ fontSize: "9.5px", color: "var(--t3)", marginLeft: 6 }}>任务规划 → 工具调用 → 多步执行 → 状态管理 → 人工确认 → 结果归档</span>
+        <span style={{ fontWeight: 700, fontSize: 11, color: "var(--violet)" }}>{workflowLabel}</span>
+        <span style={{ fontSize: "9.5px", color: "var(--t3)", marginLeft: 6 }}>{workflowSteps.join(" → ")}</span>
         <span style={{ fontSize: 8, color: "var(--violet)", marginLeft: 6, opacity: .5 }}>[展开详情]</span>
       </div>
 
       {/* Agent cards */}
       <div className="agent-cards mt10">
-        {AGENT_CONFIGS.map((config, i) => (
+        {configItems.map((config, i) => (
           <AgentCard
             key={i}
-            icon={AGENT_ICONS[config.icon]}
+            icon={AGENT_ICONS[config.icon ?? "doc"]}
             name={agentItems[i]?.label ?? config.name}
             scene={agentItems[i]?.desc ?? config.scene}
             metric={config.metric}
             color={config.color}
-            nameColor={config.nameColor}
+            nameColor={config.nameColor ?? config.color}
             className="fu"
           />
         ))}
@@ -118,8 +157,8 @@ export function AgentLeapSlide({ slide, onOpenOverlay }: Props) {
         onClick={() => onOpenOverlay("ov-conflict-types")}
         style={{ textAlign: "center" as const, marginTop: 5, fontSize: "9.5px", color: "var(--t3)" }}
       >
-        <span style={{ color: "var(--teal)", fontWeight: 600 }}>7 类冲突场景：</span>
-        功能触发 · 执行时序 · 网络通信 · 供电功耗 · 功能安全 · 多域协同 · 定义完整性 <span style={{ fontSize: 8, opacity: .5 }}>[详情]</span>
+        <span style={{ color: "var(--teal)", fontWeight: 600 }}>{conflictLabel}：</span>
+        {conflictTypes.join(" · ")} <span style={{ fontSize: 8, opacity: .5 }}>[详情]</span>
       </div>
 
       {/* RAG Flow */}
@@ -129,37 +168,26 @@ export function AgentLeapSlide({ slide, onOpenOverlay }: Props) {
         style={{ marginTop: 16, padding: 16, border: "1px dashed rgba(107,94,160,.18)", borderRadius: "var(--r)", background: "rgba(107,94,160,.03)" }}
       >
         <div style={{ fontWeight: 700, color: "var(--violet)", fontSize: 11, marginBottom: 4 }}>
-          RAG 知识库 · 数据底座 <span style={{ fontWeight: 400, fontSize: 9, color: "var(--t3)", marginLeft: 4 }}>[展开架构]</span>
+          {typeof viz?.ragLabel === "string" ? viz.ragLabel : "知识库 / 数据底座"} <span style={{ fontWeight: 400, fontSize: 9, color: "var(--t3)", marginLeft: 4 }}>[展开架构]</span>
         </div>
         <RagFlow
-          blocks={[
-            { title: "数据层", items: "项目文档 · 架构模型\n设计规范 · 历史方案" },
-            { title: "处理层", items: "文档解析 · 语义切分\n向量嵌入 · 增量更新" },
-            { title: "检索层", items: "向量语义检索\n召回率 >85%\n2000+ 工程文档评测", highlighted: true },
-            { title: "应用层", items: "5 个 Agent 调用\n合规校验 · 知识问答" },
-          ]}
-          footer="全部私有化部署（本地化部署的大模型）· 军工/航天合规 · 跨项目知识复用"
+          blocks={ragBlocks}
+          footer={ragFooter}
         />
       </div>
 
       <AccentCard className="mt10 fu">
-        <strong>产品战略：</strong>不做 ChatGPT 套壳。Agent 有效性取决于知识库质量，知识库质量取决于平台数据结构化程度。<strong>没有统一平台数据模型 → 没有高质量知识库 → Agent 只是 LLM 搜索框。</strong>
+        <strong>产品战略：</strong>{strategyInsight}
       </AccentCard>
 
       {hasOverlay && (
-        <div className="fu" style={{ marginTop: 12, display: "flex", gap: 8 }}>
-          {slide.overlayIds!.map((oid) => {
-            return (
-              <button
-                key={oid}
-                onClick={() => onOpenOverlay(oid)}
-                style={{ padding: "8px 14px", border: "1px dashed rgba(107,94,160,.25)", borderRadius: "var(--r)", background: "var(--violet-dim)", fontSize: 11, color: "var(--violet)", fontWeight: 700, cursor: "pointer" }}
-              >
-                查看详情 ↗
-              </button>
-            );
-          })}
-        </div>
+        <button
+          className="fu"
+          onClick={() => onOpenOverlay(slide.overlayIds![0]!)}
+          style={{ marginTop: 12, padding: "8px 14px", border: "1px dashed rgba(107,94,160,.25)", borderRadius: "var(--r)", background: "var(--violet-dim)", fontSize: 11, color: "var(--violet)", fontWeight: 700, cursor: "pointer" }}
+        >
+          查看工作流详情 ↗
+        </button>
       )}
 
       {(slide.phaseTag || slide.summaryLine) && (

@@ -1,10 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Layers, Plus, Rocket } from "lucide-react";
-import { LoadingPage } from "@/components/ui/loading";
+import { Layers, Plus, Rocket } from "lucide-react";
 import { useResumeStore } from "@/store/resume-store";
 import {
   loadResumeBase,
@@ -33,11 +32,7 @@ export default function SiteAgentWorkbenchPage() {
   const resumeData = useResumeStore((s) => s.resumeData);
   const setStoreDraftData = useResumeStore((s) => s.setDraftData);
 
-  const [loading, setLoading] = useState(true);
-  const [siteMissing, setSiteMissing] = useState(false);
-
-  // Load resume base + site on mount
-  useEffect(() => {
+  const loadState = useMemo(() => {
     // Try new resume base key first, fall back to legacy
     let base = loadResumeBase(projectId);
     if (!base) {
@@ -46,26 +41,17 @@ export default function SiteAgentWorkbenchPage() {
         base = personalToResumeData(legacy);
       }
     }
-    if (!base) {
-      setLoading(false);
-      return;
-    }
-    setResumeData(base);
-
     const site = loadSite(siteId);
-    if (!site) {
-      setSiteMissing(true);
-      setLoading(false);
-      return;
-    }
+    return { base, site, siteMissing: Boolean(base && !site) };
+  }, [projectId, siteId]);
 
-    // Set site draft in store
-    if (site.draft) {
-      setStoreDraftData(site.draft as CareerSiteDraft);
-    }
+  const activeResumeData = resumeData ?? loadState.base;
 
-    setLoading(false);
-  }, [projectId, siteId, setResumeData, setStoreDraftData]);
+  // Synchronize loaded local project data into the shared store.
+  useEffect(() => {
+    if (loadState.base) setResumeData(loadState.base);
+    if (loadState.site?.draft) setStoreDraftData(loadState.site.draft as CareerSiteDraft);
+  }, [loadState.base, loadState.site, setResumeData, setStoreDraftData]);
 
   // Save draft back to site when it changes
   const handleDraftSave = useCallback(
@@ -106,13 +92,7 @@ export default function SiteAgentWorkbenchPage() {
     }
   }, [projectId]);
 
-  if (loading) {
-    return (
-      <LoadingPage />
-    );
-  }
-
-  if (siteMissing) {
+  if (loadState.siteMissing) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
@@ -126,7 +106,7 @@ export default function SiteAgentWorkbenchPage() {
     );
   }
 
-  if (!resumeData) {
+  if (!activeResumeData) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
@@ -188,9 +168,9 @@ export default function SiteAgentWorkbenchPage() {
     >
       <div className="h-full overflow-hidden bg-zinc-100">
         <AgentSiteWorkbench
-          resumeData={resumeData}
+          resumeData={activeResumeData}
           siteId={siteId}
-          themeId={(resumeData.siteThemeId as SiteThemeId) || "warm-business"}
+          themeId={(activeResumeData.siteThemeId as SiteThemeId) || "warm-business"}
           onRenderedDataChange={handleRenderedDataChange}
           onThemeChange={handleThemeChange}
           onDraftSave={handleDraftSave}

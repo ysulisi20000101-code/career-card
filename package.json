@@ -6,6 +6,7 @@
     "dev": "next dev",
     "dev:stable": "cross-env WATCHPACK_POLLING=true CHOKIDAR_USEPOLLING=true next dev -H 127.0.0.1 -p 3000",
     "build": "next build",
+    "postbuild": "node scripts/copy-pdf-worker.mjs",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",

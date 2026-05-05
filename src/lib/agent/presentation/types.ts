@@ -1,4 +1,4 @@
-import type { PresentationDraft, PresentationSlide, PresentationOverlay } from "@/lib/presentation/types";
+import type { PresentationDraft, PresentationSlide } from "@/lib/presentation/types";
 import type { ResumeData } from "@/types";
 
 /** Input to the LLM presentation enhancement API. */
@@ -24,6 +24,9 @@ export interface SlideEnhancementUpdate {
   narrativeThread?: string;
   featurePills?: PresentationSlide["featurePills"];
   domainTags?: string[];
+  narrativeBeats?: string[];
+  layoutIntensity?: PresentationSlide["layoutIntensity"];
+  overlayComposition?: PresentationSlide["overlayComposition"];
   speakerNotes?: string;
 }
 
