@@ -78,7 +78,7 @@ export function OrbitVisualization({ data, theme }: OrbitProps) {
 
         return (
           <motion.div
-            key={sat}
+            key={`${sat}-${i}`}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.3 + i * 0.08 }}

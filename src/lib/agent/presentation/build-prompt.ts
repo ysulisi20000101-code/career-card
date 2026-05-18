@@ -7,7 +7,13 @@ import { buildResumeDataSummary } from "@/lib/presentation/generator";
  * This reduces the baseline payload from ~15KB to ~3KB.
  */
 function stripSlide(slide: PresentationSlide): Record<string, unknown> {
-  const stripped: Record<string, unknown> = { id: slide.id, kind: slide.kind };
+  const stripped: Record<string, unknown> = {
+    id: slide.id,
+    kind: slide.kind,
+    moduleId: slide.moduleId,
+    moduleTitle: slide.moduleTitle,
+    moduleOrder: slide.moduleOrder,
+  };
   const copyFields: Array<keyof PresentationSlide> = [
     "title", "subtitle", "body", "bullets", "visualizations",
     "phaseTag", "summaryLine", "highlightCallouts", "cards",
@@ -33,6 +39,7 @@ function stripSlide(slide: PresentationSlide): Record<string, unknown> {
 export function buildPresentationEnhancePrompt(
   baseline: PresentationDraft,
   data: ResumeData,
+  instruction?: string,
 ): string {
   const resumeSummary = buildResumeDataSummary(data);
   const strippedSlides = baseline.slides.map(stripSlide);
@@ -46,7 +53,7 @@ export function buildPresentationEnhancePrompt(
   }));
 
   const systemRules = [
-    "You are a career narrative editor for an 8-slide interview presentation.",
+    "You are a career narrative editor for a modular interview-space presentation.",
     "Given a deterministic baseline generated from resume data, improve text quality,",
     "narrative structure, strategic framing, and visualization data.",
     "The baseline may already contain a structured narrativeProfile and",
@@ -60,22 +67,20 @@ export function buildPresentationEnhancePrompt(
     "    Do NOT inflate metrics (e.g. '效率提升 20%' → '50%+' is FORBIDDEN).",
     "    If the data says '参与', do not change it to '主导'.",
     "",
-    "R1: 8 slides fixed arc. Kinds: hero, foundation, tension, platform_build,",
-    "    agent_leap, lifecycle, impact, resolution. Do NOT add/remove slides.",
-    "    Keep the reference arc: Hero -> Foundation -> Tension -> Platform Build ->",
-    "    Agent Leap -> Lifecycle -> Impact -> Resolution.",
+    "R1: The existing slide list is fixed. The deck is a self-story presentation,",
+    "    usually 8-12 slides. Do NOT add/remove/reorder slides.",
+    "    Do NOT rename ids, change moduleId, or collapse the story. Improve only",
+    "    the text/structured visual fields of slides that already exist.",
     "",
-    "R2: Every slide needs a phaseTag (time anchor like '2020.12—2021.03') and",
-    "    at least 2 quantified metrics in body/bullets. Dates MUST be yyyy.mm format.",
-    "    Never use ranges ('50%-60%'); use '50%+' format.",
+    "R2: Quantified metrics are valuable only when present in the source data.",
+    "    Never invent numbers. Prioritize evidence mapping, risk boundaries,",
+    "    and interview-ready spoken language.",
     "",
-    "R3: Slide 3 (tension) & Slide 8 (resolution) MUST reference the same v-model",
-    "    diagram structure but with DIFFERENT variant data.",
-    "    Slide 3 variant='monopoly' — shows industry before your intervention.",
-    "    Slide 8 variant='complete' — shows industry after your intervention.",
-    "    designNodes/testNodes MUST be the same set of items, only statuses change.",
+    "R3: Tension and resolution SHOULD visually echo each other.",
+    "    If both use v-model diagrams, keep the same node sets and only change",
+    "    status/variant data.",
     "",
-    "R4: Slide 5 (agent_leap) is the ★CORE★ page with highest info density.",
+    "R4: If an agent_leap slide exists, it is a core page with high info density.",
     "    Open with a COUNTERINTUITIVE statement:",
     '    "晋升后我做的第一件事不是{最酷的部分}——是先把{前提}做完整。"',
     "    Then explain WHY this order matters (card-accent explaining strategic logic).",
@@ -83,10 +88,11 @@ export function buildPresentationEnhancePrompt(
     "R5: ALL body text in first-person '我' perspective. No third-person, no",
     "    passive-voice hiding of agency. Body should sound like spoken interview answers.",
     "",
-    "R6: Every slide MUST end with a card-accent (emphasis box) as closing insight.",
-    "    The card-accent answers: 'what did this phase teach me / what did it prove?'",
+    "R6: Preserve the renderer contract for each slide kind. You may improve cards,",
+    "    callouts, bullets, and speakerNotes, but do not require every slide to share",
+    "    the same visual pattern.",
     "",
-    "R7: Slide 2 (foundation) compresses ALL early-career/internship experiences into",
+    "R7: If a foundation slide exists, it compresses early-career/internship experiences into",
     "    ONE page. Frame them as '基础训练' not '工作经历'. Each internship ends with",
     "    a meta-skill takeaway ('学会了：{可迁移的元能力}'), not domain knowledge.",
     "    Maximum 3 internship cards. Closing card-accent declares these are",
@@ -101,9 +107,9 @@ export function buildPresentationEnhancePrompt(
     "    cyan (#318a94) = simulation / verification",
     "    green (#4a8a5a) = DevOps / delivery / engineering",
     "",
-    "R9: Slide 8 MUST form a visual callback to Slide 3 — reuse the same diagram",
-    "    structure (same node positions, same layers) but update all statuses.",
-    "    Include Before/After comparison cards below the diagram.",
+    "R9: If resolution and tension slides both exist, resolution should form a",
+    "    callback to the earlier tension without inventing a new storyline.",
+    "    Keep Before/After comparisons grounded in the source data.",
     "    Final sentence is a personal brand statement:",
     '    "我是{姓名}。从{起点}做到{终点}——我做的事一直在变，但逻辑始终一致：{核心信念}。"',
     "",
@@ -151,6 +157,14 @@ export function buildPresentationEnhancePrompt(
     JSON.stringify(strippedSlides, null, 2),
     "overlays:",
     JSON.stringify(strippedOverlays, null, 2),
+    instruction?.trim()
+      ? [
+          "",
+          "=== USER REVISION INSTRUCTION ===",
+          instruction.trim().slice(0, 500),
+          "Apply this instruction only when it is grounded in ResumeData or the existing draft. If it asks for a role-specific version, prioritize interview-ready spoken pages.",
+        ].join("\n")
+      : "",
     "",
     "Return ONLY the JSON object. No markdown, no explanation.",
   ].join("\n");

@@ -3,6 +3,7 @@
 import type { ResumeData } from "@/types";
 import { sanitizeResumeData } from "@/lib/share/validation";
 import { buildPublishSnapshot } from "@/lib/share/snapshot";
+import { strFromU8, strToU8, unzlibSync, zlibSync } from "fflate";
 
 const LEGACY_PREFIX = "career-card:published:";
 const SITE_PREFIX = "career-card:published-site:";
@@ -69,16 +70,42 @@ export function loadPublishedResume(slug: string): ResumeData | null {
   }
 }
 
-/**
- * Encode the entire resume into a URL-safe base64 string so the share link
- * can be opened on any device without requiring a backend.
- */
-export function encodeResumeToHash(data: ResumeData): string {
-  const json = JSON.stringify(data);
-  if (typeof window === "undefined") return "";
-  const utf8 = new TextEncoder().encode(json);
+const COMPRESSED_HASH_PREFIX = "z.";
+
+function compactPortablePayload(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    const items = value
+      .map((item) => compactPortablePayload(item))
+      .filter((item) => {
+        if (item == null || item === "") return false;
+        if (Array.isArray(item)) return item.length > 0;
+        if (typeof item === "object") return Object.keys(item as Record<string, unknown>).length > 0;
+        return true;
+      });
+    return items.length > 0 ? items : undefined;
+  }
+
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .map(([key, item]) => [key, compactPortablePayload(item)] as const)
+      .filter(([, item]) => {
+        if (item == null || item === "") return false;
+        if (Array.isArray(item)) return item.length > 0;
+        if (typeof item === "object") return Object.keys(item as Record<string, unknown>).length > 0;
+        return true;
+      });
+    return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+  }
+
+  return value;
+}
+
+function bytesToBase64Url(bytes: Uint8Array): string {
   let binary = "";
-  utf8.forEach((byte) => (binary += String.fromCharCode(byte)));
+  const chunkSize = 0x8000;
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+  }
   return window
     .btoa(binary)
     .replace(/\+/g, "-")
@@ -86,16 +113,35 @@ export function encodeResumeToHash(data: ResumeData): string {
     .replace(/=+$/g, "");
 }
 
+function base64UrlToBytes(encoded: string): Uint8Array {
+  const padded = encoded.replace(/-/g, "+").replace(/_/g, "/");
+  const pad = padded.length % 4 === 0 ? "" : "=".repeat(4 - (padded.length % 4));
+  const binary = window.atob(padded + pad);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index);
+  return bytes;
+}
+
+export function encodeResumeToHash(data: ResumeData): string {
+  if (typeof window === "undefined") return "";
+  const compactData = compactPortablePayload(data) ?? data;
+  const json = JSON.stringify(compactData);
+  const legacy = bytesToBase64Url(new TextEncoder().encode(json));
+  try {
+    const compressed = `${COMPRESSED_HASH_PREFIX}${bytesToBase64Url(zlibSync(strToU8(json)))}`;
+    return compressed.length < legacy.length ? compressed : legacy;
+  } catch {
+    return legacy;
+  }
+}
+
 export function decodeResumeFromHash(encoded: string): ResumeData | null {
   if (typeof window === "undefined") return null;
   if (!encoded) return null;
   try {
-    const padded = encoded.replace(/-/g, "+").replace(/_/g, "/");
-    const pad = padded.length % 4 === 0 ? "" : "=".repeat(4 - (padded.length % 4));
-    const binary = window.atob(padded + pad);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    const json = new TextDecoder().decode(bytes);
+    const json = encoded.startsWith(COMPRESSED_HASH_PREFIX)
+      ? strFromU8(unzlibSync(base64UrlToBytes(encoded.slice(COMPRESSED_HASH_PREFIX.length))))
+      : new TextDecoder().decode(base64UrlToBytes(encoded));
     return sanitizeResumeData(JSON.parse(json));
   } catch {
     return null;

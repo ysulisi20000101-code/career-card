@@ -24,7 +24,7 @@ function isValidStages(val: unknown): val is PipelineStage[] {
   return Array.isArray(val) && val.length > 0 && typeof val[0] === "object" && val[0] !== null && "color" in val[0];
 }
 
-export function FullstackSlide({ slide, theme }: Props) {
+export function FullstackSlide({ slide }: Props) {
   const domainTags = slide.domainTags ?? [];
   const viz = slide.visualizations?.[0]?.data;
   const stages = isValidStages(viz?.stages) ? viz.stages : undefined;

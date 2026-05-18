@@ -7,10 +7,11 @@ import type { PresentationDraft } from "@/lib/presentation/types";
 
 export const runtime = "nodejs";
 
-const MAX_BODY_SIZE = 80_000;
+const MAX_BODY_SIZE = 180_000;
 const MAX_TIMELINE_NODES = 25;
+const MAX_PRESENTATION_SLIDES = 24;
 
-function isPresentationDraft(v: unknown): v is PresentationDraft {
+export function isPresentationDraft(v: unknown): v is PresentationDraft {
   if (!v || typeof v !== "object") return false;
   const d = v as Record<string, unknown>;
   return (
@@ -18,7 +19,7 @@ function isPresentationDraft(v: unknown): v is PresentationDraft {
     typeof d.id === "string" &&
     Array.isArray(d.slides) &&
     d.slides.length >= 6 &&
-    d.slides.length <= 12
+    d.slides.length <= MAX_PRESENTATION_SLIDES
   );
 }
 
@@ -64,7 +65,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = await enhancePresentationDraft(baseline, resumeData);
+    const instruction = typeof body.instruction === "string" ? body.instruction.trim().slice(0, 500) : undefined;
+    const result = await enhancePresentationDraft(baseline, resumeData, instruction);
 
     return NextResponse.json({
       draft: result.draft,

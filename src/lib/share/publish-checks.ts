@@ -34,7 +34,7 @@ export function getPublishChecks(data: ResumeData): PublishCheck[] {
       id: "target-role",
       label: "目标岗位",
       description: hasRole
-        ? "公开站会在首屏展示岗位匹配摘要"
+        ? "公开站会在首屏展示职业定位摘要"
         : "建议补充目标岗位或个人标题，帮助面试官快速判断匹配度",
       severity: hasRole ? "passed" : "warning",
     },

@@ -23,7 +23,7 @@ function isValidVModelVariant(val: unknown): val is "monopoly" | "complete" {
   return val === "monopoly" || val === "complete";
 }
 
-export function ResolutionSlide({ slide, theme }: Props) {
+export function ResolutionSlide({ slide }: Props) {
   const bullets = slide.bullets ?? [];
   const closingQuote = slide.closingQuote ?? "";
 

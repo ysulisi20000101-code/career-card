@@ -16,10 +16,15 @@ export function interviewToResumeData(data: InterviewProjectData): ResumeData {
   };
 }
 
-export function resumeDataToInterview(data: ResumeData, existingNotes?: string): InterviewProjectData {
+export function resumeDataToInterview(
+  data: ResumeData,
+  existingNotes?: string,
+  extras?: { presentationDraftId?: string },
+): InterviewProjectData {
   return {
     resume: data,
     roleUnderstanding: data.roleUnderstanding,
     interviewNotes: existingNotes ?? "",
+    presentationDraftId: extras?.presentationDraftId,
   };
 }

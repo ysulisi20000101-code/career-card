@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Boxes, Brain, Clock, Eye, LayoutTemplate, Sparkles, Target } from "lucide-react";
+import { Boxes, Brain, Clock, Eye, LayoutTemplate, Sparkles } from "lucide-react";
 import type { PublicSiteTemplate } from "@/types";
 import { useResumeStore } from "@/store/resume-store";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { TimelineEditor } from "@/components/timeline/timeline-editor";
 import SkillMapEditor from "@/components/skillmap/skill-map-editor";
 import ArchitectureEditor from "@/components/architecture/architecture-editor";
-import { RoleUnderstandingEditor } from "@/components/role-understanding/role-understanding-editor";
 import { CareerNarrativeSite } from "@/components/narrative/career-narrative-site";
 import { CareerAgentPanel } from "@/components/agent/career-agent-panel";
 import { generatePresentationDraft } from "@/lib/presentation/generator";
@@ -22,7 +21,6 @@ const tabs = [
   { value: "timeline", label: "时间线", icon: Clock },
   { value: "skills", label: "技能导图", icon: Brain },
   { value: "architecture", label: "架构图", icon: Boxes },
-  { value: "role", label: "岗位理解", icon: Target },
 ] as const;
 
 type TabValue = (typeof tabs)[number]["value"];
@@ -50,7 +48,7 @@ export function EditPage({ mode = "personal", projectId }: EditPageProps) {
   const [activeTab, setActiveTab] = useState<TabValue>("timeline");
   const resumeData = useResumeStore((state) => state.resumeData);
   const updatePublicSiteTemplate = useResumeStore((state) => state.updatePublicSiteTemplate);
-  const visibleTabs = mode === "interview" ? tabs : tabs.filter((tab) => tab.value !== "role");
+  const visibleTabs = tabs;
 
   const handleGeneratePresentation = () => {
     if (!resumeData || !projectId) return;
@@ -153,7 +151,6 @@ export function EditPage({ mode = "personal", projectId }: EditPageProps) {
           {activeTab === "timeline" && <TimelineEditor />}
           {activeTab === "skills" && <SkillMapEditor />}
           {activeTab === "architecture" && <ArchitectureEditor />}
-          {mode === "interview" && activeTab === "role" && <RoleUnderstandingEditor />}
         </motion.div>
 
         <motion.aside

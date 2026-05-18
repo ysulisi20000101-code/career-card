@@ -1,5 +1,44 @@
 # Career Card — 开发日志
 
+## 2026-05-18 | 面试空间主线重构与发布前稳定性修复
+
+### 产品决策
+
+- **面试空间主线收敛**：移除岗位理解、JD 上传、补充材料等旁路能力，回到“上传简历 -> 自动生成第一版面试故事 PPT -> 对话微调 -> 面试模式投屏”的核心竞争力。
+- **李锦涛定制模板落地**：新增 `/reference-html/lijintao-interview-main.html` 精确还原入口，面试演示页在命中特定简历模板时直接渲染参考 HTML 版本。
+- **Agent 体验统一**：面试空间右侧 Agent 工作台与个人网站风格保持一致，新增建议/微调分栏、面试模式隐藏编辑与 Agent 入口，并提供修改前后对比面板。
+
+### 关键修复
+
+- **API_SECRET 同源放行**：`checkApiKey()` 支持同源浏览器请求，避免生产配置 `API_SECRET` 后发布、AI 生成、事件接口被前端误拦；公开站 GET 不走密钥校验。
+- **分享链接策略**：压缩 hash 便携链接，保留服务端短链校验逻辑，降低 serverless 多实例下复制不可访问短链的风险。
+- **site-chat history 防 500**：修复 history 过滤谓词优先级，只接受 `{ role: "user" | "agent", content: string }`。
+- **幻灯片 bullet XSS 防护**：`BaCard` 去掉 `dangerouslySetInnerHTML`，仅解析受控 `<em>` 强调标记。
+- **旧模块清理**：删除 role-understanding 组件和 interview job/material 生成路径，旧草稿中的 job/material slide 会在演示页自动失效并重生成为 self 主线。
+
+### 新增/调整模块
+
+| 文件/目录 | 说明 |
+|---|---|
+| `src/components/interview/` | 面试空间 HTML 还原入口与 PPT Agent 工作台 |
+| `src/components/agent-workbench/change-review-panel.tsx` | 统一展示 Agent 修改对比 |
+| `src/lib/presentation/lijintao-template.ts` | 李锦涛面试空间 10 页模板生成逻辑 |
+| `src/lib/presentation/instruction-edit.ts` | 本地指令微调：压缩页数、突出 Agent、改写表达重点 |
+| `src/lib/presentation/slide-coach.ts` | 面试演讲教练提示 |
+| `public/reference-html/` | 参考 HTML 静态资产 |
+| `public/project-visuals/` | 首页/个人站项目视觉资产 |
+
+### 验证结果
+
+- `npm run typecheck` 通过
+- `npm run lint` 通过
+- `npm test` 通过：22 个测试文件，89 个测试
+- `npm run build` 通过
+- 本地冒烟：`/`、`/workspace`、`/workspace/interview/new`、`/workspace/interview/[id]/present`、`/reference-html/lijintao-interview-main.html` 均返回 200
+- 文案扫描：`岗位理解 / 补充材料 / JD / 美团 / jobMaterials` 等旧路径无回潮
+
+---
+
 ## 2026-05-04 | LLM 驱动面试演示模块
 
 ### 架构决策

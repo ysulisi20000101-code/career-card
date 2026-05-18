@@ -43,7 +43,7 @@ function deriveIntent(input: AgentInput): { intent: AgentIntent; trace: AgentToo
   if (/岗位|jd|匹配|role|target/.test(text)) {
     return {
       intent: "map_to_target_role",
-      trace: { tool: "derive_intent", status: "used", note: "根据用户输入识别为岗位匹配。" },
+      trace: { tool: "derive_intent", status: "used", note: "根据用户输入识别为职业定位。" },
     };
   }
   if (/改写|故事|经历|亮点|叙事|story/.test(text)) {

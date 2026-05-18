@@ -34,7 +34,6 @@ function scoreSkill(skill: SkillNode): number {
 function textCorpus(data: ResumeData, input?: GenerateCareerSiteDraftInput): string {
   return [
     input?.instruction,
-    input?.jdText,
     input?.targetRoleOverride,
     data.profile.title,
     data.profile.summary,

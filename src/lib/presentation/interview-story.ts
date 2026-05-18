@@ -924,7 +924,7 @@ function applyGenericOverlayCopy(overlays: PresentationOverlay[]): void {
     "ov-rag-detail": {
       title: "证据库 / 全链路数据流",
       kind: "rag-detail",
-      body: "把简历、项目经历、岗位目标和用户补充材料转成可追溯证据，再服务于每页叙事和图形生成。",
+      body: "把简历、项目经历、表达目标和用户确认事实转成可追溯证据，再服务于每页叙事和图形生成。",
     },
     "ov-conflict-types": {
       title: "事实一致性校验",
@@ -934,7 +934,7 @@ function applyGenericOverlayCopy(overlays: PresentationOverlay[]): void {
     "ov-arch-detail": {
       title: "能力架构 / 三层体系",
       kind: "arch-detail",
-      body: "底层是简历证据，中层是可迁移能力与方法，上层是面向目标岗位的展示表达。",
+      body: "底层是简历证据，中层是可迁移能力与方法，上层是面向目标方向的展示表达。",
     },
     "ov-platform": {
       title: "产品方法平台",

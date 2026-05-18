@@ -8,6 +8,7 @@ export interface PresentationDraft {
   sourcePrepNarrativeId?: string;
   targetRole: string;
   template: "agent-product-arc" | "system-builder" | "growth-commercial" | "technical-project";
+  modules?: PresentationModule[];
   slides: PresentationSlide[];
   overlays: PresentationOverlay[];
   themeId: string;
@@ -18,9 +19,22 @@ export interface PresentationDraft {
   updatedAt: string;
 }
 
+export type PresentationModuleId = "self" | "job" | "material";
+
+export interface PresentationModule {
+  id: PresentationModuleId;
+  label: string;
+  description?: string;
+  defaultSlideId?: string;
+  keyboardShortcut?: "1" | "2" | "3";
+}
+
 export interface PresentationSlide {
   id: string;
   kind: string;
+  moduleId?: PresentationModuleId;
+  moduleOrder?: number;
+  moduleTitle?: string;
   title: string;
   subtitle?: string;
   body: string;

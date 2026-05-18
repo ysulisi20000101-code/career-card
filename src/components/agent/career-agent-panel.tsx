@@ -108,9 +108,9 @@ function displayPatchValue(value: AgentPatchValue): string {
 }
 
 function patchPathLabel(path: string): string {
-  if (path === "roleUnderstanding") return "岗位理解模块";
+  if (path === "roleUnderstanding") return "表达定位";
   if (path.startsWith("profile.")) return `个人信息 · ${path.replace("profile.", "")}`;
-  if (path.startsWith("roleUnderstanding.")) return `岗位理解 · ${path.replace("roleUnderstanding.", "")}`;
+  if (path.startsWith("roleUnderstanding.")) return `表达定位 · ${path.replace("roleUnderstanding.", "")}`;
   const timelineMatch = path.match(/^timeline\[id=([^\]]+)\]\.([A-Za-z0-9_]+)$/);
   if (timelineMatch) return `经历字段 · ${timelineMatch[2]}`;
   return path;
@@ -212,7 +212,7 @@ export function CareerAgentPanel({ currentSection }: { currentSection: AgentSect
       <Textarea
         value={message}
         onChange={(event) => setMessage(event.target.value)}
-        placeholder="粘贴 JD、补充目标岗位，或告诉助手这次想优化什么"
+        placeholder="告诉助手这次想优化什么，比如开场、项目重点、表达风格或页数"
         rows={3}
         className="mt-3 resize-none bg-zinc-50/70 text-sm"
       />

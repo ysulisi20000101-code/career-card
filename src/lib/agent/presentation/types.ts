@@ -5,7 +5,8 @@ import type { ResumeData } from "@/types";
 export interface PresentationEnhancementRequest {
   resumeData: ResumeData;
   baseline: PresentationDraft;
-  mode: "enhance";
+  mode: "enhance" | "revise";
+  instruction?: string;
 }
 
 /** Sparse update for a single slide — only fields the LLM is allowed to modify. */

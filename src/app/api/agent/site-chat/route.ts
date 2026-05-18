@@ -17,8 +17,10 @@ export async function POST(request: Request) {
   const history: Array<{ role: "user" | "agent"; content: string }> = Array.isArray(body?.history)
     ? (body.history as unknown[]).filter(
         (item): item is { role: "user" | "agent"; content: string } =>
-          typeof item === "object" && item !== null &&
-          (item as Record<string, unknown>).role === "user" || (item as Record<string, unknown>).role === "agent" &&
+          typeof item === "object" &&
+          item !== null &&
+          ((item as Record<string, unknown>).role === "user" ||
+            (item as Record<string, unknown>).role === "agent") &&
           typeof (item as Record<string, unknown>).content === "string",
       ).slice(-6)
     : [];

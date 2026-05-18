@@ -21,7 +21,6 @@ export default function NewSitePage() {
   }, false, [projectId]);
 
   const [targetRole, setTargetRole] = useState("");
-  const [jdText, setJdText] = useState("");
   const [error, setError] = useState("");
 
   const handleSubmit = () => {
@@ -35,7 +34,6 @@ export default function NewSitePage() {
     // 只创建站点记录，草稿生成由 Agent 工作台负责
     const site = createSite(projectId, {
       targetRole: trimmedRole,
-      jdText: jdText.trim() || undefined,
     });
 
     router.push(`/workspace/personal/${projectId}/sites/${site.id}`);
@@ -114,27 +112,6 @@ export default function NewSitePage() {
                 className="mt-2 w-full rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
                 onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}
               />
-            </div>
-
-            <div>
-              <label htmlFor="jdText" className="block text-sm font-medium text-zinc-800">
-                岗位描述 (JD) <span className="text-xs font-normal text-zinc-400">可选</span>
-              </label>
-              <p className="mt-1 text-xs text-zinc-400">
-                粘贴目标岗位的 JD 全文，Agent 会据此优化网站定位和叙事重点。
-              </p>
-              <textarea
-                id="jdText"
-                value={jdText}
-                onChange={(e) => setJdText(e.target.value)}
-                placeholder="粘贴 JD 全文..."
-                rows={8}
-                maxLength={5000}
-                className="mt-2 w-full resize-none rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-              />
-              <p className="mt-1 text-right text-[11px] text-zinc-400">
-                {jdText.length} / 5000
-              </p>
             </div>
 
             {error && (

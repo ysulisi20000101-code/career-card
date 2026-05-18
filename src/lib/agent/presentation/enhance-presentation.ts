@@ -6,7 +6,7 @@ import { buildPresentationEnhancePrompt } from "./build-prompt";
 import { normalizeEnhancementOutput, mergePresentationEnhancements, scanForFabrication } from "./normalize-presentation";
 import type { PresentationEnhancementResult, ValidationIssue } from "./types";
 
-const PRESENTATION_TIMEOUT_MS = 40_000; // longer timeout for full 8-slide generation
+const PRESENTATION_TIMEOUT_MS = 40_000; // longer timeout for full modular presentation enhancement
 const RETRY_DELAYS_MS = [1_000, 2_000];
 const MAX_RETRIES = 2;
 
@@ -40,6 +40,7 @@ function parseJsonContent(content: string): unknown | null {
 export async function enhancePresentationDraft(
   baseline: PresentationDraft,
   data: ResumeData,
+  instruction?: string,
 ): Promise<PresentationEnhancementResult> {
   const issues: ValidationIssue[] = [];
   const groundedBaseline = applyInterviewStoryBlueprint(baseline, data);
@@ -59,7 +60,7 @@ export async function enhancePresentationDraft(
   // If it fails after retries, we return baseline — the provider chain is exhausted.
   // (Full multi-provider failover requires per-provider configs which adds complexity.)
 
-  const promptContent = buildPresentationEnhancePrompt(groundedBaseline, data);
+  const promptContent = buildPresentationEnhancePrompt(groundedBaseline, data, instruction);
 
   // Try the primary provider with retries
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {

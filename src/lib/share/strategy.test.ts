@@ -97,4 +97,25 @@ describe("share strategy", () => {
     expect(artifacts.portableLink.ready).toBe(true);
     expect(primary.capability).toBe("portable");
   });
+
+  it("compresses portable payloads while preserving hash decoding", () => {
+    const data = structuredClone(mockResumeData);
+    data.profile.summary = "Agent workflow, RAG knowledge base, platform delivery. ".repeat(200);
+
+    const artifacts = buildShareArtifacts("https://example.com", "compressed", data);
+    const encoded = artifacts.portableUrl.split("#d=")[1];
+    const plainEncoded = Buffer.from(JSON.stringify(data), "utf8")
+      .toString("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/g, "");
+    const resolved = resolveSharedResume({
+      hash: `#d=${encoded}`,
+      slug: "compressed",
+      loadFromStorage: () => null,
+    });
+
+    expect(encoded.length).toBeLessThan(plainEncoded.length);
+    expect(resolved?.profile.name).toBe(data.profile.name);
+  });
 });

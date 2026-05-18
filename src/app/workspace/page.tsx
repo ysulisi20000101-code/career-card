@@ -43,7 +43,7 @@ import {
   loadInterviewProject,
   saveInterviewProject,
 } from "@/lib/projects/registry";
-import { interviewToResumeData, personalToResumeData } from "@/lib/projects/adapters";
+import { interviewToResumeData } from "@/lib/projects/adapters";
 import { generatePresentationDraft } from "@/lib/presentation/generator";
 import { savePresentationDraft, deletePresentationDraft } from "@/lib/presentation/storage";
 import { formatRelativeTime } from "@/lib/utils";
@@ -179,7 +179,12 @@ export default function WorkspacePage() {
         deletePresentationDraft(interviewData.presentationDraftId);
       }
       savePresentationDraft(draft);
-      saveInterviewProject(record.id, { ...interviewData, presentationDraftId: draft.id });
+      saveInterviewProject(record.id, {
+        ...interviewData,
+        resume: resumeData,
+        roleUnderstanding: resumeData.roleUnderstanding,
+        presentationDraftId: draft.id,
+      });
       refreshRecords();
       router.push(`/workspace/interview/${record.id}/present`);
     } finally {
@@ -235,10 +240,10 @@ export default function WorkspacePage() {
               工作台
             </div>
             <h1 className="max-w-2xl text-3xl font-semibold leading-tight tracking-normal text-zinc-950 lg:text-4xl">
-              你的职业网站工作台
+              你的 Career Card 工作台
             </h1>
             <p className="max-w-2xl text-sm leading-7 text-muted-foreground lg:text-base">
-              上传简历、生成公开页、发布稳定链接。
+              管理职业网站和面试空间。上传简历后先生成完整初稿，再围绕讲述重点和表达节奏微调。
             </p>
           </div>
 
@@ -273,7 +278,7 @@ export default function WorkspacePage() {
             </div>
             <h2 className="text-xl font-semibold text-zinc-900">还没有职业档案</h2>
             <p className="mt-2 max-w-md text-sm text-zinc-500">
-              上传一份简历，AI 自动生成你的第一个职业网站。支持 PDF 简历解析、多岗位定制和发布分享。
+              上传一份简历，AI 自动生成你的第一个职业网站。支持 PDF 简历解析、内容微调和发布分享。
             </p>
             <Link href="/workspace/personal/new" className="mt-6">
               <Button variant="brand" size="lg" className="gap-2 rounded-full px-8 shadow-md shadow-indigo-500/25">
@@ -322,7 +327,7 @@ export default function WorkspacePage() {
             icon={MonitorSmartphone}
             gradient="from-rose-500 to-amber-500"
             title="面试演示"
-            description="把经历、岗位理解和讲述节奏组织成演示场景。"
+            description="把经历亮点和讲述节奏组织成演示场景。"
             newHref="/workspace/interview/new"
             newLabel="新建面试演示"
             records={interviewRecords}
@@ -335,7 +340,7 @@ export default function WorkspacePage() {
                 ? { label: "故事演示", icon: Play }
                 : { label: "演示", icon: Play };
             }}
-            emptyHint="还没有面试演示。可以基于目标岗位搭建讲述节奏。"
+            emptyHint="还没有面试演示。上传简历后可以直接生成一版可投屏的故事 PPT。"
             onRename={handleRename}
             onDuplicate={handleDuplicate}
             onArchive={handleArchive}
@@ -448,7 +453,7 @@ function SpaceCard({
           </div>
         </div>
         <Link href={newHref}>
-          <Button size="sm" variant="brand" className="gap-1 rounded-full">
+          <Button size="sm" variant="brand" className="gap-1 rounded-full" aria-label={newLabel}>
             <Plus className="h-3.5 w-3.5" />
             新建
           </Button>

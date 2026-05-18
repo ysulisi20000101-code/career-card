@@ -49,7 +49,7 @@ const MINIMAL_RESUME: ResumeData = {
     },
     {
       id: "t3",
-      company: "美团",
+      company: "星河生活",
       position: "产品实习生",
       startDate: "2018-06",
       endDate: "2019-06",
@@ -108,12 +108,52 @@ const RICH_RESUME: ResumeData = {
   },
 };
 
+const LIJINTAO_RESUME: ResumeData = {
+  ...MINIMAL_RESUME,
+  profile: {
+    id: "lijintao",
+    name: "李锦涛",
+    email: "lijintao@example.com",
+    title: "复杂 ToB 产品与平台产品负责人",
+    summary: "长期在汽车、军工等复杂产业场景中负责平台产品、专业工具链、知识库与产品矩阵建设。",
+  },
+  timeline: [
+    {
+      id: "ljt-core",
+      company: "经纬恒润",
+      position: "产品负责人",
+      startDate: "2022-08",
+      endDate: "至今",
+      description: "负责架构设计工具、SOME/IP 服务设计、知识库与受控式 Agent 工作流。",
+      highlights: ["服务 100+ 研发用户", "覆盖 10+ 客户项目", "文档生成效率提升 50%+"],
+      projects: [],
+      skills: ["架构设计工具", "SOME/IP", "知识库", "RAG", "Agent 工作流"],
+      order: 0,
+      careerKind: "fulltime",
+    },
+  ],
+  skills: [],
+  education: [],
+  architecture: [],
+  roleUnderstanding: {
+    targetRoleTitle: "平台产品负责人",
+    oneLineInterpretation: "把复杂工程能力做成可交付产品系统",
+    priorityProblems: [],
+    ninetyDayPlan: { day0To30: "", day31To60: "", day61To90: "" },
+    experienceMappings: [],
+  },
+};
+
 describe("generatePresentationDraft", () => {
   describe("with minimal resume data (raw upload)", () => {
     const draft = generatePresentationDraft(MINIMAL_RESUME);
 
-    it("produces 8 slides", () => {
+    it("produces an interview deck with only the self-introduction module", () => {
       expect(draft.slides).toHaveLength(8);
+      expect(draft.modules?.map((module) => module.id)).toEqual(["self"]);
+      expect(draft.slides.filter((slide) => slide.moduleId === "self")).toHaveLength(8);
+      expect(draft.slides.filter((slide) => slide.moduleId === "job")).toHaveLength(0);
+      expect(draft.slides.filter((slide) => slide.moduleId === "material")).toHaveLength(0);
     });
 
     it("hero slide has meaningful title from profile", () => {
@@ -182,8 +222,10 @@ describe("generatePresentationDraft", () => {
   describe("with rich resume data (interview prep)", () => {
     const draft = generatePresentationDraft(RICH_RESUME);
 
-    it("produces 8 slides", () => {
+    it("produces only the self-introduction module", () => {
       expect(draft.slides).toHaveLength(8);
+      expect(draft.slides.filter((slide) => slide.moduleId === "job")).toHaveLength(0);
+      expect(draft.slides.filter((slide) => slide.moduleId === "material")).toHaveLength(0);
     });
 
     it("hero uses oneLineInterpretation in title", () => {
@@ -218,6 +260,23 @@ describe("generatePresentationDraft", () => {
     });
   });
 
+  describe("with Li Jintao resume data", () => {
+    const draft = generatePresentationDraft(LIJINTAO_RESUME);
+
+    it("uses the customized 10-page interview-space main line by default", () => {
+      expect(draft.narrativeProfile?.presetId).toBe("lijintao-interview-space");
+      expect(draft.modules?.map((module) => module.id)).toEqual(["self"]);
+      expect(draft.slides.filter((slide) => slide.moduleId === "self")).toHaveLength(10);
+      expect(draft.slides.filter((slide) => slide.moduleId === "job")).toHaveLength(0);
+      expect(draft.slides.filter((slide) => slide.moduleId === "material")).toHaveLength(0);
+      expect(draft.slides[0]?.title).toContain("李锦涛");
+      expect(draft.slides.find((slide) => slide.id === "core-product")?.title).toContain("架构设计工具");
+      expect(draft.slides.find((slide) => slide.id === "agent-workflow")?.title).toContain("受控式 AI Agent");
+      expect(draft.slides.find((slide) => slide.id === "result-judgement")?.body).toContain("可执行产品系统");
+    });
+
+  });
+
   describe("edge cases", () => {
     it("handles empty timeline gracefully", () => {
       const empty: ResumeData = { ...MINIMAL_RESUME, timeline: [], skills: [] };
@@ -231,7 +290,7 @@ describe("generatePresentationDraft", () => {
     it("handles single experience", () => {
       const single: ResumeData = { ...MINIMAL_RESUME, timeline: MINIMAL_RESUME.timeline.slice(0, 1) };
       const draft = generatePresentationDraft(single);
-      expect(draft.slides).toHaveLength(7); // no agent-leap with only 1 experience
+      expect(draft.slides).toHaveLength(7); // self module only, no secondary fallback slides
     });
 
     it("handles no roleUnderstanding", () => {

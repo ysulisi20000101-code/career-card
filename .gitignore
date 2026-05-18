@@ -52,3 +52,9 @@ next-env.d.ts
 /design-preview.html
 /homepage-*.html
 /preview-*.html
+/*.html
+
+# Tencent Cloud EdgeOne
+.env
+.edgeone/*
+.tef_dist/*

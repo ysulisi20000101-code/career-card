@@ -9,7 +9,6 @@ import {
   Wrench,
   Check,
   X,
-  ChevronRight,
   Plus,
   Sparkles,
   Pencil,

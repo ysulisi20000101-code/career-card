@@ -739,7 +739,7 @@ export function TimelineEditor() {
   const [suggestions, setSuggestions] = useState<Record<string, AiStoryResult>>({});
   const [promotionSuggestions, setPromotionSuggestions] = useState<Record<string, AiPromotionResult>>({});
 
-  const nodes = resumeData?.timeline ?? [];
+  const nodes = useMemo(() => resumeData?.timeline ?? [], [resumeData?.timeline]);
   const sortedNodes = useMemo(() => getOrderedTimeline(nodes), [nodes]);
   const careerNodes = useMemo(() => sortedNodes.filter((node) => inferCareerKind(node) === "fulltime"), [sortedNodes]);
   const latestCareerNodeId = careerNodes[0]?.id ?? null;

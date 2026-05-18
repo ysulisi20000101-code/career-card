@@ -87,7 +87,7 @@ export function AgentLeapSlide({ slide, onOpenOverlay }: Props) {
   const ragBlocks = Array.isArray(viz?.ragBlocks) && viz.ragBlocks.length > 0
     ? (viz.ragBlocks as RagBlockSpec[])
     : [
-        { title: "数据层", items: "简历事实 / 项目证据\n岗位目标 / 用户补充" },
+        { title: "数据层", items: "简历事实 / 项目证据\n表达目标 / 确认事实" },
         { title: "处理层", items: "证据抽取 / 语义归类\n结构化蓝图生成" },
         { title: "校验层", items: "指标 / 公司 / 项目名校验", highlighted: true },
         { title: "表达层", items: "八页叙事 / 图形数据\n投屏表达" },
@@ -99,7 +99,7 @@ export function AgentLeapSlide({ slide, onOpenOverlay }: Props) {
   const conflictLabel = typeof viz?.conflictLabel === "string" ? viz.conflictLabel : "校验场景";
   const conflictTypes = Array.isArray(viz?.conflictTypes) && viz.conflictTypes.length > 0
     ? (viz.conflictTypes as string[])
-    : ["事实一致性", "指标可追溯", "项目名校验", "岗位匹配", "表达完整性"];
+    : ["事实一致性", "指标可追溯", "项目名校验", "职业定位", "表达完整性"];
 
   // Parse agent bullets: "Label：Desc"
   const agentItems = bullets.map((b) => {

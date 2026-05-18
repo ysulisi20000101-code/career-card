@@ -61,7 +61,7 @@ export async function enhanceSiteDraft(
   const result = getFirstAvailableProviderConfig();
   if (!result) return draft;
 
-  const { config, provider } = result;
+  const { config } = result;
 
   try {
     const body: Record<string, unknown> = {

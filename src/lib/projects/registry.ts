@@ -351,7 +351,7 @@ export function listSitesByProject(projectId: string): PersonalSite[] {
 
 export function createSite(
   projectId: string,
-  params: { targetRole?: string; jdText?: string; jdImageUrls?: string[] },
+  params: { targetRole?: string },
 ): PersonalSite {
   const now = nowIso();
   const site: PersonalSite = {
@@ -363,8 +363,6 @@ export function createSite(
     status: "draft",
     createdAt: now,
     updatedAt: now,
-    jdText: params.jdText?.trim().slice(0, 5000) || undefined,
-    jdImageUrls: params.jdImageUrls?.length ? params.jdImageUrls : undefined,
   };
 
   // Persist site

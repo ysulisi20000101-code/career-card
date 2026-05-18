@@ -2,13 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Edit3, StickyNote, X } from "lucide-react";
-import type { PresentationDraft, PresentationOverlay } from "@/lib/presentation/types";
+import { Bot, ChevronLeft, ChevronRight, Edit3, StickyNote, X } from "lucide-react";
+import type { PresentationDraft, PresentationModule, PresentationModuleId, PresentationOverlay, PresentationSlide } from "@/lib/presentation/types";
+import { buildSlideCoachBrief } from "@/lib/presentation/slide-coach";
 import { savePresentationDraft } from "@/lib/presentation/storage";
 import { getPresentationTheme } from "@/lib/presentation/themes";
 import { getSlideRenderer } from "./slide-registry";
 import { SlideContainer } from "./slide";
 import { DeckEditor } from "./deck-editor";
+import { AgentCoachPanel } from "./agent-coach-panel";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { OverlayShell, AgentWorkflowOverlay, RagDetailOverlay, ConflictTypesOverlay, ArchDetailOverlay, PlatformDetailOverlay } from "../overlays";
 import "@/components/presentation/styles/reference.css";
@@ -16,9 +18,20 @@ import "@/components/presentation/styles/reference.css";
 const SLIDE_ANIMATION_DURATION_MS = 500;
 const NAV_LOCK_TIMEOUT_MS = SLIDE_ANIMATION_DURATION_MS + 120;
 
+const FALLBACK_MODULES: PresentationModule[] = [
+  { id: "self", label: "自我介绍", description: "职业主线与关键项目", defaultSlideId: "hero", keyboardShortcut: "1" },
+];
+
+function getSlideModuleId(slide: PresentationSlide): PresentationModuleId {
+  return slide.moduleId ?? "self";
+}
+
 interface PresentationShellProps {
   draft: PresentationDraft;
   onExit: () => void;
+  onDraftChange?: (previous: PresentationDraft, updated: PresentationDraft) => void;
+  embedded?: boolean;
+  displayMode?: "prepare" | "interview";
 }
 
 export function resolveOpenOverlayId(id: string, overlays: PresentationOverlay[]): string | null {
@@ -47,19 +60,71 @@ function OverlayContent({ overlay }: { overlay: PresentationOverlay }) {
   }
 }
 
-export function PresentationShell({ draft: initialDraft, onExit }: PresentationShellProps) {
+export function PresentationShell({
+  draft: initialDraft,
+  onExit,
+  onDraftChange,
+  embedded = false,
+  displayMode = "prepare",
+}: PresentationShellProps) {
+  const isInterviewMode = displayMode === "interview";
   const [draft, setDraft] = useState(initialDraft);
+  useEffect(() => {
+    setDraft(initialDraft);
+  }, [initialDraft]);
   const theme = useMemo(() => getPresentationTheme(draft.themeId), [draft.themeId]);
-  const slides = useMemo(() => draft.slides.filter((s) => !s.hidden), [draft.slides]);
+  const slides = useMemo(
+    () => draft.slides.filter((s) => !s.hidden && getSlideModuleId(s) === "self"),
+    [draft.slides],
+  );
   const overlays = draft.overlays;
-  const total = slides.length;
+  const moduleDefs = useMemo(() => {
+    const configured = draft.modules?.length ? draft.modules : FALLBACK_MODULES;
+    const visibleModuleIds = new Set(slides.map(getSlideModuleId));
+    const modules: PresentationModule[] = [];
+
+    for (const moduleDef of configured) {
+      if (visibleModuleIds.has(moduleDef.id) && !modules.some((item) => item.id === moduleDef.id)) {
+        modules.push(moduleDef);
+      }
+    }
+
+    for (const moduleId of visibleModuleIds) {
+      if (!modules.some((item) => item.id === moduleId)) {
+        modules.push(FALLBACK_MODULES.find((item) => item.id === moduleId) ?? { id: moduleId, label: moduleId });
+      }
+    }
+
+    return modules;
+  }, [draft.modules, slides]);
+  const [activeModuleId, setActiveModuleId] = useState<PresentationModuleId>("self");
   const [current, setCurrent] = useState(0);
   const [locked, setLocked] = useState(false);
   const [activeOverlayId, setActiveOverlayId] = useState<string | null>(null);
   const touchStartRef = useRef(0);
   const [showNotes, setShowNotes] = useState(false);
+  const [showCoach, setShowCoach] = useState(false);
   const [showEditor, setShowEditor] = useState(false);
 
+  const activeModule = moduleDefs.find((moduleDef) => moduleDef.id === activeModuleId) ?? moduleDefs[0];
+  const effectiveModuleId = activeModule?.id ?? "self";
+  const slideOrderLookup = useMemo(() => new Map(slides.map((slide, index) => [slide.id, index])), [slides]);
+  const moduleSlides = useMemo(
+    () =>
+      slides
+        .filter((slide) => getSlideModuleId(slide) === effectiveModuleId)
+        .sort((a, b) => {
+          const orderA = a.moduleOrder ?? slideOrderLookup.get(a.id) ?? 0;
+          const orderB = b.moduleOrder ?? slideOrderLookup.get(b.id) ?? 0;
+          return orderA - orderB;
+        }),
+    [effectiveModuleId, slideOrderLookup, slides],
+  );
+  const moduleSlidePositions = useMemo(
+    () => new Map(moduleSlides.map((slide, index) => [slide.id, index])),
+    [moduleSlides],
+  );
+  const total = moduleSlides.length;
   const safeCurrent = total > 0 ? Math.min(current, total - 1) : 0;
 
   const activeOverlay = useMemo(
@@ -79,9 +144,30 @@ export function PresentationShell({ draft: initialDraft, onExit }: PresentationS
 
   const goNext = useCallback(() => goTo(safeCurrent + 1), [safeCurrent, goTo]);
   const goPrev = useCallback(() => goTo(safeCurrent - 1), [safeCurrent, goTo]);
+  const switchModule = useCallback(
+    (moduleId: PresentationModuleId) => {
+      if (moduleId === effectiveModuleId || locked || activeOverlay) return;
+      if (!moduleDefs.some((moduleDef) => moduleDef.id === moduleId)) return;
+      setLocked(true);
+      setActiveModuleId(moduleId);
+      setCurrent(0);
+      setTimeout(() => setLocked(false), NAV_LOCK_TIMEOUT_MS);
+    },
+    [activeOverlay, effectiveModuleId, locked, moduleDefs],
+  );
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
+      const target = e.target;
+      const targetElement = target instanceof HTMLElement ? target : null;
+      const isTextInput =
+        targetElement?.tagName === "INPUT" ||
+        targetElement?.tagName === "TEXTAREA" ||
+        targetElement?.isContentEditable;
+      if (isTextInput) {
+        if (e.key === "Escape" && showEditor) setShowEditor(false);
+        return;
+      }
       if (showEditor) {
         if (e.key === "Escape") setShowEditor(false);
         return;
@@ -94,6 +180,10 @@ export function PresentationShell({ draft: initialDraft, onExit }: PresentationS
         } else {
           onExit();
         }
+      } else if (moduleDefs.some((moduleDef) => moduleDef.keyboardShortcut === e.key)) {
+        e.preventDefault();
+        const nextModule = moduleDefs.find((moduleDef) => moduleDef.keyboardShortcut === e.key);
+        if (nextModule) switchModule(nextModule.id);
       } else if (e.key === "ArrowRight" || e.key === "ArrowDown" || e.key === " ") {
         e.preventDefault();
         goNext();
@@ -102,19 +192,24 @@ export function PresentationShell({ draft: initialDraft, onExit }: PresentationS
         goPrev();
       } else if (e.key === "n" || e.key === "N") {
         setShowNotes((v) => !v);
+      } else if (e.key === "a" || e.key === "A") {
+        setShowCoach((v) => !v);
       }
     },
-    [activeOverlay, onExit, goNext, goPrev, showNotes, showEditor],
+    [activeOverlay, onExit, goNext, goPrev, showNotes, showEditor, moduleDefs, switchModule],
   );
 
   useEffect(() => {
     document.addEventListener("keydown", handleKeyDown);
-    document.body.style.overflow = "hidden";
+    const previousOverflow = document.body.style.overflow;
+    if (!embedded || isInterviewMode) {
+      document.body.style.overflow = "hidden";
+    }
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "";
+      document.body.style.overflow = previousOverflow;
     };
-  }, [handleKeyDown]);
+  }, [embedded, handleKeyDown, isInterviewMode]);
 
   const openOverlay = useCallback((id: string) => {
     const nextOverlayId = resolveOpenOverlayId(id, overlays);
@@ -137,8 +232,11 @@ export function PresentationShell({ draft: initialDraft, onExit }: PresentationS
   );
 
   const handleDraftUpdate = useCallback((updated: PresentationDraft) => {
-    setDraft(updated);
-  }, []);
+    setDraft((previous) => {
+      onDraftChange?.(previous, updated);
+      return updated;
+    });
+  }, [onDraftChange]);
 
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
@@ -152,8 +250,16 @@ export function PresentationShell({ draft: initialDraft, onExit }: PresentationS
     };
   }, [draft]);
 
-  const currentSlide = slides[safeCurrent];
+  const currentSlide = moduleSlides[safeCurrent];
   const hasNotes = currentSlide?.speakerNotes && currentSlide.speakerNotes.trim().length > 0;
+  const activeModuleLabel = activeModule?.label;
+  const coachBrief = useMemo(
+    () => (currentSlide ? buildSlideCoachBrief(currentSlide, overlays, activeModuleLabel) : null),
+    [activeModuleLabel, currentSlide, overlays],
+  );
+  const coachOpen = !isInterviewMode && showCoach && Boolean(coachBrief) && !showEditor;
+  const rootPosition = embedded ? "absolute" : "fixed";
+  const floatingPosition = embedded ? "absolute" : "fixed";
 
   if (total === 0) {
     return (
@@ -167,9 +273,9 @@ export function PresentationShell({ draft: initialDraft, onExit }: PresentationS
   return (
     <>
       <div
-        className="ps-root"
+        className={`ps-root${embedded ? " ps-embedded" : ""}${isInterviewMode ? " ps-interview-mode" : ""}${coachOpen ? " coach-open" : ""}`}
         style={{
-          position: "fixed",
+          position: rootPosition,
           inset: 0,
           overflow: "hidden",
           background: `radial-gradient(ellipse 80% 50% at 20% 0%, ${theme.colors.teal}06, transparent), radial-gradient(ellipse 60% 40% at 80% 100%, ${theme.colors.gold}06, transparent), var(--bg)`,
@@ -177,53 +283,119 @@ export function PresentationShell({ draft: initialDraft, onExit }: PresentationS
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
+        {/* Module switcher */}
+        {!isInterviewMode && moduleDefs.length > 1 && (
+          <div
+            style={{
+              position: "absolute",
+              left: 16,
+              top: 16,
+              zIndex: 100,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "7px 9px",
+              borderRadius: 99,
+              border: "1px solid rgba(0,0,0,.08)",
+              background: "rgba(255,255,255,.48)",
+              backdropFilter: "blur(10px)",
+              boxShadow: "0 1px 4px rgba(0,0,0,.03)",
+            }}
+            aria-label="面试空间模块"
+          >
+            {moduleDefs.map((moduleDef) => {
+              const selected = moduleDef.id === effectiveModuleId;
+              return (
+                <button
+                  key={moduleDef.id}
+                  type="button"
+                  onClick={() => switchModule(moduleDef.id)}
+                  aria-pressed={selected}
+                  aria-label={`${moduleDef.label}${moduleDef.keyboardShortcut ? ` (${moduleDef.keyboardShortcut})` : ""}`}
+                  title={moduleDef.description ?? moduleDef.label}
+                  style={{
+                    width: selected ? 18 : 7,
+                    height: 7,
+                    minWidth: selected ? 18 : 7,
+                    borderRadius: 99,
+                    border: "none",
+                    padding: 0,
+                    background: selected ? "var(--gold-bright)" : "rgba(0,0,0,.2)",
+                    cursor: selected ? "default" : "pointer",
+                    opacity: selected ? 0.9 : 0.48,
+                    transition: "all .24s ease",
+                  }}
+                />
+              );
+            })}
+          </div>
+        )}
+
         {/* Top-right buttons */}
-        <div style={{ position: "absolute", right: 16, top: 16, zIndex: 100, display: "flex", gap: 8 }}>
-          <button
-            onClick={() => setShowNotes((v) => !v)}
-            aria-label="演讲备注"
-            title="演讲备注 (N)"
-            style={{
-              width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center",
-              borderRadius: "50%", border: "1px solid var(--border-s)",
-              background: showNotes ? "var(--gold-dim)" : "rgba(255,255,255,.73)",
-              backdropFilter: "blur(8px)",
-              color: showNotes ? "var(--gold-bright)" : "var(--t3)", cursor: "pointer",
-            }}
-          >
-            <StickyNote size={16} />
-          </button>
-          <button
-            onClick={() => setShowEditor(true)}
-            aria-label="编辑演示稿"
-            title="编辑演示稿"
-            style={{
-              width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center",
-              borderRadius: "50%", border: "1px solid var(--border-s)",
-              background: "rgba(255,255,255,.73)", backdropFilter: "blur(8px)",
-              color: "var(--t3)", cursor: "pointer",
-            }}
-          >
-            <Edit3 size={16} />
-          </button>
-          <button
-            onClick={onExit}
-            aria-label="退出演示"
-            style={{
-              width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center",
-              borderRadius: "50%", border: "1px solid var(--border-s)",
-              background: "rgba(255,255,255,.73)", backdropFilter: "blur(8px)",
-              color: "var(--t3)", cursor: "pointer",
-            }}
-          >
-            <X size={18} />
-          </button>
-        </div>
+        {!isInterviewMode && (
+          <div style={{ position: "absolute", right: 16, top: 16, zIndex: 100, display: "flex", gap: 8 }}>
+            <button
+              type="button"
+              onClick={() => setShowCoach((v) => !v)}
+              aria-label="Agent 教练"
+              title="Agent 教练 (A)"
+              style={{
+                width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center",
+                borderRadius: "50%", border: "1px solid var(--border-s)",
+                background: showCoach ? "var(--violet-dim)" : "rgba(255,255,255,.73)",
+                backdropFilter: "blur(8px)",
+                color: showCoach ? "var(--violet)" : "var(--t3)", cursor: "pointer",
+              }}
+            >
+              <Bot size={16} />
+            </button>
+            <button
+              onClick={() => setShowNotes((v) => !v)}
+              aria-label="演讲备注"
+              title="演讲备注 (N)"
+              style={{
+                width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center",
+                borderRadius: "50%", border: "1px solid var(--border-s)",
+                background: showNotes ? "var(--gold-dim)" : "rgba(255,255,255,.73)",
+                backdropFilter: "blur(8px)",
+                color: showNotes ? "var(--gold-bright)" : "var(--t3)", cursor: "pointer",
+              }}
+            >
+              <StickyNote size={16} />
+            </button>
+            <button
+              onClick={() => setShowEditor(true)}
+              aria-label="编辑演示稿"
+              title="编辑演示稿"
+              style={{
+                width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center",
+                borderRadius: "50%", border: "1px solid var(--border-s)",
+                background: "rgba(255,255,255,.73)", backdropFilter: "blur(8px)",
+                color: "var(--t3)", cursor: "pointer",
+              }}
+            >
+              <Edit3 size={16} />
+            </button>
+            <button
+              onClick={onExit}
+              aria-label="退出演示"
+              title="退出演示"
+              style={{
+                width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center",
+                borderRadius: "50%", border: "1px solid var(--border-s)",
+                background: "rgba(255,255,255,.73)", backdropFilter: "blur(8px)",
+                color: "var(--t3)", cursor: "pointer",
+              }}
+            >
+              <X size={18} />
+            </button>
+          </div>
+        )}
 
         {/* Progress bar */}
         <div
           style={{
-            position: "fixed",
+            position: floatingPosition,
             top: 0,
             left: 0,
             height: 3,
@@ -238,9 +410,17 @@ export function PresentationShell({ draft: initialDraft, onExit }: PresentationS
 
         {/* Stage */}
         <ErrorBoundary>
-          <div style={{ position: "absolute", inset: 0 }}>
-            {slides.map((slide, i) => {
-              const position = i < safeCurrent ? "left" : i > safeCurrent ? "right" : "active";
+          <div className="presentation-stage" style={{ position: "absolute", inset: 0 }}>
+            {slides.map((slide) => {
+              const modulePosition = moduleSlidePositions.get(slide.id);
+              const position =
+                modulePosition === undefined
+                  ? "right"
+                  : modulePosition < safeCurrent
+                    ? "left"
+                    : modulePosition > safeCurrent
+                      ? "right"
+                      : "active";
               const Renderer = getSlideRenderer(slide.kind);
               return (
                 <SlideContainer
@@ -269,7 +449,7 @@ export function PresentationShell({ draft: initialDraft, onExit }: PresentationS
           disabled={safeCurrent === 0}
           aria-label="上一页"
           style={{
-            position: "fixed", top: "50%", left: 6, zIndex: 90, transform: "translateY(-50%)",
+            position: floatingPosition, top: "50%", left: 6, zIndex: 90, transform: "translateY(-50%)",
             width: 32, height: 48, display: "flex", alignItems: "center", justifyContent: "center",
             cursor: safeCurrent === 0 ? "default" : "pointer", border: "none",
             background: "rgba(255,255,255,.55)", backdropFilter: "blur(8px)",
@@ -285,7 +465,7 @@ export function PresentationShell({ draft: initialDraft, onExit }: PresentationS
           disabled={safeCurrent === total - 1}
           aria-label="下一页"
           style={{
-            position: "fixed", top: "50%", right: 6, zIndex: 90, transform: "translateY(-50%)",
+            position: floatingPosition, top: "50%", right: 6, zIndex: 90, transform: "translateY(-50%)",
             width: 32, height: 48, display: "flex", alignItems: "center", justifyContent: "center",
             cursor: safeCurrent === total - 1 ? "default" : "pointer", border: "none",
             background: "rgba(255,255,255,.55)", backdropFilter: "blur(8px)",
@@ -300,7 +480,7 @@ export function PresentationShell({ draft: initialDraft, onExit }: PresentationS
         {/* Dots */}
         <div
           style={{
-            position: "fixed", bottom: showNotes && hasNotes ? 120 : 16, left: "50%", zIndex: 90,
+            position: floatingPosition, bottom: !isInterviewMode && showNotes && hasNotes ? 120 : 16, left: "50%", zIndex: 90,
             transform: "translateX(-50%)", display: "flex", gap: 5, alignItems: "center",
             padding: "6px 14px", borderRadius: 99,
             background: "rgba(255,255,255,.65)", backdropFilter: "blur(8px)",
@@ -308,11 +488,11 @@ export function PresentationShell({ draft: initialDraft, onExit }: PresentationS
             transition: "bottom .3s ease",
           }}
         >
-          {slides.map((_, i) => (
+          {moduleSlides.map((slide, i) => (
             <button
-              key={i}
+              key={slide.id}
               onClick={() => goTo(i)}
-              aria-label={`第 ${i + 1} 页`}
+              aria-label={`${activeModule?.label ?? "面试空间"}第 ${i + 1} 页`}
               style={{
                 width: i === safeCurrent ? 18 : 6, height: 6,
                 borderRadius: i === safeCurrent ? 99 : "50%",
@@ -323,13 +503,17 @@ export function PresentationShell({ draft: initialDraft, onExit }: PresentationS
             />
           ))}
           <span style={{ fontSize: "var(--fs-xs)", color: "var(--t3)", marginLeft: 6, fontWeight: 500, letterSpacing: ".04em" }}>
-            {safeCurrent + 1} / {total}
+            {activeModule?.label ?? "面试空间"} {safeCurrent + 1} / {total}
           </span>
         </div>
 
+        {coachOpen && coachBrief && (
+          <AgentCoachPanel brief={coachBrief} onClose={() => setShowCoach(false)} />
+        )}
+
         {/* Speaker notes panel */}
         <AnimatePresence>
-          {showNotes && hasNotes && (
+          {!isInterviewMode && showNotes && hasNotes && (
             <motion.div
               initial={{ y: 100, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -352,25 +536,39 @@ export function PresentationShell({ draft: initialDraft, onExit }: PresentationS
         </AnimatePresence>
 
         {/* ESC hint */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.4 }}
-          transition={{ delay: 1 }}
-          style={{
-            position: "fixed", bottom: 64, left: 16, fontSize: 10,
-            color: "var(--t3)", letterSpacing: ".06em", pointerEvents: "none",
-          }}
-        >
-          ESC 退出 · 方向键翻页 · N 备注
-        </motion.div>
+        {!isInterviewMode && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.4 }}
+            transition={{ delay: 1 }}
+            style={{
+              position: floatingPosition, bottom: 64, left: 16, fontSize: 10,
+              color: "var(--t3)", letterSpacing: ".06em", pointerEvents: "none",
+            }}
+          >
+            ESC 退出 · 方向键翻页 · 1/2/3 切换模块 · A Agent · N 备注
+          </motion.div>
+        )}
 
         {/* Print style */}
         <style>{`
           @media print {
             .ps-root { position: static !important; overflow: visible !important; }
+            .ps-root .agent-coach-panel { display: none !important; }
             .ps-root .slide { position: static !important; opacity: 1 !important; transform: none !important; pointer-events: auto !important; page-break-after: always; min-height: 100vh; display: flex !important; align-items: center !important; justify-content: center !important; overflow: visible !important; }
             .ps-root .slide.left, .ps-root .slide.right { transform: none !important; opacity: 1 !important; }
-    }
+          }
+          @media screen and (min-width: 1180px) {
+            .ps-root.coach-open .presentation-stage {
+              right: 372px !important;
+              transition: right .24s ease;
+            }
+          }
+          .ps-root.ps-embedded .slide {
+            padding: 52px 36px 64px;
+          }
+          .ps-root.ps-interview-mode .slide {
+            padding-top: 48px;
           }
         `}</style>
       </div>
@@ -381,7 +579,7 @@ export function PresentationShell({ draft: initialDraft, onExit }: PresentationS
       </OverlayShell>
 
       {/* Deck Editor */}
-      {showEditor && (
+      {!isInterviewMode && showEditor && (
         <DeckEditor draft={draft} onUpdate={handleDraftUpdate} onClose={() => setShowEditor(false)} />
       )}
     </>

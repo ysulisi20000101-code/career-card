@@ -10,6 +10,4 @@ export interface PersonalSite {
   createdAt: string;
   updatedAt: string;
   publishedAt?: string;
-  jdText?: string;
-  jdImageUrls?: string[];
 }

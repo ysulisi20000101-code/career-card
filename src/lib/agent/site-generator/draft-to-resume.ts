@@ -1,6 +1,6 @@
 import type { ResumeData, SkillProfile, TimelineNode } from "@/types";
 import type { CareerSiteDraft, CareerSiteExperienceBlock, CareerSiteSection } from "./types";
-import { clean, compact, unique } from "@/lib/utils-helpers";
+import { compact, unique } from "@/lib/utils-helpers";
 
 function sectionByKind(draft: CareerSiteDraft, kind: CareerSiteSection["kind"]): CareerSiteSection | undefined {
   return draft.sections.find((section) => section.kind === kind);

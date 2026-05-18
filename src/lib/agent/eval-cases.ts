@@ -77,7 +77,7 @@ export const agentEvalCases: AgentEvalCase[] = [
   },
   {
     id: "map-ai-agent-role",
-    title: "岗位匹配能生成岗位理解结构",
+    title: "职业定位能生成结构化建议",
     input: {
       resumeData: (() => {
         const data = baseResume();

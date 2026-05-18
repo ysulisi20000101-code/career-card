@@ -2,6 +2,7 @@
 
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import {
@@ -472,10 +473,28 @@ function tagStyle(index: number, total: number, isFirst: boolean, theme: SiteThe
   return "bg-slate-100 text-slate-500";
 }
 
+const REFERENCE_INTERNSHIP_CARDS = [
+  {
+    company: "京东健康",
+    summary: "后台产品 · 测评中台 0-1 建设与上线",
+  },
+  {
+    company: "百度",
+    summary: "后台产品 · 机构答主系统搭建，数据 BI 与用户画像体系建设",
+  },
+  {
+    company: "京东",
+    summary: "用户产品 · 权益中心 17 款权益上线，点击占比 3.7%",
+  },
+] as const;
+
+const REFERENCE_INTERNSHIP_SKILLS = ["需求分析", "用户研究", "数据分析", "后台产品", "运营机制"] as const;
+const REFERENCE_INTERNSHIP_TITLE = "京东健康 / 百度 / 京东 · 产品实习生";
+const REFERENCE_INTERNSHIP_PERIOD = "2020年12月 — 2022年04月";
+
 function InternshipDetail({
   detail,
   index,
-  total,
   theme,
 }: {
   detail: PublicExperienceDetail;
@@ -488,11 +507,11 @@ function InternshipDetail({
       id={`experience-${detail.id}`}
       className="relative scroll-mt-14 bg-white px-4 py-16 sm:px-6 lg:px-8"
     >
-      <div className={cn("absolute top-0 left-0 right-0 h-[3px]", theme.section.accentSolid)} />
+      <div className="absolute top-0 left-0 right-0 h-[3px] bg-slate-100" />
 
       <div className="max-w-5xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
-          <span className={cn("flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold", theme.section.accentBg, theme.section.accentText)}>
+          <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold", theme.section.accentBg, theme.section.accentText)}>
             {index + 1}
           </span>
           <span className={cn("text-xs font-medium tracking-[0.12em] uppercase", theme.section.accent)}>经历详情</span>
@@ -500,49 +519,29 @@ function InternshipDetail({
 
         <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
           <div>
-            <h2 className="text-3xl font-semibold tracking-tight text-slate-900">{detail.title}</h2>
-            <p className="mt-2 text-sm text-slate-400">{detail.period} · 三段产品实习</p>
-            <p className="mt-4 max-w-lg text-sm leading-7 text-slate-600">
-              在三家不同业务场景的互联网公司参与后台产品、用户产品和运营工具相关工作。
-              这段经历的价值不在行业标签，而在于训练了需求拆解、业务理解、用户问题判断和跨团队沟通的通用产品能力。
+            <h2 className="text-3xl font-semibold tracking-tight text-slate-900">{REFERENCE_INTERNSHIP_TITLE}</h2>
+            <p className="mt-2 text-sm text-slate-400">{REFERENCE_INTERNSHIP_PERIOD} · 三段产品实习</p>
+            <p className="mt-4 max-w-lg text-sm leading-relaxed text-slate-600">
+              在京东健康、百度、京东参与后台产品、用户产品、数据建设与运营工具工作，形成对 B 端系统、用户路径、数据指标和商业化场景的基础产品认知。
             </p>
           </div>
 
-          {detail.earlyRows?.length ? (
-            <div className="space-y-3">
-              {detail.earlyRows.map((row) => (
-                <div key={`${row.company}-${row.role}`} className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
-                  <p className="text-sm font-semibold text-slate-800">{row.company}</p>
-                  <p className="mt-0.5 text-xs text-slate-400">{row.role}</p>
-                  <p className="mt-2 text-xs leading-5 text-slate-500">{row.summary}</p>
-                </div>
-              ))}
-            </div>
-          ) : null}
-        </div>
-
-        <div className="mt-6 grid gap-3 md:grid-cols-3">
-          {[
-            { label: "业务理解", value: "把真实业务流程拆成可执行的页面、规则和数据口径。" },
-            { label: "用户问题", value: "从问诊、权益、商品和后台场景里理解用户路径。" },
-            { label: "后台系统", value: "建立对权限、流程、看板和运营机制的产品感觉。" },
-          ].map((block) => (
-            <DetailBlock key={block.label} label={block.label} value={block.value} />
-          ))}
-        </div>
-
-        <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-5">
-          <p className="mb-3 text-xs font-semibold text-slate-500">可迁移能力</p>
-          <div className="flex flex-wrap gap-1.5">
-            {detail.skills.map((skill, i) => (
-              <span
-                key={skill}
-                className={cn("text-[11px] rounded-full px-2.5 py-1", tagStyle(index, total, i === 0, theme))}
-              >
-                {skill}
-              </span>
+          <div className="grid gap-3">
+            {REFERENCE_INTERNSHIP_CARDS.map((row) => (
+              <div key={row.company} className="rounded-xl border border-slate-100 bg-slate-50/80 p-4">
+                <p className="text-sm font-semibold text-slate-700">{row.company}</p>
+                <p className="mt-0.5 text-sm text-slate-500">{row.summary}</p>
+              </div>
             ))}
           </div>
+        </div>
+
+        <div className="mt-6 flex flex-wrap gap-1.5">
+          {REFERENCE_INTERNSHIP_SKILLS.map((skill) => (
+            <span key={skill} className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] text-slate-500">
+              {skill}
+            </span>
+          ))}
         </div>
       </div>
     </MotionSection>
@@ -679,6 +678,38 @@ const REFERENCE_PROJECTS = [
       "支撑文档驱动向模型驱动转型",
       "参与工信部汽车工具链摸底调研",
     ],
+    visual: "architecture",
+    imageSrc: "/project-visuals/groot-arch.png",
+  },
+  {
+    num: "02",
+    eyebrow: "产品负责人",
+    title: "企业级 AI Agent 工作流与知识库平台",
+    description:
+      "面向文档生成、模型生成、一致性校验与知识检索等商业业务场景，构建“知识库 + RAG + 原生工具调用 + 人工确认”的受控式 AI Agent 工作流。",
+    bullets: [
+      "任务规划、工具调用、多步骤执行、状态管理、人工确认",
+      "FDS/SSTS 文档、UML/SysML 模型和一致性校验",
+      "100+ 研发用户，各环节效率提升 20%+",
+      "文档生成和通信设计环节效率提升 50%+",
+    ],
+    visual: "agent",
+    imageSrc: "/project-visuals/agent-workflow.png",
+  },
+  {
+    num: "03",
+    eyebrow: "独立项目负责人 · Agent 产品设计",
+    title: "Career-Card · 面试空间智能叙事系统",
+    description:
+      "面向求职与面试表达场景，独立设计 AI Agent 产品，将简历经历转化为结构化、可校验、可展示的职业叙事空间。",
+    bullets: [
+      "简历解析 → 证据抽取 → 故事主线 → 表达生成",
+      "事实校验、人工确认、可展示的职业材料交付",
+      "证据约束，避免虚构经历、指标和项目结论",
+      "支持项目讲述、表达微调和面试场景展示",
+    ],
+    visual: "career",
+    imageSrc: "/project-visuals/career-card-story.png",
   },
 ] as const;
 
@@ -741,7 +772,159 @@ function ArchitectureStack({ title, subtitle, items, tone }: { title: string; su
   );
 }
 
-function ReferenceProjectVisual({ expanded = false }: { expanded?: boolean }) {
+function AgentProjectVisual({ expanded = false }: { expanded?: boolean }) {
+  const agents = [
+    ["文档生成", "FDS/SSTS 初稿"],
+    ["模型生成", "UML/SysML 草稿"],
+    ["一致性校验", "冲突场景检测"],
+    ["方案推荐", "历史案例匹配"],
+    ["知识检索", "RAG 跨项目搜索"],
+  ] as const;
+  const metrics = [
+    ["100+", "研发用户覆盖"],
+    ["20%+", "各环节效率提升"],
+    ["50%+", "关键设计环节提效"],
+    ["受控", "人工确认与追溯"],
+  ] as const;
+
+  return (
+    <div className={cn("relative z-20 w-full rounded-2xl border border-slate-100 bg-white text-slate-900 shadow-xl shadow-slate-900/10", expanded ? "p-5 sm:p-7" : "p-4")}>
+      <div className="border-b border-slate-100 pb-4 text-center">
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-600">Enterprise AI Agent Platform</p>
+        <h4 className="mt-1 text-lg font-semibold tracking-tight text-slate-900">企业级 AI Agent 工作流与知识库平台</h4>
+        <p className="mt-1 text-[11px] font-medium text-emerald-700">受控式 AI 工作流 · 私有知识库 · 原生工具调用</p>
+      </div>
+
+      <div className={cn("mt-5 grid gap-3", expanded ? "sm:grid-cols-5" : "grid-cols-2 xl:grid-cols-5")}>
+        {agents.map(([name, meta], index) => (
+          <div key={name} className={cn("rounded-2xl border px-3 py-3 text-center shadow-sm", index === 2 ? "border-emerald-200 bg-emerald-50" : "border-slate-100 bg-slate-50")}>
+            <span className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-white text-xs font-bold text-emerald-700 shadow-sm">
+              {index + 1}
+            </span>
+            <p className="mt-2 text-xs font-bold text-slate-800">{name}</p>
+            <p className="mt-1 text-[10px] leading-relaxed text-slate-500">{meta}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-5 rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-4">
+        <div className={cn("grid gap-3", expanded ? "sm:grid-cols-[0.95fr_1.05fr]" : "xl:grid-cols-[0.95fr_1.05fr]")}>
+          <div className="rounded-xl border border-emerald-100 bg-white p-4">
+            <p className="text-xs font-bold text-emerald-700">企业知识库</p>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-[10px] text-slate-500">
+              {["项目文档", "架构模型", "设计规范", "历史方案"].map((item) => (
+                <span key={item} className="rounded-lg bg-slate-50 px-2 py-1.5 text-center">{item}</span>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-xl border border-slate-100 bg-white p-4">
+            <p className="text-xs font-bold text-slate-800">工作流闭环</p>
+            <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[10px] font-medium text-slate-500">
+              {["任务规划", "工具调用", "多步执行", "人工确认", "结果归档"].map((item, index) => (
+                <span key={item} className={cn("rounded-full px-2 py-1", index === 3 ? "bg-amber-50 text-amber-700" : "bg-slate-50")}>{item}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className={cn("mt-4 grid gap-2", expanded ? "sm:grid-cols-4" : "grid-cols-2 xl:grid-cols-4")}>
+        {metrics.map(([value, label]) => (
+          <div key={label} className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-center">
+            <p className="text-lg font-bold text-emerald-700">{value}</p>
+            <p className="text-[10px] text-slate-500">{label}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CareerCardProjectVisual({ expanded = false }: { expanded?: boolean }) {
+  const stages = [
+    ["简历解析", "结构化抽取"],
+    ["证据抽取", "项目 / 指标"],
+    ["证据约束", "事实校验"],
+    ["叙事蓝图", "8 页故事"],
+    ["投屏空间", "交互展示"],
+  ] as const;
+
+  return (
+    <div className={cn("relative z-20 w-full rounded-2xl border border-slate-100 bg-white text-slate-900 shadow-xl shadow-slate-900/10", expanded ? "p-5 sm:p-7" : "p-4")}>
+      <div className="border-b border-slate-100 pb-4 text-center">
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-600">Career-Card Agent System</p>
+        <h4 className="mt-1 text-lg font-semibold tracking-tight text-slate-900">面试空间智能叙事系统</h4>
+        <p className="mt-1 text-[11px] font-medium text-emerald-700">AI 简历解析 · 证据约束 · 可投屏职业叙事</p>
+      </div>
+
+      <div className={cn("mt-5 grid gap-4", expanded ? "lg:grid-cols-[0.8fr_1.2fr_0.9fr]" : "xl:grid-cols-[0.8fr_1.2fr_0.9fr]")}>
+        <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+          <p className="text-xs font-bold text-slate-800">输入资产</p>
+          <div className="mt-3 space-y-2 text-[10px] text-slate-500">
+            {["简历 PDF / DOCX", "项目经历", "成果指标"].map((item) => (
+              <div key={item} className="rounded-lg bg-white px-3 py-2 shadow-sm">{item}</div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-4 text-center">
+          <p className="text-xs font-bold text-emerald-700">AI Agent 中枢</p>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            {stages.map(([name, meta], index) => (
+              <div key={name} className={cn("rounded-xl border bg-white px-3 py-2 shadow-sm", index === 2 ? "border-amber-200" : "border-slate-100")}>
+                <p className="text-[11px] font-bold text-slate-800">{name}</p>
+                <p className="mt-0.5 text-[10px] text-slate-500">{meta}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+          <p className="text-xs font-bold text-slate-800">输出空间</p>
+          <div className="mt-3 rounded-xl bg-slate-900 p-3 text-white">
+            <p className="text-[10px] font-bold text-emerald-300">INTERVIEW DECK</p>
+            <div className="mt-2 h-3 w-24 rounded bg-white/90" />
+            <div className="mt-2 h-2 w-16 rounded bg-white/30" />
+            <div className="mt-4 grid gap-1.5">
+              {["Hero", "Tension", "Agent Leap", "Impact"].map((item) => (
+                <span key={item} className="rounded bg-white/10 px-2 py-1 text-[10px] text-slate-200">{item}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 rounded-2xl border border-dashed border-emerald-200 bg-emerald-50/60 px-4 py-3 text-center">
+        <p className="text-[11px] font-semibold text-emerald-700">Human-in-the-Loop</p>
+        <p className="mt-1 text-[10px] text-emerald-700/70">事实证据、人工确认、岗位定制与面试场景展示形成闭环</p>
+      </div>
+    </div>
+  );
+}
+
+function ReferenceProjectVisual({ project, expanded = false }: { project: ReferenceProject; expanded?: boolean }) {
+  const imageSrc: string | undefined = project.imageSrc;
+
+  if (imageSrc) {
+    return (
+      <Image
+        src={imageSrc}
+        alt={project.title}
+        width={1672}
+        height={941}
+        sizes={expanded ? "94vw" : "(min-width: 1024px) 520px, 100vw"}
+        draggable={false}
+        className={cn(
+          "relative z-20 block w-full select-none rounded-2xl border border-slate-100 bg-white object-contain shadow-xl transition duration-450",
+          expanded ? "max-h-[calc(92vh-108px)]" : "group-hover/project:scale-[1.012] group-hover/project:contrast-[1.02] group-hover/project:saturate-[1.04]",
+        )}
+      />
+    );
+  }
+
+  if (project.visual === "agent") return <AgentProjectVisual expanded={expanded} />;
+  if (project.visual === "career") return <CareerCardProjectVisual expanded={expanded} />;
+
   return (
     <div
       className={cn(
@@ -863,7 +1046,7 @@ function ReferenceProjects({ theme }: { theme: SiteTheme }) {
                   点击查看项目大图
                 </span>
                 <div className="relative z-20 w-full transition duration-450 group-hover/project:scale-[1.012]">
-                  <ReferenceProjectVisual />
+                  <ReferenceProjectVisual project={project} />
                 </div>
               </button>
             </div>
@@ -896,7 +1079,7 @@ function ReferenceProjects({ theme }: { theme: SiteTheme }) {
               </button>
             </div>
             <div className="overflow-auto bg-[radial-gradient(circle_at_50%_0%,rgba(16,185,129,.08),transparent_36%)] p-3 sm:p-5">
-              <ReferenceProjectVisual expanded />
+              <ReferenceProjectVisual project={activeProject} expanded />
             </div>
           </div>
         </div>

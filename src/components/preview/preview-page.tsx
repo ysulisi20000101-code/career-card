@@ -9,18 +9,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import SkillMapView from "@/components/skillmap/skill-map-view";
 import ArchitectureView from "@/components/architecture/architecture-view";
-import { RoleUnderstandingView } from "@/components/role-understanding/role-understanding-view";
 import { AgentSiteWorkbench } from "@/components/agent-first/agent-site-workbench";
 import type { SiteThemeId } from "@/lib/site-styles/theme-config";
 import { savePersonalProject } from "@/lib/projects/registry";
 import { resumeDataToPersonal } from "@/lib/projects/adapters";
 import type { ResumeData } from "@/types";
 
-type SectionId = "timeline" | "role" | "skills" | "architecture";
+type SectionId = "timeline" | "skills" | "architecture";
 
 const interviewSections: { id: SectionId; label: string }[] = [
   { id: "timeline", label: "职业经历" },
-  { id: "role", label: "岗位理解" },
   { id: "skills", label: "技能导图" },
   { id: "architecture", label: "架构视图" },
 ];
@@ -215,12 +213,6 @@ export function PreviewPage({ mode = "personal", projectId, onStartPresentation 
                 </div>
               </section>
             )}
-          </div>
-        )}
-
-        {activeSection === "role" && (
-          <div className="rounded-lg border border-zinc-100 bg-white p-5 shadow-sm">
-            <RoleUnderstandingView roleUnderstanding={resumeData.roleUnderstanding} compact />
           </div>
         )}
 

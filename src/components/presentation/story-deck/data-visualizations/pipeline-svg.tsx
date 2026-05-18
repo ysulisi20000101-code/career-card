@@ -79,7 +79,7 @@ export function PipelineSVG({ theme, data }: PipelineProps) {
           const strokeColor = stage.isCore ? `${color}70` : `${color}40`;
 
           return (
-            <g key={stage.name}>
+            <g key={`${stage.name}-${i}`}>
               <rect x={x} y="20" width={w} height="120" rx="12" fill={fillColor} stroke={strokeColor} />
               <text x={x + w / 2} y="46" fontSize="9.5" fill={color} fontWeight="700" textAnchor="middle" letterSpacing=".08em" fontFamily="PingFang SC, sans-serif">{stage.label}</text>
               <text x={x + w / 2} y="68" fontSize={stage.isCore ? 15 : 14} fill={theme.colors.text} fontWeight={stage.isCore ? 900 : 800} textAnchor="middle" fontFamily="PingFang SC, sans-serif">{stage.name}</text>

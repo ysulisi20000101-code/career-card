@@ -32,6 +32,8 @@ import { useResumeStore } from "@/store/resume-store";
 import { loadSite, saveSite } from "@/lib/projects/registry";
 import { Button } from "@/components/ui/button";
 import { CareerNarrativeSite } from "@/components/narrative/career-narrative-site";
+import { ChangeReviewPanel } from "@/components/agent-workbench/change-review-panel";
+import { diffCareerSiteDraft, type AgentChangeSet } from "@/lib/agent/change-diff";
 
 type ChatMessage = {
   id: string;
@@ -184,11 +186,9 @@ export function AgentSiteWorkbench({
   const [showIntentPanel, setShowIntentPanel] = useState(false);
   const [showMobileChat, setShowMobileChat] = useState(false);
   const [isIntentLoading, setIsIntentLoading] = useState(false);
-  const draftStorageKey = useMemo(() => storageKey(resumeData), [
-    resumeData.profile.email,
-    resumeData.profile.id,
-    resumeData.profile.name,
-  ]);
+  const [lastChangeSet, setLastChangeSet] = useState<AgentChangeSet | null>(null);
+  const [lastBeforeDraft, setLastBeforeDraft] = useState<CareerSiteDraft | null>(null);
+  const draftStorageKey = useMemo(() => storageKey(resumeData), [resumeData]);
 
   useEffect(() => {
     setActiveThemeId(themeId);
@@ -221,7 +221,6 @@ export function AgentSiteWorkbench({
     const site = siteId ? loadSite(siteId) : null;
     const body: Record<string, unknown> = { resumeData };
     if (site?.targetRole) body.targetRole = site.targetRole;
-    if (site?.jdText) body.jdText = site.jdText;
 
     let lastError: unknown = null;
     for (let attempt = 0; attempt < 2; attempt++) {
@@ -370,13 +369,35 @@ export function AgentSiteWorkbench({
     return (await response.json()) as CareerSiteChatResult;
   }
 
-  function commitDraftUpdate(result: CareerSiteChatResult) {
+  function commitDraftUpdate(result: CareerSiteChatResult, beforeDraft: CareerSiteDraft | null = draft) {
     saveStoredDraft(resumeData, result.draft);
     rememberDraft(resumeData, result.draft);
     setStoreDraftData(result.draft);
     setDraft(result.draft);
     setHistory(readStoredHistory(resumeData));
+    setLastBeforeDraft(beforeDraft);
+    setLastChangeSet(diffCareerSiteDraft(beforeDraft, result.draft, result.summary || "已更新个人网站。"));
     if (onDraftSave) onDraftSave(result.draft);
+  }
+
+  function undoLastChange() {
+    if (!lastBeforeDraft) return;
+    saveStoredDraft(resumeData, lastBeforeDraft);
+    rememberDraft(resumeData, lastBeforeDraft);
+    setStoreDraftData(lastBeforeDraft);
+    setDraft(lastBeforeDraft);
+    setHistory(readStoredHistory(resumeData));
+    setLastBeforeDraft(null);
+    setLastChangeSet(null);
+    if (onDraftSave) onDraftSave(lastBeforeDraft);
+    setMessages((current) => [
+      ...current,
+      {
+        id: `agent-undo-${Date.now()}`,
+        role: "agent",
+        content: "已撤回上一次 Agent 修改。",
+      },
+    ]);
   }
 
   async function sendIntent(intent: string) {
@@ -462,11 +483,14 @@ export function AgentSiteWorkbench({
   }
 
   function restoreDraft(nextDraft: CareerSiteDraft) {
+    const beforeDraft = draft;
     saveStoredDraft(resumeData, nextDraft);
     rememberDraft(resumeData, nextDraft);
     setStoreDraftData(nextDraft);
     setDraft(nextDraft);
     setHistory(readStoredHistory(resumeData));
+    setLastBeforeDraft(beforeDraft);
+    setLastChangeSet(diffCareerSiteDraft(beforeDraft, nextDraft, "已恢复历史版本。"));
     setMessages((current) => [
       ...current,
       {
@@ -645,6 +669,11 @@ export function AgentSiteWorkbench({
             <MessageSquareText className="mr-1 inline h-3.5 w-3.5" />
             AI 驱动：修改定位、风格、叙事。不会新增简历外事实。
           </div>
+          <ChangeReviewPanel
+            changeSet={lastChangeSet}
+            onClear={() => setLastChangeSet(null)}
+            onUndo={lastBeforeDraft ? undoLastChange : undefined}
+          />
           {draft.review.publishBlockers.length > 0 && (
             <div className="border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
               发布前需要处理：{draft.review.publishBlockers.join("、")}

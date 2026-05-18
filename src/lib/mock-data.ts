@@ -118,7 +118,7 @@ export const mockResumeData: ResumeData = {
     },
     {
       id: "tl-3",
-      company: "美团",
+      company: "星河生活",
       position: "产品经理",
       startDate: "2016-06",
       endDate: "2018-06",
@@ -356,7 +356,7 @@ export const mockResumeData: ResumeData = {
       {
         id: "rem-2",
         requirement: "通过数据驱动产品迭代，提高关键指标",
-        myExperience: "在美团负责增长漏斗与A/B实验体系建设",
+        myExperience: "在增长业务中负责漏斗优化与A/B实验体系建设",
         outcomeEvidence: "转化率提升15%，月活提升25%",
       },
     ],

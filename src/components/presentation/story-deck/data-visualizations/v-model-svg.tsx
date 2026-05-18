@@ -43,7 +43,7 @@ export function VModelSVG({ data, theme }: VModelProps) {
         <line x1="530" y1="468" x2="530" y2="548" stroke={`${theme.colors.amber}55`} strokeWidth="2" />
 
         {/* Design nodes (left) */}
-        {designNodes.map((node) => {
+        {designNodes.map((node, index) => {
           const isCovered = allCovered || (!showGaps && (node.label === "通信设计" || node.label === "诊断设计"));
           const hasGap = showGaps && node.label !== "通信设计" && node.label !== "诊断设计";
           const fillColor = isCovered ? `${theme.colors.teal}14` : `${theme.colors.text}08`;
@@ -52,7 +52,7 @@ export function VModelSVG({ data, theme }: VModelProps) {
           const subColor = isCovered ? `${theme.colors.teal}cc` : theme.colors.text3;
 
           return (
-            <g key={node.label}>
+            <g key={`${node.label}-${index}`}>
               <rect x="30" y={node.y - 12} width="310" height="42" rx="8" fill={fillColor} stroke={strokeColor} />
               <text x="46" y={node.y + 6} fontSize="12" fill={labelColor} fontWeight="700" fontFamily="PingFang SC, sans-serif">{node.label}</text>
               <text x="46" y={node.y + 21} fontSize="10" fill={subColor} fontFamily="PingFang SC, sans-serif">{isCovered ? `Groot-Arch · ${node.old.split("/")[0]?.trim()}` : node.old}</text>
@@ -70,8 +70,8 @@ export function VModelSVG({ data, theme }: VModelProps) {
         })}
 
         {/* Test nodes (right) */}
-        {testNodes.map((node) => (
-          <g key={node.label}>
+        {testNodes.map((node, index) => (
+          <g key={`${node.label}-${index}`}>
             <rect x="740" y={node.y - 12} width="280" height="42" rx="8" fill={`${theme.colors.text}05`} stroke={`${theme.colors.text}0c`} />
             <text x="756" y={node.y + 6} fontSize="12" fill={theme.colors.text3} fontWeight="700" fontFamily="PingFang SC, sans-serif">{node.label}</text>
             <text x="756" y={node.y + 21} fontSize="10" fill={`${theme.colors.text3}90`} fontFamily="PingFang SC, sans-serif">{node.old}</text>

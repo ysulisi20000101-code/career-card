@@ -1,8 +1,15 @@
 import type { ResumeData, TimelineNode } from "@/types";
-import type { PresentationDraft, PresentationSlide, PresentationOverlay } from "./types";
+import type { PresentationDraft, PresentationModule, PresentationModuleId, PresentationOverlay, PresentationSlide } from "./types";
 import { applyInterviewStoryBlueprint } from "./interview-story";
 import { getResumeRevision } from "@/lib/public-narrative/from-draft";
 import { getOrderedTimeline } from "@/lib/timeline/order";
+import { buildLijintaoPresentationDraft, shouldUseLijintaoInterviewTemplate } from "./lijintao-template";
+
+export const DEFAULT_PRESENTATION_MODULES: PresentationModule[] = [
+  { id: "self", label: "自我介绍", description: "职业主线、关键经历和能力闭环", defaultSlideId: "hero", keyboardShortcut: "1" },
+];
+
+export type GeneratePresentationOptions = Record<string, never>;
 
 function safeRandomId(): string {
   try {
@@ -26,8 +33,13 @@ function asChronological(timeline: TimelineNode[]): TimelineNode[] {
  * Also uses story and evidence fields when available (from interview prep flow),
  * but never depends on them -- every slide has a high-quality fallback path.
  */
-export function generatePresentationDraft(data: ResumeData): PresentationDraft {
+export function generatePresentationDraft(data: ResumeData, options: GeneratePresentationOptions = {}): PresentationDraft {
   const now = new Date().toISOString();
+
+  if (shouldUseLijintaoInterviewTemplate(data)) {
+    return buildLijintaoPresentationDraft(data, options, safeRandomId(), now);
+  }
+
   const slides: PresentationSlide[] = [];
   const overlays: PresentationOverlay[] = [];
 
@@ -76,6 +88,9 @@ export function generatePresentationDraft(data: ResumeData): PresentationDraft {
 
   // ─── Slide 8: Resolution ─────────────────────────────────────────
   slides.push(buildResolutionSlide(data, name, title, oneLine, timeline, topExperiences));
+
+  const selfSlides = assignSlidesToModule(slides, "self", "自我介绍");
+  slides.splice(0, slides.length, ...selfSlides);
 
   // ─── Experience-mapping overlays (from roleUnderstanding) ─────────
   for (const mapping of data.roleUnderstanding?.experienceMappings?.slice(0, 2) ?? []) {
@@ -137,6 +152,7 @@ export function generatePresentationDraft(data: ResumeData): PresentationDraft {
     sourceResumeRevision: getResumeRevision(data),
     targetRole: title,
     template: "agent-product-arc",
+    modules: DEFAULT_PRESENTATION_MODULES,
     slides,
     overlays,
     themeId: "light-story",
@@ -144,6 +160,19 @@ export function generatePresentationDraft(data: ResumeData): PresentationDraft {
     updatedAt: now,
   };
   return applyInterviewStoryBlueprint(draft, data);
+}
+
+function assignSlidesToModule(
+  slides: PresentationSlide[],
+  moduleId: PresentationModuleId,
+  moduleTitle: string,
+): PresentationSlide[] {
+  return slides.map((slide, index) => ({
+    ...slide,
+    moduleId,
+    moduleTitle,
+    moduleOrder: index,
+  }));
 }
 
 // ─── Slide Builders ────────────────────────────────────────────────

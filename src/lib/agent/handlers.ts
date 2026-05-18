@@ -303,7 +303,7 @@ export function mapToTargetRole(data: ResumeData, input: AgentInput): AgentSugge
           ? [
               {
                 id: "agent-mapping-1",
-                requirement: `${targetRole || "目标岗位"}需要的核心能力`,
+                requirement: `${targetRole || "目标方向"}需要的核心能力`,
                 myExperience: `${strongestNode.company} · ${strongestNode.position}`,
                 outcomeEvidence: compact(strongestNode.highlights[0] || strongestNode.description, 140),
               },
@@ -314,14 +314,14 @@ export function mapToTargetRole(data: ResumeData, input: AgentInput): AgentSugge
   return [
     {
       id: "role-mapping",
-      title: "生成岗位理解初稿",
-      body: "基于目标岗位和现有经历生成岗位理解模块，仍需要你确认公司语境和真实优先级。",
+      title: "生成职业定位初稿",
+      body: "基于目标方向和现有经历生成职业定位建议，仍需要你确认表达语境和真实优先级。",
       priority: "high",
       evidence: unique([targetRole, ...keywords, strongestNode?.company ?? ""]).slice(0, 5),
       patches: [
         patch({
           id: "role-understanding",
-          label: "岗位理解模块",
+          label: "职业定位模块",
           path: "roleUnderstanding",
           value: nextRole as unknown as Record<string, unknown>,
           previousValue: data.roleUnderstanding as unknown as Record<string, unknown>,

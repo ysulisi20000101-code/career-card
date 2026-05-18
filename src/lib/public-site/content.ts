@@ -66,7 +66,6 @@ export interface PublicSiteContent {
 }
 
 const MAX_HERO_OUTCOME = 88;
-const MAX_BLOCK_TEXT = 92;
 // Demo defaults — customize per deployment by replacing these arrays and maps.
 const PUBLIC_SKILL_BLOCKLIST: string[] = [];
 const PUBLIC_TEXT_REPLACEMENTS: Record<string, string> = {};

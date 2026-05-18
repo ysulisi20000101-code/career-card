@@ -208,7 +208,7 @@ export function PublishPage({ projectId, siteId, onPublished }: PublishPageProps
     }
 
     setPublishing(false);
-  }, [hasBlocker, isLocalOrigin, onPublished, projectId, resumeData, slug]);
+  }, [hasBlocker, isLocalOrigin, onPublished, projectId, resumeData, siteId, slug]);
 
   const handleRevoke = useCallback(async () => {
     if (!slug || revoking) return;

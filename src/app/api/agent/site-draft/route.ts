@@ -38,7 +38,6 @@ export async function POST(request: Request) {
   const baseline = generateCareerSiteDraft(resumeData, {
     provider: asProvider(body?.provider),
     instruction: asOptionalString(body?.instruction),
-    jdText: asOptionalString(body?.jdText),
     targetRoleOverride: asOptionalString(body?.targetRole),
   });
   const draft = await enhanceSiteDraft(baseline, resumeData);

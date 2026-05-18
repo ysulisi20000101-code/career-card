@@ -1,0 +1,2158 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>李锦涛 · 面试空间</title>
+<style>
+    :root{
+      --bg:#f8fffc;--bg2:#ecfdf5;--surface:#fff;
+      --border:rgba(0,0,0,0.10);--border-s:rgba(0,0,0,0.14);
+      --t:#1a1d27;--t2:#495468;--t3:#5e6b7a;
+      --gold:#047857;--gold-bright:#10b981;--gold-dim:rgba(16,185,129,0.08);
+      --teal:#059669;--teal-dim:rgba(5,150,105,0.08);
+      --blue:#0891b2;--blue-dim:rgba(8,145,178,0.07);
+      --violet:#0f766e;--violet-dim:rgba(15,118,110,0.08);
+      --rose:#dc6b76;--green:#16a34a;--cyan:#06b6d4;
+      --r:10px;--rl:16px;
+      /* Typographic scale */
+      --fs-xs:10px;--fs-sm:11px;--fs-base:12px;--fs-lg:14px;
+      --fs-xl:18px;--fs-2xl:24px;--fs-3xl:32px;--fs-4xl:48px;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0}
+    html,body{
+      height:100%;overflow:hidden;
+      font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif;
+      color:var(--t);line-height:1.6;-webkit-font-smoothing:antialiased;
+      background:radial-gradient(circle at 18% 12%, rgba(16,185,129,.08), transparent 32%),radial-gradient(circle at 88% 84%, rgba(6,182,212,.06), transparent 30%),var(--bg)
+    }
+
+    /* ── Stage ── */
+    .stage{position:fixed;inset:0;overflow:hidden}
+
+    /* ── Slide ── */
+    .slide{
+      position:absolute;inset:0;
+      display:flex;align-items:center;justify-content:center;
+      overflow:hidden;
+      padding:48px max(24px,calc((100vw - 1080px)/2)) 48px;
+      opacity:0;pointer-events:none;
+      transform:translateX(0);
+      transition:transform .56s cubic-bezier(.33,1,.68,1),opacity .42s ease;
+    }
+    .slide.active{opacity:1;pointer-events:auto;transform:translateX(0)}
+    .slide.left{transform:translateX(-100%)}
+    .slide.right{transform:translateX(100%)}
+    .slide-inner{width:100%;max-width:1080px;margin:auto}
+
+    /* ── Progress ── */
+    .progress-bar{position:fixed;top:0;left:0;height:3px;z-index:100;background:linear-gradient(90deg,var(--violet),var(--gold-bright));transition:width .42s ease;border-radius:0 2px 2px 0;box-shadow:0 0 8px rgba(15,118,110,.15)}
+
+    /* ── Nav ── */
+    .nav-arrow{position:fixed;top:50%;z-index:90;transform:translateY(-50%);width:32px;height:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;background:rgba(255,255,255,.55);backdrop-filter:blur(8px);color:var(--t3);border-radius:8px;transition:all .25s;font-family:inherit;outline:none;-webkit-tap-highlight-color:transparent;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+    .nav-arrow:hover{background:rgba(255,255,255,.9);color:var(--t);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+    .nav-arrow:active{transform:translateY(-50%) scale(.94)}
+    .nav-arrow:disabled{opacity:.15;pointer-events:none}
+    .nav-prev{left:6px}.nav-next{right:6px}
+
+    .dots{position:fixed;bottom:16px;left:50%;z-index:90;transform:translateX(-50%);display:flex;gap:5px;padding:6px 14px;border-radius:99px;background:rgba(255,255,255,.65);backdrop-filter:blur(8px);border:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.04)}
+    .dot{width:6px;height:6px;border-radius:50%;background:rgba(0,0,0,.15);cursor:pointer;transition:all .3s;border:none;padding:0;outline:none;-webkit-tap-highlight-color:transparent}
+    .dot.active{background:var(--gold-bright);box-shadow:0 0 6px rgba(16,185,129,.3);width:18px;border-radius:99px}
+    .page-num{font-size:var(--fs-xs);color:var(--t3);margin-left:6px;display:flex;align-items:center;font-weight:500;letter-spacing:.04em}
+
+    /* ── Scroll hint → page indicator ── */
+    .scroll-hint{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:var(--fs-xs);color:var(--t3);letter-spacing:.04em;pointer-events:none}
+
+    /* ── Typography ── */
+    .eb{display:inline-flex;align-items:center;gap:7px;font-size:var(--fs-xs);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-bright);margin-bottom:8px}
+    .eb::before{content:"";width:14px;height:1px;background:var(--gold-bright);opacity:.45}
+    .h1{font-size:clamp(var(--fs-2xl),4vw,var(--fs-4xl));line-height:1.18;font-weight:900;letter-spacing:0;text-wrap:balance;color:var(--t)}
+    .h2{font-size:clamp(var(--fs-xl),2.5vw,var(--fs-3xl));line-height:1.2;font-weight:800;letter-spacing:0;text-wrap:balance}
+    .lead{color:var(--t2);font-size:clamp(var(--fs-base),1.1vw,var(--fs-lg));line-height:1.6;max-width:640px}
+    .body-t{color:var(--t2);line-height:1.6;font-size:var(--fs-base)}
+    .accent{color:var(--gold-bright);font-weight:700}
+    .v-accent{color:var(--violet);font-weight:700}
+    .mt4{margin-top:4px}.mt6{margin-top:8px}.mt8{margin-top:8px}.mt10{margin-top:12px}.mt12{margin-top:12px}.mt14{margin-top:12px}.mt16{margin-top:16px}.mt20{margin-top:20px}
+
+    /* ── Layout ── */
+    .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+    .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+
+    /* ── Cards ── */
+    .card{border:1px solid var(--border);border-radius:var(--r);background:var(--surface);padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+    .card-accent{padding:12px 16px;border-left:3px solid var(--gold-bright);background:var(--gold-dim);border-radius:0 var(--r) var(--r) 0;font-size:var(--fs-base);color:var(--t2);line-height:1.55}
+    .card-accent strong{color:var(--gold-bright)}
+    .card-accent.v{border-left-color:var(--violet);background:var(--violet-dim)}
+    .card-accent.v strong{color:var(--violet)}
+
+    /* ── Hero (Slide 1) ── */
+    .hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center}
+    .hero-name{font-size:clamp(var(--fs-3xl),4vw,var(--fs-4xl));line-height:1.15;font-weight:900;letter-spacing:0;color:var(--t)}
+    .hero-name .hl{color:var(--gold-bright)}
+    .hero-subtitle{font-size:clamp(var(--fs-base),1.1vw,var(--fs-lg));color:var(--t2);line-height:1.6;max-width:520px}
+
+    /* ── Architecture diagram (Slide 1) ── */
+    .topo-wrap{display:flex;align-items:center;justify-content:center;min-height:300px}
+
+    /* ── V-model ── */
+    .v-wrap{position:relative;width:100%;overflow-x:auto}
+    .v-wrap svg{min-width:760px;width:100%;height:auto;max-height:50vh}
+    .v-wrap text{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
+
+    /* ── Timeline ── */
+    .tl{position:relative;padding-left:20px}
+    .tl::before{content:"";position:absolute;left:7px;top:4px;bottom:4px;width:1.5px;background:var(--border-s)}
+    .tl-item{position:relative;margin-bottom:10px;padding-left:8px}
+    .tl-item::before{content:"";position:absolute;left:-17px;top:6px;width:8px;height:8px;border-radius:50%;background:var(--gold-bright);border:2px solid #fafbfc}
+    .tl-item .tl-time{font-size:var(--fs-xs);color:var(--t3);font-weight:600;letter-spacing:.04em}
+    .tl-item .tl-text{font-size:var(--fs-sm);color:var(--t2);line-height:1.5;margin-top:1px}
+
+    /* ── Phase badge ── */
+    .phase{display:inline-block;padding:3px 8px;border-radius:99px;font-size:var(--fs-xs);font-weight:700}
+    .phase.pm{color:var(--gold-bright);border:1px solid rgba(16,185,129,.25)}
+    .phase.dir{color:var(--violet);border:1px solid rgba(15,118,110,.25)}
+
+    /* ── Foundation cards (Slide 2) ── */
+    .fd-card{padding:16px 14px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+    .fd-card .fd-company{font-weight:800;font-size:var(--fs-base);color:var(--t);margin-bottom:2px}
+    .fd-card .fd-role{font-size:var(--fs-xs);color:var(--t3);margin-bottom:8px}
+    .fd-card .fd-role span{color:var(--gold-bright)}
+    .fd-card .fd-item{font-size:var(--fs-sm);color:var(--t2);line-height:1.5;margin-bottom:2px;text-align:left;padding-left:10px;position:relative}
+    .fd-card .fd-item::before{content:"·";position:absolute;left:0;color:var(--t3)}
+
+    /* ── Platform quad (Slide 4) ── */
+    .quad{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .quad-item{padding:14px 16px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.06)}
+    .quad-item .q-icon{font-weight:900;font-size:16px;margin-bottom:6px}
+    .quad-item .q-title{font-weight:800;font-size:var(--fs-base);color:var(--t);margin-bottom:4px}
+    .quad-item .q-desc{font-size:var(--fs-sm);color:var(--t3);line-height:1.5}
+
+    /* ── Agent cards (Slide 5) ── */
+    .agent-cards{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+    .a-card{padding:12px 8px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);text-align:center;position:relative;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06);cursor:pointer;transition:all .2s}
+    .a-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08);transform:translateY(-1px)}
+    .a-card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:var(--violet);opacity:.5}
+    .a-card:nth-child(1)::before{background:var(--violet)}
+    .a-card:nth-child(2)::before{background:var(--blue)}
+    .a-card:nth-child(3)::before{background:var(--teal)}
+    .a-card:nth-child(4)::before{background:var(--gold-bright)}
+    .a-card:nth-child(5)::before{background:var(--rose)}
+    .a-card .a-icon{width:24px;height:24px;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+    .a-card .a-name{font-weight:800;font-size:var(--fs-sm);margin-bottom:2px;color:var(--violet)}
+    .a-card .a-scene{font-size:var(--fs-xs);color:var(--t3);line-height:1.4;margin-bottom:4px}
+    .a-card .a-metric{font-size:var(--fs-xs);font-weight:700;color:var(--gold-bright)}
+
+    /* ── RAG diagram ── */
+    .rag-flow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center;font-size:var(--fs-sm)}
+    .rag-block{padding:10px 14px;border:1px solid var(--border);border-radius:6px;background:var(--surface);text-align:center}
+    .rag-block .rag-title{font-weight:700;font-size:10.5px;color:var(--t);margin-bottom:3px}
+    .rag-block .rag-items{font-size:var(--fs-xs);color:var(--t3);line-height:1.45}
+    .rag-arrow{color:var(--t3);font-size:14px;flex-shrink:0}
+
+    /* ── Pipeline (Slide 6) ── */
+    .pl-wrap{width:100%;overflow-x:auto}
+    .pl-wrap svg{min-width:800px;width:100%;height:auto;max-height:34vh}
+
+    /* ── Domain tags ── */
+    .domains{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+    .dt{padding:6px 14px;border:1px solid var(--border-s);border-radius:99px;font-weight:700;font-size:var(--fs-sm);color:var(--t);background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.04)}
+
+    /* ── Quote ── */
+    .quote{padding:14px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);font-size:clamp(var(--fs-base),1.4vw,var(--fs-xl));font-weight:800;line-height:1.35;letter-spacing:0;text-wrap:balance;color:var(--t)}
+
+    /* ── Before/After (Slide 8) ── */
+    .ba-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center}
+    .ba-card{padding:16px;border:1px solid var(--border);border-radius:var(--r);text-align:center}
+    .ba-card.before{background:rgba(184,93,106,.04);border-color:rgba(184,93,106,.15)}
+    .ba-card.after{background:rgba(5,150,105,.04);border-color:rgba(5,150,105,.2)}
+    .ba-card .ba-label{font-size:var(--fs-xs);font-weight:700;letter-spacing:.06em;margin-bottom:8px}
+    .ba-card.before .ba-label{color:var(--rose)}
+    .ba-card.after .ba-label{color:var(--teal)}
+    .ba-card .ba-item{font-size:var(--fs-sm);color:var(--t2);line-height:1.6}
+    .ba-card .ba-item em{font-style:normal;font-weight:700;color:var(--gold-bright)}
+    .ba-arrow{font-size:24px;color:var(--t3);flex-shrink:0}
+
+    /* ── Overlay trigger indicator ── */
+    .ov-trigger{cursor:pointer;position:relative}
+    .ov-trigger::after{content:"↗";position:absolute;bottom:4px;right:8px;font-size:9px;color:var(--t3);opacity:0;transition:opacity .25s;pointer-events:none}
+    .ov-trigger:hover::after{opacity:.55}
+    .ov-badge{display:block;text-align:right;font-size:8px;color:var(--t3);opacity:.34;margin-bottom:2px;pointer-events:none;letter-spacing:.02em}
+
+    /* ── Fade-up stagger ── */
+    .fu{opacity:0;transform:translateY(16px);transition:opacity .45s ease,transform .45s ease}
+    .slide.active .fu{opacity:1;transform:translateY(0)}
+
+    /* ── Responsive ── */
+    @media(max-width:860px){
+      .slide{padding:36px 14px 48px}
+      .g3,.quad,.agent-cards,.hero-grid,.ba-grid{grid-template-columns:1fr}
+      .g2{grid-template-columns:1fr}
+      .hero-grid{gap:20px}
+      .nav-arrow{width:28px;height:40px;border-radius:6px}
+      .nav-prev{left:2px}.nav-next{right:2px}
+      .hero-name{font-size:var(--fs-2xl)}
+      .rag-flow{flex-direction:column}.rag-arrow{display:none}
+      .ba-arrow{transform:rotate(90deg)}
+      .pl-wrap svg{min-width:600px}
+      .v-wrap svg{min-width:600px}
+    }
+    @media(max-width:640px){
+      .slide{padding:32px 12px 44px}
+      .agent-cards{grid-template-columns:repeat(3,1fr)}
+      .g3{grid-template-columns:1fr}
+      .hero-name{font-size:var(--fs-xl)}
+      .h1{font-size:var(--fs-xl)}.h2{font-size:var(--fs-lg)}
+      .lead{font-size:var(--fs-sm)}
+      .pl-wrap svg{min-width:480px}
+      .v-wrap svg{min-width:480px}
+    }
+    @media(max-width:480px){
+      .slide{padding:28px 8px 40px}
+      .agent-cards{grid-template-columns:repeat(2,1fr)}
+      .hero-name{font-size:var(--fs-xl)}.h1{font-size:var(--fs-xl)}.h2{font-size:var(--fs-lg)}
+      .lead{font-size:var(--fs-sm)}
+      .dots{padding:5px 10px;gap:4px;bottom:8px}
+      .dot{width:5px;height:5px}.dot.active{width:14px}
+      .page-num{font-size:9px}
+      .pl-wrap{overflow-x:auto}
+      .pl-wrap svg{min-width:auto;max-height:none}
+    }
+    @media(prefers-reduced-motion:reduce){
+      *,*::before,*::after{animation-duration:1ms!important;animation-iteration-count:1!important}
+      .slide{transition-duration:1ms!important}
+      .fu{transition-duration:1ms!important}
+    }
+    @media print{
+      .stage,.overlay{position:static!important}
+      .slide{position:relative!important;opacity:1!important;pointer-events:auto!important;transform:none!important;page-break-after:always;overflow:visible!important}
+      .slide.left,.slide.right{transform:none!important;opacity:1!important}
+      .nav-arrow,.dots,.progress-bar,.scroll-hint{display:none!important}
+      .overlay{display:none!important}
+      body{overflow:visible!important}
+    }
+
+/* ── Bar Chart (Slide 5) ── */
+.bar-chart{padding:0;margin-top:10px}
+.bar-row{display:grid;grid-template-columns:90px 1fr 60px;gap:10px;align-items:center;margin-bottom:7px;font-size:var(--fs-sm)}
+.bar-row .bar-label{color:var(--t2);text-align:right;font-weight:600}
+.bar-row .bar-track{height:7px;background:rgba(0,0,0,0.05);border-radius:99px;overflow:hidden}
+.bar-row .bar-fill{height:100%;border-radius:99px;width:0;transition:width 1s cubic-bezier(.33,1,.68,1)}
+.bar-row:nth-child(1) .bar-fill{background:var(--gold-bright);box-shadow:0 0 6px rgba(16,185,129,.2)}
+.bar-row:nth-child(2) .bar-fill{background:var(--blue);box-shadow:0 0 6px rgba(8,145,178,.2)}
+.bar-row:nth-child(3) .bar-fill{background:var(--teal);box-shadow:0 0 6px rgba(5,150,105,.2)}
+.bar-row:nth-child(4) .bar-fill{background:var(--violet);box-shadow:0 0 6px rgba(15,118,110,.2)}
+.bar-row .bar-value{color:var(--t2);font-weight:700;font-size:var(--fs-sm);font-feature-settings:'tnum'}
+
+/* ── Counter animation (Slide 7) ── */
+.counter{font-variant-numeric:tabular-nums;display:inline-block}
+
+/* ── Hero decorative elements ── */
+.hero-deco-bar{width:48px;height:3px;background:var(--gold-bright);border-radius:2px;margin-bottom:16px}
+
+/* ── Overlay ── */
+.overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s ease;padding:24px}
+.overlay.open{opacity:1;pointer-events:auto}
+.ov-panel{position:relative;background:#fff;border-radius:16px;padding:28px 32px;max-width:min(92vw,960px);max-height:88vh;overflow-y:auto;box-shadow:0 8px 48px rgba(0,0,0,.18);width:100%}
+.ov-close{position:absolute;top:12px;right:16px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:none;background:rgba(0,0,0,.04);border-radius:50%;cursor:pointer;font-size:16px;color:var(--t3);transition:all .2s;font-family:inherit}
+.ov-close:hover{background:rgba(0,0,0,.08);color:var(--t)}
+.ov-content{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
+.ov-content svg text{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
+
+/* small-screen support without changing page structure */
+@media (max-width: 1440px), (max-height: 900px){
+  .slide{align-items:flex-start;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:28px;padding-bottom:90px}
+  .slide-inner{max-width:1180px}
+}
+@media (max-width: 1180px){
+  .g2{grid-template-columns:1fr !important}
+}
+.hero-enterprise-svg text,.proto-inline-svg text{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
+
+
+/* ── Top floating tabs: default collapsed, low-exposure interviewer-facing add-on ── */
+.float-switch{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:160;display:flex;align-items:center;gap:6px;padding:4px;border:1px solid rgba(0,0,0,.08);border-radius:999px;background:rgba(255,255,255,.58);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 8px 28px rgba(0,0,0,.055);opacity:.38;transition:opacity .22s ease,transform .22s ease,background .22s ease,border-color .22s ease;max-width:calc(100vw - 28px)}
+.float-switch:hover,.float-switch.expanded{opacity:1;transform:translateX(-50%) translateY(1px);background:rgba(255,255,255,.82);border-color:rgba(0,0,0,.12)}
+.switch-toggle{appearance:none;border:0;background:transparent;border-radius:999px;width:34px;height:24px;padding:0;display:flex;align-items:center;justify-content:center;font:900 15px/1 "PingFang SC","Microsoft YaHei",sans-serif;color:var(--gold-bright);cursor:pointer;letter-spacing:.04em;transition:all .18s ease}.switch-toggle:hover{background:rgba(16,185,129,.06)}
+.switch-tabs{display:flex;align-items:center;gap:4px;max-width:0;opacity:0;overflow:hidden;white-space:nowrap;pointer-events:none;transition:max-width .24s cubic-bezier(.33,1,.68,1),opacity .18s ease}.float-switch.expanded .switch-tabs,.float-switch:focus-within .switch-tabs{max-width:360px;opacity:1;pointer-events:auto}.float-switch.expanded .switch-toggle,.float-switch:focus-within .switch-toggle{background:var(--gold-dim);box-shadow:inset 0 0 0 1px rgba(16,185,129,.13)}
+.switch-tabs button{appearance:none;border:0;background:transparent;border-radius:999px;padding:6px 12px;font:700 11px/1 "PingFang SC","Microsoft YaHei",sans-serif;color:var(--t3);cursor:pointer;letter-spacing:.02em;white-space:nowrap;transition:all .18s ease}.switch-tabs button:hover{background:rgba(16,185,129,.06);color:var(--gold-bright)}.switch-tabs button.active{background:var(--gold-dim);color:var(--gold-bright);box-shadow:inset 0 0 0 1px rgba(16,185,129,.13)}
+.float-switch .hint{font-size:9px;color:var(--t3);padding-right:6px;opacity:.55}
+.module-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.module-card{padding:16px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.05)}.module-card h4{font-size:13px;color:var(--t);margin-bottom:6px}.module-card p{font-size:11.5px;color:var(--t2);line-height:1.65}.module-row{display:grid;grid-template-columns:180px 1fr;gap:12px;align-items:start;padding:12px 0;border-bottom:1px solid var(--border)}.module-row:last-child{border-bottom:0}.module-row strong{font-size:12px;color:var(--gold-bright)}.module-row span{font-size:11.5px;color:var(--t2);line-height:1.65}
+
+/* ── Independent module placeholder slides ── */
+.module-hero{display:grid;grid-template-columns:1.05fr .95fr;gap:28px;align-items:center}
+.module-kicker{display:inline-flex;align-items:center;gap:7px;font-size:var(--fs-xs);font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-bright);margin-bottom:10px}
+.module-kicker::before{content:"";width:16px;height:1px;background:var(--gold-bright);opacity:.45}
+.module-title{font-size:clamp(26px,3.2vw,42px);font-weight:900;line-height:1.18;letter-spacing:-.01em;color:var(--t)}
+.module-lead{margin-top:12px;color:var(--t2);font-size:clamp(13px,1.15vw,16px);line-height:1.72;max-width:620px}
+.module-note{margin-top:14px;padding:12px 16px;border-left:3px solid var(--gold-bright);background:var(--gold-dim);border-radius:0 var(--r) var(--r) 0;font-size:12px;line-height:1.72;color:var(--t2)}
+.module-panel{padding:18px;border:1px solid var(--border);border-radius:var(--rl);background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.module-list{display:grid;gap:10px;margin-top:12px}
+.module-list .mi{padding:12px 14px;border:1px solid var(--border);border-radius:var(--r);background:rgba(255,255,255,.75)}
+.module-list .mi strong{display:block;font-size:12px;color:var(--t);margin-bottom:4px}
+.module-list .mi span{font-size:11.5px;color:var(--t2);line-height:1.65}
+.module-map{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px}
+.module-map .node{padding:14px;border:1px solid var(--border);border-radius:var(--r);background:linear-gradient(135deg,rgba(255,255,255,.95),rgba(248,249,251,.92));min-height:92px}
+.module-map .node em{font-style:normal;display:block;font-size:10px;font-weight:800;letter-spacing:.06em;color:var(--gold-bright);margin-bottom:6px}
+.module-map .node b{display:block;font-size:13px;color:var(--t);margin-bottom:4px}
+.module-map .node p{font-size:11px;color:var(--t3);line-height:1.55}
+.module-placeholder{margin-top:12px;padding:10px 12px;border:1px dashed rgba(16,185,129,.28);border-radius:var(--r);font-size:11px;color:var(--t3);background:rgba(16,185,129,.035)}
+@media(max-width:860px){.module-hero{grid-template-columns:1fr}.module-map{grid-template-columns:1fr}}
+
+@media(max-width:860px){.float-switch{top:8px;max-width:calc(100vw - 18px)}.switch-tabs button{padding:6px 10px}.float-switch.expanded .switch-tabs,.float-switch:focus-within .switch-tabs{max-width:calc(100vw - 76px);overflow:auto}.module-grid{grid-template-columns:1fr}.module-row{grid-template-columns:1fr;gap:4px}}
+@media print{.float-switch{display:none!important}}
+
+
+
+/* ── Focus redesign for Slide 07/08 only: image2-inspired, original structure preserved ── */
+.slide-inner.viz-focus{max-width:1180px;position:relative;min-height:650px;padding:18px 18px 78px;border-radius:18px;background:
+  radial-gradient(circle at 12% 8%, rgba(20,184,166,.12), transparent 28%),
+  radial-gradient(circle at 92% 72%, rgba(6,182,212,.10), transparent 32%),
+  linear-gradient(135deg, rgba(255,255,255,.96), rgba(247,255,252,.94));
+  box-shadow:0 28px 80px rgba(15,118,110,.10), inset 0 0 0 1px rgba(15,118,110,.08);overflow:hidden}
+.slide-inner.viz-focus::before{content:"";position:absolute;inset:auto -8% -75px -8%;height:160px;background:
+  radial-gradient(circle at 18% 48%, rgba(255,255,255,.95) 0 4px, transparent 5px),
+  radial-gradient(circle at 62% 38%, rgba(255,255,255,.85) 0 3px, transparent 4px),
+  linear-gradient(165deg, transparent 0 35%, rgba(20,184,166,.30) 36% 54%, transparent 55%),
+  linear-gradient(172deg, transparent 0 45%, rgba(15,118,110,.42) 46% 64%, transparent 65%),
+  linear-gradient(178deg, transparent 0 52%, rgba(6,182,212,.18) 53% 70%, transparent 71%);
+  opacity:.85;filter:drop-shadow(0 -10px 24px rgba(20,184,166,.15));pointer-events:none}
+.viz-brand{position:absolute;left:26px;top:18px;display:flex;align-items:center;gap:10px;font-size:12px;font-weight:800;color:#04786c;letter-spacing:.02em}
+.viz-logo{width:25px;height:25px;border-radius:8px;background:linear-gradient(135deg,#14b8a6,#047857);box-shadow:0 8px 22px rgba(20,184,166,.28);position:relative}.viz-logo::after{content:"";position:absolute;inset:7px;border:3px solid rgba(255,255,255,.88);border-radius:5px}
+.viz-route{position:absolute;right:26px;top:22px;display:flex;align-items:center;gap:14px;padding:8px 14px;border-radius:999px;background:rgba(255,255,255,.72);border:1px solid rgba(15,118,110,.12);box-shadow:0 14px 38px rgba(15,118,110,.08);backdrop-filter:blur(12px);font-size:12px;font-weight:800;color:#0b3f3d}
+.viz-route span{display:flex;align-items:center;gap:6px}.viz-route i{font-style:normal;color:#0891b2;opacity:.85}.viz-route .dot-icon{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#e9fffb,#f8fffd);border:1px solid rgba(20,184,166,.18);color:#059669;font-size:13px;box-shadow:0 6px 16px rgba(15,118,110,.08)}
+.viz-title-row{display:grid;grid-template-columns:142px 1fr;gap:22px;align-items:start;margin-top:42px;margin-bottom:16px}.viz-page-no{font-size:80px;line-height:.86;font-weight:900;letter-spacing:-.06em;background:linear-gradient(180deg,#26d7c4,#04786c);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 12px 28px rgba(20,184,166,.16)}.viz-title-wrap{border-left:2px solid rgba(15,118,110,.45);padding-left:20px}.viz-title{font-size:34px;line-height:1.15;font-weight:900;color:#071827;letter-spacing:-.02em}.viz-subtitle{font-size:19px;line-height:1.35;font-weight:850;color:#0f2b3d;margin-top:5px}.viz-lead{font-size:14px;color:#31465a;line-height:1.7;margin-top:12px;max-width:760px}.viz-main{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:26px;align-items:stretch}.viz-left{display:grid;gap:12px}.viz-panel{border:1px solid rgba(15,118,110,.13);border-radius:14px;background:rgba(255,255,255,.70);box-shadow:0 18px 42px rgba(15,118,110,.06), inset 0 1px 0 rgba(255,255,255,.86);overflow:hidden}.viz-panel-title{font-size:15px;font-weight:900;color:#04786c;padding:12px 16px;border-bottom:1px solid rgba(15,118,110,.10);background:linear-gradient(180deg,rgba(236,253,245,.7),rgba(255,255,255,.32))}
+.viz-side{border-radius:18px;background:linear-gradient(155deg,#049b8c 0%,#03695f 44%,#063f44 100%);box-shadow:0 26px 70px rgba(2,85,78,.27), inset 0 0 0 1px rgba(255,255,255,.16);color:white;padding:18px 20px;position:relative;overflow:hidden}.viz-side::before{content:"";position:absolute;inset:-40% -50% auto auto;width:260px;height:260px;background:radial-gradient(circle,rgba(255,255,255,.25),transparent 62%);opacity:.55}.viz-side::after{content:"";position:absolute;right:0;bottom:0;width:180px;height:160px;background:linear-gradient(135deg,transparent,rgba(19,229,211,.18));clip-path:polygon(100% 0,100% 100%,0 100%);opacity:.55}.viz-side h3{font-size:18px;line-height:1.25;font-weight:900;margin-bottom:12px;position:relative}.viz-side-section{position:relative;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:8px 12px;margin-bottom:12px;background:rgba(255,255,255,.035)}.viz-side-item{display:grid;grid-template-columns:36px 1fr;gap:10px;align-items:start;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.10)}.viz-side-item:last-child{border-bottom:0}.viz-side-icon{width:34px;height:34px;border-radius:50%;background:rgba(20,184,166,.36);display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 0 20px rgba(45,212,191,.22)}.viz-side-item strong{display:block;font-size:14px;font-weight:900;color:#fff}.viz-side-item span{display:block;font-size:11.5px;line-height:1.55;color:rgba(255,255,255,.78);margin-top:2px}.viz-side-quote{position:relative;margin-top:12px;padding:14px 16px;border-radius:12px;background:rgba(255,255,255,.13);font-size:14px;line-height:1.65;font-weight:850;color:#fff}.viz-side-quote::before{content:"“";font-size:30px;line-height:0;vertical-align:-.28em;margin-right:4px;color:rgba(255,255,255,.8)}.viz-side-quote::after{content:"”";font-size:30px;line-height:0;vertical-align:-.38em;margin-left:4px;color:rgba(255,255,255,.8)}
+.workflow-cards{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;padding:15px}.wf-card{text-align:center;position:relative;padding:12px 7px;border-radius:13px;background:rgba(255,255,255,.80);border:1px solid rgba(15,118,110,.12);min-height:136px}.wf-card:not(:last-child)::after{content:"→";position:absolute;right:-12px;top:44px;color:#0d9488;font-size:22px;font-weight:700;opacity:.45}.wf-icon{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;background:linear-gradient(180deg,#ecfeff,#f4fffb);border:1px solid rgba(20,184,166,.20);color:#059669;font-size:19px;box-shadow:0 8px 20px rgba(20,184,166,.10)}.wf-card strong{display:block;font-size:12.4px;line-height:1.25;color:#04786c;font-weight:900}.wf-card p{font-size:10.4px;line-height:1.45;color:#40586a;margin-top:8px}.wf-card em{display:block;font-style:normal;font-size:9.4px;line-height:1.45;color:#04786c;margin-top:8px;padding:5px;border-radius:7px;background:rgba(20,184,166,.08)}
+.safety-strip{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;border-radius:10px;border:1px solid rgba(15,118,110,.11);background:linear-gradient(90deg,rgba(236,253,245,.65),rgba(255,255,255,.65));padding:9px 12px;font-size:12.5px;font-weight:850;color:#04786c}.capability-row{display:grid;grid-template-columns:repeat(6,1fr);gap:0;padding:12px 10px}.capability-mini{padding:10px 8px;text-align:center;border-right:1px solid rgba(15,118,110,.10)}.capability-mini:last-child{border-right:0}.capability-mini .mini-icon{width:28px;height:28px;margin:0 auto 7px;border-radius:50%;background:rgba(20,184,166,.10);color:#059669;display:flex;align-items:center;justify-content:center;font-size:14px}.capability-mini strong{display:block;font-size:11.5px;color:#04786c;font-weight:900}.capability-mini span{display:block;font-size:9.8px;line-height:1.45;color:#52667a;margin-top:5px}
+.role-path{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;padding:16px}.role-step{text-align:center;position:relative}.role-step:not(:last-child)::after{content:"→";position:absolute;right:-14px;top:34px;color:#0d9488;font-size:22px;font-weight:700;opacity:.45}.role-step .role-icon{width:52px;height:52px;border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#ecfeff,#f8fffd);border:1px solid rgba(20,184,166,.18);box-shadow:0 8px 22px rgba(20,184,166,.10);color:#059669;font-size:20px}.role-step strong{display:block;font-size:13px;color:#04786c;font-weight:900}.role-step span{display:block;font-size:11px;line-height:1.45;color:#52667a;margin-top:4px}.role-matrix{width:100%;border-collapse:separate;border-spacing:0;font-size:10.7px;color:#23364a}.role-matrix-wrap{padding:0 12px 12px}.role-matrix th{background:rgba(20,184,166,.10);color:#04786c;font-weight:900;padding:8px;border-right:1px solid rgba(15,118,110,.10)}.role-matrix th:first-child{border-radius:10px 0 0 0}.role-matrix th:last-child{border-radius:0 10px 0 0;border-right:0}.role-matrix td{padding:8px;border-right:1px solid rgba(15,118,110,.08);border-bottom:1px solid rgba(15,118,110,.08);line-height:1.42;background:rgba(255,255,255,.60)}.role-matrix td:last-child{border-right:0}.role-name{font-weight:900;color:#04786c;white-space:nowrap}.viz-footer-no{position:absolute;left:22px;bottom:20px;font-size:20px;font-weight:900;color:#fff;text-shadow:0 4px 18px rgba(0,77,72,.35);letter-spacing:.04em;z-index:2}.viz-expand{cursor:pointer}.viz-expand:hover{transform:translateY(-1px);transition:.18s}.viz-expand:hover .viz-panel,.viz-expand:hover.viz-panel{box-shadow:0 22px 56px rgba(15,118,110,.12), inset 0 1px 0 rgba(255,255,255,.9)}
+@media(max-width:1100px){.viz-main{grid-template-columns:1fr}.viz-side{min-height:auto}.workflow-cards,.capability-row{grid-template-columns:repeat(3,1fr)}.wf-card:nth-child(3)::after{display:none}.role-path{grid-template-columns:repeat(3,1fr)}.viz-route{display:none}.viz-title-row{grid-template-columns:110px 1fr}.viz-page-no{font-size:64px}}
+
+
+
+/* ── Visual upgrade for slide 04/05/06: loop, V-model, lifecycle ── */
+.story-page{position:relative;width:100%;}
+.story-head{display:grid;grid-template-columns:1fr auto;gap:18px;align-items:start;margin-bottom:14px;}
+.story-kicker{font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-bright);display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.story-kicker::before{content:"";width:18px;height:2px;border-radius:99px;background:linear-gradient(90deg,var(--gold-bright),var(--cyan));opacity:.8;}
+.story-title{font-size:clamp(26px,3.2vw,42px);line-height:1.15;font-weight:900;letter-spacing:-.02em;color:#071b36;}
+.story-title .sub{display:block;font-size:.62em;font-weight:850;margin-top:2px;color:#0f766e;letter-spacing:-.01em;}
+.story-lead{font-size:12.8px;color:var(--t2);line-height:1.75;max-width:760px;margin-top:8px;}
+.story-chip{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:rgba(255,255,255,.72);border:1px solid rgba(16,185,129,.18);box-shadow:0 10px 26px rgba(15,118,110,.06);font-size:11px;font-weight:800;color:#0f766e;white-space:nowrap;}
+.story-chip i{width:9px;height:9px;border-radius:50%;background:#10b981;box-shadow:0 0 18px rgba(16,185,129,.45);display:inline-block;}
+.story-layout{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:20px;align-items:stretch;}
+.story-main-panel{position:relative;padding:16px;border:1px solid rgba(16,185,129,.18);border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.94),rgba(244,253,249,.72));box-shadow:0 18px 45px rgba(15,118,110,.08), inset 0 1px 0 rgba(255,255,255,.8);overflow:hidden;}
+.story-main-panel::after{content:"";position:absolute;right:-80px;bottom:-90px;width:220px;height:220px;background:radial-gradient(circle,rgba(16,185,129,.11),transparent 66%);pointer-events:none;}
+.deep-panel{position:relative;border-radius:18px;padding:18px 18px;background:linear-gradient(145deg,#0b746a 0%,#053d56 100%);color:#fff;box-shadow:0 18px 42px rgba(6,78,91,.22);overflow:hidden;min-height:100%;}
+.deep-panel::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 16% 10%,rgba(94,234,212,.38),transparent 28%),radial-gradient(circle at 96% 96%,rgba(6,182,212,.16),transparent 32%);pointer-events:none;}
+.deep-panel > *{position:relative;z-index:1;}
+.deep-title{font-size:19px;font-weight:900;letter-spacing:.02em;margin-bottom:12px;color:#fff;display:flex;align-items:center;gap:8px;}
+.deep-title::before{content:"✦";font-size:14px;color:#a7f3d0;}
+.deep-list{display:grid;gap:9px;}
+.deep-item{display:grid;grid-template-columns:46px 1fr;gap:10px;align-items:start;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.15);}
+.deep-item:last-child{border-bottom:0;}
+.deep-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.9);color:#0f766e;font-size:20px;font-weight:900;box-shadow:0 0 0 6px rgba(45,212,191,.12),0 8px 22px rgba(0,0,0,.16);}
+.deep-item b{display:block;font-size:14px;color:#fff;margin-bottom:3px;}
+.deep-item span{font-size:11.5px;line-height:1.62;color:rgba(255,255,255,.82);}
+.deep-quote{margin-top:12px;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.13);font-size:12.5px;line-height:1.68;color:#fff;font-weight:800;}
+.loop-flow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;position:relative;}
+.loop-card{position:relative;min-height:232px;padding:16px 14px;border:1px solid rgba(16,185,129,.16);border-radius:16px;background:rgba(255,255,255,.86);box-shadow:0 12px 28px rgba(15,118,110,.06);}
+.loop-card:not(:last-child)::after{content:"";position:absolute;right:-20px;top:45%;width:28px;height:28px;background:linear-gradient(135deg,#20c997,#0891b2);clip-path:polygon(0 0,100% 50%,0 100%,32% 50%);filter:drop-shadow(0 6px 8px rgba(6,182,212,.2));z-index:3;}
+.loop-no{width:34px;height:28px;border-radius:11px;background:linear-gradient(135deg,#12c7b0,#078b7a);color:#fff;font-size:15px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 20px rgba(16,185,129,.22);margin-bottom:8px;}
+.loop-icon{font-size:34px;line-height:1;margin:4px 0 12px;color:#0f766e;text-shadow:0 10px 26px rgba(16,185,129,.22);}
+.loop-card h3{font-size:15.5px;color:#071b36;font-weight:900;margin-bottom:10px;}
+.loop-card ul{list-style:none;padding:0;margin:0;display:grid;gap:7px;}
+.loop-card li{position:relative;padding-left:12px;font-size:11.5px;color:var(--t2);line-height:1.62;}
+.loop-card li::before{content:"";position:absolute;left:0;top:.68em;width:5px;height:5px;border-radius:50%;background:#10b981;}
+.evo-strip{display:grid;grid-template-columns:145px 1fr;gap:0;margin-top:12px;border:1px solid rgba(16,185,129,.18);border-radius:16px;overflow:hidden;background:rgba(255,255,255,.76);}
+.evo-label{display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#10b981,#075985);color:#fff;font-weight:900;font-size:13px;}
+.evo-path{display:flex;align-items:center;justify-content:space-around;gap:10px;padding:12px 16px;}
+.evo-node{display:grid;justify-items:center;gap:4px;min-width:86px;}
+.evo-node strong{font-size:13px;color:#0f766e;}
+.evo-node span{font-size:9.5px;color:var(--t3);}
+.evo-arrow{color:#0f766e;font-size:20px;font-weight:900;opacity:.75;}
+.vmodel-shell{display:grid;grid-template-columns:1fr;gap:12px;}
+.vmodel-svg{width:100%;height:auto;max-height:420px;display:block;}
+.v-caption{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:14px;border:1px solid rgba(16,185,129,.18);background:rgba(255,255,255,.78);font-size:12px;color:var(--t2);line-height:1.65;}
+.v-caption b{color:#0f766e;white-space:nowrap;}
+.lifecycle-chain{display:grid;grid-template-columns:repeat(6,1fr);gap:0;margin-bottom:12px;border:1px solid rgba(16,185,129,.18);border-radius:16px;overflow:hidden;background:rgba(255,255,255,.75);}
+.life-step{position:relative;padding:10px 8px;text-align:center;font-size:11px;font-weight:850;color:#0f766e;border-right:1px solid rgba(16,185,129,.14);}
+.life-step:last-child{border-right:0;}
+.life-step::after{content:"";position:absolute;right:-8px;top:50%;transform:translateY(-50%);width:15px;height:15px;background:rgba(255,255,255,.9);border-top:1px solid rgba(16,185,129,.14);border-right:1px solid rgba(16,185,129,.14);transform:translateY(-50%) rotate(45deg);z-index:2;}
+.life-step:last-child::after{display:none;}
+.matrix-layer{display:grid;grid-template-columns:116px 1fr;gap:12px;align-items:center;margin:10px 0;}
+.layer-name{font-size:12px;font-weight:900;color:#0f766e;text-align:right;}
+.layer-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.layer-card{padding:12px 12px;border-radius:15px;border:1px solid rgba(16,185,129,.16);background:rgba(255,255,255,.88);box-shadow:0 9px 22px rgba(15,118,110,.045);min-height:76px;}
+.layer-card b{display:block;font-size:13.5px;color:#071b36;margin-bottom:3px;}
+.layer-card span{display:block;font-size:10.6px;color:var(--t2);line-height:1.55;}
+.knowledge-band{margin:12px 0;padding:12px 18px;border-radius:16px;border:1px solid rgba(16,185,129,.2);background:linear-gradient(90deg,rgba(209,250,229,.78),rgba(236,253,245,.7));display:flex;gap:12px;align-items:center;}
+.knowledge-band .book{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#fff;color:#0f766e;font-size:24px;box-shadow:0 10px 24px rgba(15,118,110,.09);}
+.knowledge-band b{font-size:14px;color:#071b36;}
+.knowledge-band span{font-size:11.5px;color:var(--t2);}
+.foundation-line{margin-top:10px;padding:10px 14px;border-radius:14px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.14);font-size:12px;color:#0f766e;font-weight:900;text-align:center;}
+@media(max-width:1180px){.story-layout{grid-template-columns:1fr}.deep-panel{min-height:auto}.loop-flow{grid-template-columns:repeat(2,1fr)}.loop-card:not(:last-child)::after{display:none}.layer-cards{grid-template-columns:1fr}.matrix-layer{grid-template-columns:1fr}.layer-name{text-align:left}.lifecycle-chain{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:640px){.loop-flow{grid-template-columns:1fr}.story-head{grid-template-columns:1fr}.evo-strip{grid-template-columns:1fr}.evo-path{flex-wrap:wrap}.lifecycle-chain{grid-template-columns:1fr}.life-step::after{display:none}}
+
+
+
+/* ── Scoped cleanup: reduce visually polluting color blocks on self pages 4–8 ── */
+/* Pages 4–6: convert heavy dark right panels into light, low-saturation explanation cards */
+.slide[data-module="self"][data-slide="3"] .deep-panel,
+.slide[data-module="self"][data-slide="4"] .deep-panel,
+.slide[data-module="self"][data-slide="5"] .deep-panel{
+  background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(243,253,249,.78)) !important;
+  color:var(--t) !important;
+  border:1px solid rgba(16,185,129,.18) !important;
+  box-shadow:0 14px 34px rgba(15,118,110,.075), inset 0 1px 0 rgba(255,255,255,.86) !important;
+}
+.slide[data-module="self"][data-slide="3"] .deep-panel::before,
+.slide[data-module="self"][data-slide="4"] .deep-panel::before,
+.slide[data-module="self"][data-slide="5"] .deep-panel::before{
+  background:radial-gradient(circle at 92% 0%,rgba(16,185,129,.10),transparent 42%) !important;
+  opacity:.9 !important;
+}
+.slide[data-module="self"][data-slide="3"] .deep-title,
+.slide[data-module="self"][data-slide="4"] .deep-title,
+.slide[data-module="self"][data-slide="5"] .deep-title{
+  color:#047857 !important;
+}
+.slide[data-module="self"][data-slide="3"] .deep-title::before,
+.slide[data-module="self"][data-slide="4"] .deep-title::before,
+.slide[data-module="self"][data-slide="5"] .deep-title::before{
+  color:#10b981 !important;
+}
+.slide[data-module="self"][data-slide="3"] .deep-item,
+.slide[data-module="self"][data-slide="4"] .deep-item,
+.slide[data-module="self"][data-slide="5"] .deep-item{
+  border-bottom:1px solid rgba(15,118,110,.10) !important;
+}
+.slide[data-module="self"][data-slide="3"] .deep-icon,
+.slide[data-module="self"][data-slide="4"] .deep-icon,
+.slide[data-module="self"][data-slide="5"] .deep-icon{
+  background:rgba(236,253,245,.78) !important;
+  color:#047857 !important;
+  box-shadow:0 0 0 5px rgba(16,185,129,.08),0 8px 18px rgba(15,118,110,.08) !important;
+}
+.slide[data-module="self"][data-slide="3"] .deep-item b,
+.slide[data-module="self"][data-slide="4"] .deep-item b,
+.slide[data-module="self"][data-slide="5"] .deep-item b{
+  color:var(--t) !important;
+}
+.slide[data-module="self"][data-slide="3"] .deep-item span,
+.slide[data-module="self"][data-slide="4"] .deep-item span,
+.slide[data-module="self"][data-slide="5"] .deep-item span{
+  color:var(--t2) !important;
+}
+.slide[data-module="self"][data-slide="3"] .deep-quote,
+.slide[data-module="self"][data-slide="4"] .deep-quote,
+.slide[data-module="self"][data-slide="5"] .deep-quote{
+  background:rgba(16,185,129,.07) !important;
+  color:#0f3f3a !important;
+  border:1px solid rgba(16,185,129,.13) !important;
+}
+
+/* Pages 7–8: keep the 07/08 structure, but remove the heavy dark side color block */
+.slide[data-module="self"][data-slide="6"] .viz-side,
+.slide[data-module="self"][data-slide="7"] .viz-side{
+  background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(238,253,249,.84)) !important;
+  color:var(--t) !important;
+  border:1px solid rgba(16,185,129,.18) !important;
+  box-shadow:0 16px 42px rgba(15,118,110,.085), inset 0 1px 0 rgba(255,255,255,.88) !important;
+}
+.slide[data-module="self"][data-slide="6"] .viz-side::before,
+.slide[data-module="self"][data-slide="6"] .viz-side::after,
+.slide[data-module="self"][data-slide="7"] .viz-side::before,
+.slide[data-module="self"][data-slide="7"] .viz-side::after{
+  opacity:.18 !important;
+  background:radial-gradient(circle at 90% 4%,rgba(16,185,129,.14),transparent 48%) !important;
+}
+.slide[data-module="self"][data-slide="6"] .viz-side h3,
+.slide[data-module="self"][data-slide="7"] .viz-side h3{
+  color:#047857 !important;
+}
+.slide[data-module="self"][data-slide="6"] .viz-side-section,
+.slide[data-module="self"][data-slide="7"] .viz-side-section{
+  background:rgba(255,255,255,.56) !important;
+  border:1px solid rgba(16,185,129,.13) !important;
+}
+.slide[data-module="self"][data-slide="6"] .viz-side-item,
+.slide[data-module="self"][data-slide="7"] .viz-side-item{
+  border-bottom:1px solid rgba(15,118,110,.10) !important;
+}
+.slide[data-module="self"][data-slide="6"] .viz-side-icon,
+.slide[data-module="self"][data-slide="7"] .viz-side-icon{
+  background:rgba(236,253,245,.82) !important;
+  color:#047857 !important;
+  box-shadow:0 0 0 5px rgba(16,185,129,.07),0 8px 18px rgba(15,118,110,.08) !important;
+}
+.slide[data-module="self"][data-slide="6"] .viz-side-item strong,
+.slide[data-module="self"][data-slide="7"] .viz-side-item strong,
+.slide[data-module="self"][data-slide="6"] .viz-side-section strong,
+.slide[data-module="self"][data-slide="7"] .viz-side-section strong{
+  color:var(--t) !important;
+}
+.slide[data-module="self"][data-slide="6"] .viz-side-item span,
+.slide[data-module="self"][data-slide="7"] .viz-side-item span,
+.slide[data-module="self"][data-slide="6"] .viz-side-section span,
+.slide[data-module="self"][data-slide="7"] .viz-side-section span{
+  color:var(--t2) !important;
+}
+.slide[data-module="self"][data-slide="6"] .viz-side-quote,
+.slide[data-module="self"][data-slide="7"] .viz-side-quote{
+  background:rgba(16,185,129,.075) !important;
+  color:#0f3f3a !important;
+  border:1px solid rgba(16,185,129,.13) !important;
+}
+.slide[data-module="self"][data-slide="6"] .viz-side-quote::before,
+.slide[data-module="self"][data-slide="6"] .viz-side-quote::after,
+.slide[data-module="self"][data-slide="7"] .viz-side-quote::before,
+.slide[data-module="self"][data-slide="7"] .viz-side-quote::after{
+  color:rgba(4,120,87,.52) !important;
+}
+/* The big 07/08 pages were also visually heavy at the bottom; tone down the wave only there. */
+.slide[data-module="self"][data-slide="6"] .slide-inner.viz-focus::before,
+.slide[data-module="self"][data-slide="7"] .slide-inner.viz-focus::before{
+  opacity:.34 !important;
+  filter:none !important;
+}
+
+
+
+/* ── Clean rebuild for page 6: one-row lifecycle product matrix ── */
+.slide[data-module="self"][data-slide="5"] .story-main-panel{padding:18px 18px 16px;}
+.life-row-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;}
+.life-row-heading strong{font-size:13px;color:#0f766e;font-weight:900;letter-spacing:.02em;}
+.life-row-heading span{font-size:10.5px;color:var(--t3);line-height:1.5;}
+.life-product-row{position:relative;display:grid;grid-template-columns:repeat(7,minmax(92px,1fr));gap:8px;align-items:stretch;margin:10px 0 14px;padding:8px 0;}
+.life-product-row::before{content:"";position:absolute;left:6%;right:6%;top:50%;height:2px;background:linear-gradient(90deg,rgba(15,118,110,.10),rgba(16,185,129,.42),rgba(6,182,212,.22));transform:translateY(-50%);z-index:0;border-radius:99px;}
+.life-product{position:relative;z-index:1;min-height:150px;padding:12px 9px 10px;border:1px solid rgba(16,185,129,.16);border-radius:15px;background:linear-gradient(180deg,rgba(255,255,255,.94),rgba(246,253,250,.86));box-shadow:0 10px 24px rgba(15,118,110,.055), inset 0 1px 0 rgba(255,255,255,.9);display:flex;flex-direction:column;align-items:center;text-align:center;}
+.life-product::after{content:"";position:absolute;right:-9px;top:50%;width:15px;height:15px;background:rgba(255,255,255,.94);border-top:1px solid rgba(16,185,129,.18);border-right:1px solid rgba(16,185,129,.18);transform:translateY(-50%) rotate(45deg);z-index:2;}
+.life-product:last-child::after{display:none;}
+.life-product .p-icon{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:8px;background:linear-gradient(180deg,#ecfeff,#f8fffd);border:1px solid rgba(20,184,166,.22);box-shadow:0 8px 18px rgba(20,184,166,.10);font-size:18px;color:#059669;}
+.life-product .p-stage{font-size:9.5px;font-weight:900;letter-spacing:.04em;color:#0f766e;margin-bottom:4px;white-space:nowrap;}
+.life-product b{font-size:13px;line-height:1.25;color:#071b36;font-weight:900;margin-bottom:5px;}
+.life-product span{font-size:10px;line-height:1.45;color:var(--t2);}
+.life-base-band{display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:center;margin-top:8px;padding:12px 14px;border-radius:16px;border:1px solid rgba(16,185,129,.18);background:linear-gradient(90deg,rgba(209,250,229,.70),rgba(255,255,255,.78));}
+.life-base-title{font-size:13px;font-weight:900;color:#0f766e;display:flex;align-items:center;gap:8px;}
+.life-base-title i{width:34px;height:34px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1px solid rgba(16,185,129,.16);font-style:normal;box-shadow:0 8px 18px rgba(15,118,110,.06);}
+.life-base-text{font-size:11.2px;line-height:1.65;color:var(--t2);}
+.life-outcome-line{margin-top:12px;padding:10px 14px;border-radius:14px;background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.14);font-size:12px;color:#0f766e;font-weight:900;text-align:center;}
+@media(max-width:1180px){.life-product-row{overflow-x:auto;grid-template-columns:repeat(7,116px);padding-bottom:12px}.life-base-band{grid-template-columns:1fr}.life-product-row::before{left:30px;right:30px}}
+
+
+
+/* ── P0 visual-system cleanup: stable projection language, lower green noise ── */
+:root{
+  --bg:#fbfdfc;
+  --bg2:#f3faf7;
+  --surface:#ffffff;
+  --border:rgba(10,32,28,.095);
+  --border-s:rgba(10,32,28,.14);
+  --gold:#047857;
+  --gold-bright:#059669;
+  --gold-dim:rgba(5,150,105,.055);
+  --teal:#0f766e;
+  --teal-dim:rgba(15,118,110,.055);
+  --violet:#0f766e;
+  --violet-dim:rgba(15,118,110,.055);
+}
+html,body{
+  background:
+    radial-gradient(circle at 12% 10%,rgba(16,185,129,.035),transparent 30%),
+    radial-gradient(circle at 88% 86%,rgba(6,182,212,.025),transparent 30%),
+    var(--bg) !important;
+}
+.slide{
+  background:linear-gradient(135deg,rgba(255,255,255,.78),rgba(247,253,250,.72)) !important;
+}
+.progress-bar{
+  background:linear-gradient(90deg,#0f766e,#10b981) !important;
+  box-shadow:none !important;
+}
+.dot.active{background:#059669 !important;box-shadow:none !important;}
+.scroll-hint{
+  bottom:12px !important;
+  font-size:10px !important;
+  color:rgba(73,84,104,.58) !important;
+  background:rgba(255,255,255,.55);
+  border:1px solid rgba(10,32,28,.06);
+  border-radius:999px;
+  padding:3px 9px;
+}
+/* No oversized page-number blocks in the front-stage pages. */
+.viz-page-no,.viz-brand,.viz-footer-no{display:none !important;}
+.viz-title-row{display:block !important;margin-top:0 !important;margin-bottom:14px !important;}
+.viz-title-wrap{border-left:0 !important;padding-left:0 !important;}
+.viz-route{opacity:.65 !important;box-shadow:0 8px 22px rgba(15,118,110,.04) !important;}
+/* Unified card language */
+.card,.fd-card,.quad-item,.module-card,.module-panel,.module-list .mi,.module-map .node,
+.story-main-panel,.deep-panel,.viz-panel,.wf-card,.role-step .role-icon,.role-step,.layer-card,
+.loop-card,.evo-strip,.knowledge-band,.foundation-line,.v-caption,.ba-card,.a-card,.rag-block{
+  border-color:rgba(10,32,28,.10) !important;
+  box-shadow:0 10px 26px rgba(15,118,110,.045), inset 0 1px 0 rgba(255,255,255,.78) !important;
+}
+.story-main-panel,.deep-panel,.viz-panel,.card,.fd-card,.quad-item,.layer-card,.loop-card{
+  background:rgba(255,255,255,.86) !important;
+}
+.story-main-panel,.deep-panel,.viz-panel{border-radius:16px !important;}
+.layer-card,.loop-card,.wf-card,.fd-card,.quad-item,.card{border-radius:13px !important;}
+/* Typography hierarchy: green is an accent, not a flood color. */
+.story-kicker,.eb,.module-kicker{color:#047857 !important;}
+.story-kicker::before,.eb::before,.module-kicker::before{background:#059669 !important;opacity:.45 !important;}
+.story-title{color:#0b1828 !important;}
+.story-title .sub{color:#0b1828 !important;font-weight:850 !important;}
+.story-lead,.lead{color:#4b5b70 !important;}
+.accent,.v-accent{color:#047857 !important;}
+/* Low-exposure chips and overlay badges. */
+.story-chip{
+  background:rgba(255,255,255,.70) !important;
+  color:#0f766e !important;
+  border-color:rgba(15,118,110,.11) !important;
+  box-shadow:0 8px 18px rgba(15,118,110,.035) !important;
+  opacity:.78;
+}
+.story-chip i{background:#10b981 !important;box-shadow:none !important;}
+.ov-badge{opacity:.26 !important;color:#667085 !important;}
+/* Right-side panels: one light explanation style, no heavy color blocks. */
+.deep-panel,.viz-side{
+  background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(247,252,249,.82)) !important;
+  color:var(--t) !important;
+  border:1px solid rgba(10,32,28,.10) !important;
+  box-shadow:0 12px 30px rgba(15,118,110,.055), inset 3px 0 0 rgba(5,150,105,.72) !important;
+}
+.deep-panel::before,.viz-side::before,.viz-side::after{opacity:0 !important;display:none !important;}
+.deep-title,.viz-side h3{color:#0b1828 !important;font-size:17px !important;}
+.deep-title::before{color:#059669 !important;}
+.deep-item,.viz-side-item{border-bottom:1px solid rgba(10,32,28,.075) !important;}
+.deep-icon,.viz-side-icon{
+  background:rgba(5,150,105,.075) !important;
+  color:#047857 !important;
+  box-shadow:none !important;
+}
+.deep-item b,.viz-side-item strong,.viz-side-section strong{color:#0b1828 !important;}
+.deep-item span,.viz-side-item span,.viz-side-section span{color:#4b5b70 !important;}
+.deep-quote,.viz-side-quote{
+  background:rgba(5,150,105,.045) !important;
+  color:#25443f !important;
+  border:1px solid rgba(10,32,28,.07) !important;
+  font-weight:700 !important;
+}
+.viz-side-quote::before,.viz-side-quote::after{display:none !important;}
+/* Reduce green density inside dense diagrams. */
+.loop-no,.loop-icon,.evo-node strong,.wf-card strong,.capability-mini strong,.role-step strong,.role-name,
+.viz-panel-title,.layer-name,.layer-card b,.knowledge-band b,.foundation-line{
+  color:#047857 !important;
+}
+.loop-card li::before{background:#10b981 !important;opacity:.7 !important;}
+.wf-card,.role-step .role-icon,.capability-mini .mini-icon,.loop-icon{
+  background:rgba(5,150,105,.055) !important;
+  border-color:rgba(5,150,105,.095) !important;
+  box-shadow:none !important;
+}
+.wf-card em{background:rgba(5,150,105,.055) !important;color:#0f766e !important;}
+.safety-strip,.foundation-line,.knowledge-band{
+  background:rgba(5,150,105,.045) !important;
+  border-color:rgba(10,32,28,.075) !important;
+  color:#0f3f3a !important;
+  box-shadow:none !important;
+}
+/* Page 7/8: keep content, but return to slide/card rhythm instead of product-page rhythm. */
+.slide[data-module="self"][data-slide="6"] .workflow-cards,
+.slide[data-module="self"][data-slide="7"] .role-path{
+  padding:14px !important;
+}
+.slide[data-module="self"][data-slide="6"] .viz-panel,
+.slide[data-module="self"][data-slide="7"] .viz-panel{
+  background:rgba(255,255,255,.88) !important;
+}
+.slide[data-module="self"][data-slide="6"] .viz-side,
+.slide[data-module="self"][data-slide="7"] .viz-side{
+  padding:16px 18px !important;
+}
+/* Keep final page more like a closing slide, not a web dashboard. */
+.slide[data-module="self"][data-slide="8"] .card{
+  box-shadow:0 10px 26px rgba(15,118,110,.045), inset 0 1px 0 rgba(255,255,255,.78) !important;
+}
+/* Responsive consistency */
+@media(max-width:1180px){
+  .story-layout{grid-template-columns:1fr !important;}
+}
+
+
+/* ── P1 upgrade: page 5 / 6 / 8 main visuals ── */
+.v-modern{position:relative;padding:12px 10px 6px;min-height:430px}
+.v-modern .v-label-top{display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:900;color:#0f766e;padding:0 48px 8px}
+.v-modern .v-core{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);width:180px;height:180px;border-radius:50%;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.98),rgba(220,252,231,.96) 55%,rgba(187,247,208,.92));border:1px solid rgba(16,185,129,.20);box-shadow:0 18px 42px rgba(15,118,110,.10), inset 0 1px 0 rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;text-align:center;padding:22px;z-index:2}
+.v-modern .v-core b{display:block;font-size:18px;line-height:1.3;color:#071b36}
+.v-modern .v-core span{display:block;font-size:11px;color:#4f6579;line-height:1.6;margin-top:4px}
+.v-modern .v-side{position:absolute;top:48px;display:grid;gap:12px;width:280px;z-index:3}
+.v-modern .v-side.left{left:8px}
+.v-modern .v-side.right{right:8px}
+.v-modern .v-node{position:relative;padding:12px 14px;border-radius:14px;border:1px solid rgba(16,185,129,.16);background:linear-gradient(180deg,rgba(255,255,255,.97),rgba(246,255,251,.86));box-shadow:0 10px 24px rgba(15,118,110,.06)}
+.v-modern .v-node b{display:block;font-size:13px;color:#071b36;margin-bottom:4px}
+.v-modern .v-node span{display:block;font-size:10.8px;color:#5a6a7c;line-height:1.56}
+.v-modern .v-node.cover::after{content:"覆盖";position:absolute;right:12px;top:10px;padding:2px 7px;border-radius:999px;background:rgba(16,185,129,.10);font-size:9px;font-weight:900;color:#059669;letter-spacing:.04em}
+.v-modern .v-node.muted{background:rgba(255,255,255,.74);border-color:rgba(15,118,110,.10)}
+.v-modern .v-lines{position:absolute;inset:18px 0 0 0;pointer-events:none;z-index:1}
+.v-modern .v-footer{position:absolute;left:24px;right:24px;bottom:8px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.v-modern .v-footer .mini{padding:9px 10px;border-radius:12px;border:1px solid rgba(15,118,110,.10);background:rgba(255,255,255,.76);font-size:10.5px;color:#4f6579;line-height:1.5}
+.v-modern .v-footer .mini b{display:block;font-size:11px;color:#0f766e;margin-bottom:2px}
+.v-modern .v-slope{position:absolute;left:50%;top:40px;bottom:96px;width:0;border-left:2px dashed rgba(16,185,129,.30);transform:translateX(-50%)}
+.v-modern .v-slope.left{left:33%;top:58px;bottom:120px;transform:none;rotate:-28deg}
+.v-modern .v-slope.right{left:auto;right:33%;top:58px;bottom:120px;transform:none;rotate:28deg}
+
+.lifecycle-band-wrap{display:grid;gap:12px}
+.lifecycle-track{display:grid;grid-template-columns:repeat(7,1fr);gap:0;border:1px solid rgba(16,185,129,.18);border-radius:16px;overflow:hidden;background:rgba(255,255,255,.78)}
+.lifecycle-step{position:relative;padding:10px 8px 10px 14px;font-size:11px;font-weight:900;color:#0f766e;line-height:1.35;min-height:54px;display:flex;align-items:center}
+.lifecycle-step:not(:last-child){border-right:1px solid rgba(16,185,129,.14)}
+.lifecycle-step:not(:last-child)::after{content:"";position:absolute;right:-10px;top:50%;transform:translateY(-50%) rotate(45deg);width:18px;height:18px;background:rgba(255,255,255,.96);border-top:1px solid rgba(16,185,129,.14);border-right:1px solid rgba(16,185,129,.14);z-index:2}
+.lifecycle-products{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;align-items:stretch}
+.lifecycle-card{padding:12px 10px;border-radius:15px;border:1px solid rgba(16,185,129,.16);background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(245,253,249,.86));box-shadow:0 10px 24px rgba(15,118,110,.055);text-align:center;min-height:126px;position:relative}
+.lifecycle-card::before{content:"";position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:1px;height:10px;background:rgba(16,185,129,.25)}
+.lifecycle-card .life-ico{width:42px;height:42px;border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#f0fdfa,#ffffff);border:1px solid rgba(16,185,129,.16);box-shadow:0 8px 20px rgba(15,118,110,.08);font-size:18px;color:#059669}
+.lifecycle-card b{display:block;font-size:12.5px;color:#071b36;margin-bottom:4px}
+.lifecycle-card span{display:block;font-size:10.6px;color:#5b6b7c;line-height:1.52}
+.lifecycle-cloud{display:flex;align-items:center;justify-content:center;padding:10px 14px;border-radius:999px;border:1px solid rgba(16,185,129,.16);background:linear-gradient(180deg,rgba(236,253,245,.90),rgba(255,255,255,.74));font-size:12px;font-weight:900;color:#0f766e;letter-spacing:.02em}
+.lifecycle-note{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.lifecycle-note .mini{padding:10px 12px;border-radius:12px;border:1px solid rgba(15,118,110,.10);background:rgba(255,255,255,.76);font-size:10.8px;color:#516376;line-height:1.54}
+.lifecycle-note .mini b{display:block;font-size:11.2px;color:#0f766e;margin-bottom:3px}
+
+.role-map{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:14px 0 0}
+.role-card{padding:14px;border:1px solid rgba(16,185,129,.16);border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.97),rgba(246,255,251,.84));box-shadow:0 10px 24px rgba(15,118,110,.05);min-height:168px}
+.role-card .role-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.role-card .role-badge{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#effcf7,#ffffff);border:1px solid rgba(16,185,129,.16);color:#059669;font-size:16px;font-weight:900;box-shadow:0 6px 16px rgba(15,118,110,.07)}
+.role-card h4{font-size:13px;color:#071b36;font-weight:900;line-height:1.35}
+.role-card dl{display:grid;gap:7px;margin:0}
+.role-card dt{font-size:10px;font-weight:900;color:#059669;letter-spacing:.04em;text-transform:uppercase}
+.role-card dd{margin:0;font-size:10.8px;color:#546577;line-height:1.55}
+.role-map-foot{margin-top:12px;padding:11px 14px;border-radius:14px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.14);font-size:11.2px;line-height:1.65;color:#486072}
+.role-map-foot b{color:#0f766e}
+
+@media(max-width:1180px){
+  .v-modern{min-height:auto;padding-bottom:12px}
+  .v-modern .v-side,.v-modern .v-core,.v-modern .v-lines,.v-modern .v-slope{position:static;transform:none;width:auto}
+  .v-modern .v-label-top{padding:0 0 8px}
+  .v-modern .v-core{margin:8px auto 12px;height:auto;border-radius:24px;max-width:420px}
+  .v-modern .v-footer{position:static;margin-top:12px;grid-template-columns:repeat(2,1fr)}
+  .lifecycle-track,.lifecycle-products,.role-map{grid-template-columns:1fr 1fr}
+}
+@media(max-width:760px){
+  .lifecycle-track,.lifecycle-products,.role-map,.v-modern .v-footer{grid-template-columns:1fr}
+  .lifecycle-step:not(:last-child)::after{display:none}
+}
+
+/* page 4 color weight optimization */
+.slide[data-slide="3"] .loop-no{
+  width:38px;
+  height:30px;
+  border-radius:12px;
+  background:rgba(16,185,129,.10) !important;
+  color:#0f766e !important;
+  border:1px solid rgba(16,185,129,.20);
+  box-shadow:none !important;
+}
+.slide[data-slide="3"] .loop-card{
+  background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(249,253,251,.88));
+}
+.slide[data-slide="3"] .loop-card:not(:last-child)::after{
+  background:linear-gradient(135deg,rgba(16,185,129,.78),rgba(13,148,136,.60));
+  filter:none;
+  opacity:.78;
+}
+.slide[data-slide="3"] .loop-icon{
+  color:rgba(15,118,110,.72) !important;
+  text-shadow:none !important;
+}
+.slide[data-slide="3"] .evo-label{
+  background:linear-gradient(135deg,#14b8a6,#0f766e);
+}
+
+/* extend light right-side explainer style to pages 7–8 */
+.slide[data-module="self"][data-slide="6"] .deep-panel,
+.slide[data-module="self"][data-slide="7"] .deep-panel{
+  background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(243,253,249,.78)) !important;
+  color:var(--t) !important;
+  border:1px solid rgba(16,185,129,.18) !important;
+  box-shadow:0 14px 34px rgba(15,118,110,.075), inset 0 1px 0 rgba(255,255,255,.86) !important;
+}
+.slide[data-module="self"][data-slide="6"] .deep-panel::before,
+.slide[data-module="self"][data-slide="7"] .deep-panel::before{
+  background:radial-gradient(circle at 92% 0%,rgba(16,185,129,.10),transparent 42%) !important;
+  opacity:.9 !important;
+}
+.slide[data-module="self"][data-slide="6"] .deep-title,
+.slide[data-module="self"][data-slide="7"] .deep-title{color:#047857 !important;}
+.slide[data-module="self"][data-slide="6"] .deep-title::before,
+.slide[data-module="self"][data-slide="7"] .deep-title::before{color:#10b981 !important;}
+.slide[data-module="self"][data-slide="6"] .deep-item,
+.slide[data-module="self"][data-slide="7"] .deep-item{border-bottom:1px solid rgba(15,118,110,.10) !important;}
+.slide[data-module="self"][data-slide="6"] .deep-icon,
+.slide[data-module="self"][data-slide="7"] .deep-icon{
+  background:rgba(236,253,245,.78) !important;
+  color:#047857 !important;
+  box-shadow:0 0 0 5px rgba(16,185,129,.08),0 8px 18px rgba(15,118,110,.08) !important;
+}
+.slide[data-module="self"][data-slide="6"] .deep-item b,
+.slide[data-module="self"][data-slide="7"] .deep-item b{color:var(--t) !important;}
+.slide[data-module="self"][data-slide="6"] .deep-item span,
+.slide[data-module="self"][data-slide="7"] .deep-item span{color:var(--t2) !important;}
+
+/* ── EE solution restored page ── */
+.ee-solution-map{display:grid;gap:12px;position:relative;z-index:1;}
+.ee-layer{border-radius:16px;border:1px solid rgba(16,185,129,.14);background:rgba(255,255,255,.78);padding:14px;box-shadow:0 10px 24px rgba(15,118,110,.045)}
+.ee-layer-label{font-size:12px;font-weight:900;color:#0f766e;letter-spacing:.04em;margin-bottom:10px;}
+.ee-loop-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.ee-loop-card{padding:12px 10px;border-radius:13px;border:1px solid rgba(16,185,129,.13);background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(246,255,251,.86));min-height:94px;}
+.ee-loop-card b{display:block;font-size:12.5px;color:#071b36;margin-bottom:5px;}
+.ee-loop-card span{display:block;font-size:10.5px;line-height:1.55;color:#566879;}
+.ee-arrow-band{padding:8px 12px;border-radius:999px;background:linear-gradient(90deg,rgba(16,185,129,.12),rgba(6,182,212,.08));border:1px solid rgba(16,185,129,.13);text-align:center;font-size:11px;font-weight:900;color:#0f766e;letter-spacing:.06em;}
+.ee-arrow-band.muted{background:rgba(15,118,110,.04);color:#607080;}
+.ee-agent-row{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
+.ee-agent{padding:11px 9px;border-radius:13px;border:1px solid rgba(16,185,129,.14);background:rgba(255,255,255,.86);text-align:center;min-height:88px;}
+.ee-agent strong{display:block;font-size:11.5px;color:#0f766e;margin-bottom:4px;}
+.ee-agent span{display:block;font-size:9.8px;line-height:1.45;color:#5e6b7a;}
+.ee-object-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:6px;}
+.ee-object-grid span{display:flex;align-items:center;justify-content:center;min-height:34px;border-radius:10px;background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.12);font-size:11px;font-weight:900;color:#0f766e;}
+.slide[data-module="self"][data-slide="8"] .deep-panel{
+  background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(243,253,249,.78)) !important;
+  color:var(--t) !important;
+  border:1px solid rgba(16,185,129,.18) !important;
+  box-shadow:0 14px 34px rgba(15,118,110,.075), inset 0 1px 0 rgba(255,255,255,.86) !important;
+}
+.slide[data-module="self"][data-slide="8"] .deep-panel::before{background:radial-gradient(circle at 92% 0%,rgba(16,185,129,.10),transparent 42%) !important;opacity:.9 !important;}
+.slide[data-module="self"][data-slide="8"] .deep-title{color:#047857 !important;}
+.slide[data-module="self"][data-slide="8"] .deep-title::before{color:#10b981 !important;}
+.slide[data-module="self"][data-slide="8"] .deep-item{border-bottom:1px solid rgba(15,118,110,.10) !important;}
+.slide[data-module="self"][data-slide="8"] .deep-icon{background:rgba(236,253,245,.78) !important;color:#047857 !important;box-shadow:0 0 0 5px rgba(16,185,129,.08),0 8px 18px rgba(15,118,110,.08) !important;}
+.slide[data-module="self"][data-slide="8"] .deep-item b{color:var(--t) !important;}
+.slide[data-module="self"][data-slide="8"] .deep-item span{color:var(--t2) !important;}
+@media(max-width:1180px){.ee-loop-grid,.ee-agent-row,.ee-object-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){.ee-loop-grid,.ee-agent-row,.ee-object-grid{grid-template-columns:1fr}}
+
+/* Page 9 vehicle-level E/E solution: platform / variants / baseline governance */
+.vehicle-solution{position:relative;min-height:440px;padding:18px 16px 14px;display:flex;align-items:center;justify-content:center;}
+.vehicle-solution::before{content:"";position:absolute;inset:16px;border-radius:20px;border:1px dashed rgba(16,185,129,.18);pointer-events:none;}
+.vehicle-center{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);width:240px;height:132px;border-radius:26px;background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(236,253,245,.94));border:1px solid rgba(16,185,129,.22);box-shadow:0 18px 42px rgba(15,118,110,.10), inset 0 1px 0 rgba(255,255,255,.90);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:18px;z-index:3;}
+.vehicle-center strong{font-size:20px;line-height:1.25;font-weight:950;color:#071b36;}
+.vehicle-center span{font-size:11px;color:#5b6b7d;line-height:1.55;margin-top:6px;}
+.vehicle-pillar-grid{position:relative;width:100%;height:100%;min-height:420px;}
+.vehicle-pillar{position:absolute;width:245px;min-height:138px;padding:13px 14px;border-radius:16px;border:1px solid rgba(16,185,129,.16);background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(247,253,251,.88));box-shadow:0 11px 26px rgba(15,118,110,.055);z-index:2;}
+.vehicle-pillar::after{content:"";position:absolute;width:44px;height:1px;background:rgba(16,185,129,.22);}
+.vehicle-pillar.p1{left:0;top:0}.vehicle-pillar.p1::after{right:-44px;top:68px;transform:rotate(16deg)}
+.vehicle-pillar.p2{right:0;top:0}.vehicle-pillar.p2::after{left:-44px;top:68px;transform:rotate(-16deg)}
+.vehicle-pillar.p3{left:50%;top:0;transform:translateX(-50%)}.vehicle-pillar.p3::after{left:50%;bottom:-34px;width:1px;height:34px}
+.vehicle-pillar.p4{left:78px;bottom:0}.vehicle-pillar.p4::after{right:-42px;top:48px;transform:rotate(-18deg)}
+.vehicle-pillar.p5{right:78px;bottom:0}.vehicle-pillar.p5::after{left:-42px;top:48px;transform:rotate(18deg)}
+.pillar-no{display:inline-flex;align-items:center;justify-content:center;width:30px;height:24px;border-radius:999px;background:rgba(16,185,129,.10);border:1px solid rgba(16,185,129,.18);font-size:11px;font-weight:950;color:#0f766e;margin-bottom:7px;}
+.vehicle-pillar h3{font-size:14px;font-weight:950;color:#071b36;line-height:1.25;margin:0 0 6px;}
+.vehicle-pillar p{font-size:10.8px;line-height:1.55;color:#536577;margin:0 0 8px;}
+.pillar-tags{display:flex;flex-wrap:wrap;gap:5px;}
+.pillar-tags span{font-size:9px;font-weight:800;color:#0f766e;background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.12);border-radius:999px;padding:2px 6px;white-space:nowrap;}
+@media(max-width:1180px){.vehicle-solution{min-height:auto;display:block}.vehicle-center{position:static;transform:none;width:auto;height:auto;margin:0 auto 14px}.vehicle-pillar-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;height:auto;min-height:auto}.vehicle-pillar{position:relative !important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;transform:none!important;width:auto}.vehicle-pillar::after{display:none}.vehicle-pillar.p3{grid-column:1/-1}}
+@media(max-width:640px){.vehicle-pillar-grid{grid-template-columns:1fr}.vehicle-pillar.p3{grid-column:auto}}
+
+/* ── Page 7: controlled AI Agent workflow, grounded in resume ── */
+.agent-flow-panel{position:relative;padding:16px;border:1px solid rgba(16,185,129,.16);border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(246,253,249,.78));box-shadow:0 14px 34px rgba(15,118,110,.06);overflow:hidden}
+.agent-flow-panel::after{content:"";position:absolute;right:-72px;bottom:-78px;width:210px;height:210px;background:radial-gradient(circle,rgba(16,185,129,.10),transparent 66%);pointer-events:none}
+.knowledge-base-strip{display:grid;grid-template-columns:126px 1fr;gap:12px;align-items:center;padding:12px 14px;border-radius:14px;border:1px solid rgba(16,185,129,.16);background:rgba(255,255,255,.78);position:relative;z-index:1}
+.knowledge-base-strip b{font-size:13px;color:#0f766e;font-weight:900}
+.knowledge-tags{display:flex;flex-wrap:wrap;gap:6px}
+.knowledge-tags span{padding:4px 9px;border-radius:999px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.12);font-size:10.5px;color:#516376;font-weight:800}
+.agent-pipeline{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:12px;position:relative;z-index:1}
+.agent-step{position:relative;min-height:112px;padding:11px 9px;border-radius:14px;border:1px solid rgba(16,185,129,.14);background:rgba(255,255,255,.88);box-shadow:0 8px 20px rgba(15,118,110,.045);text-align:center}
+.agent-step:not(:last-child)::after{content:"→";position:absolute;right:-10px;top:36px;color:#0f766e;font-size:19px;font-weight:900;opacity:.42;z-index:3}
+.agent-no{width:24px;height:22px;border-radius:8px;background:rgba(16,185,129,.10);border:1px solid rgba(16,185,129,.18);color:#0f766e;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;margin:0 auto 7px}
+.agent-step b{display:block;font-size:11.5px;color:#071b36;font-weight:900;line-height:1.35}
+.agent-step span{display:block;margin-top:5px;font-size:9.8px;color:#5d6f80;line-height:1.45}
+.agent-scenarios{margin-top:12px}
+.scenario-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;padding:12px}
+.scenario-card{padding:10px;border-radius:12px;border:1px solid rgba(16,185,129,.13);background:rgba(255,255,255,.76);min-height:88px}
+.scenario-card b{display:block;font-size:12px;color:#0f766e;margin-bottom:5px}
+.scenario-card span{display:block;font-size:10.5px;color:#5c6d7c;line-height:1.55}
+.agent-result-strip{margin-top:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.result-pill{padding:9px 12px;border-radius:13px;background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.13);font-size:11px;line-height:1.45;color:#526477}
+.result-pill b{display:block;font-size:13px;color:#0f766e;font-weight:900;margin-bottom:2px}
+@media(max-width:1180px){.agent-pipeline{grid-template-columns:repeat(4,1fr)}.agent-step:nth-child(4)::after{display:none}.scenario-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:760px){.knowledge-base-strip{grid-template-columns:1fr}.agent-pipeline,.scenario-grid,.agent-result-strip{grid-template-columns:1fr}.agent-step::after{display:none!important}}
+
+
+/* ── Fix slide 9 vehicle solution layout: avoid squeeze / overlap ── */
+.slide[data-module="self"][data-slide="8"] .story-layout{
+  grid-template-columns:minmax(0,1fr) 320px;
+  gap:18px;
+  align-items:start;
+}
+.slide[data-module="self"][data-slide="8"] .story-main-panel{
+  padding:14px 14px 12px;
+  overflow:visible;
+}
+.slide[data-module="self"][data-slide="8"] .vehicle-solution{
+  display:grid;
+  gap:12px;
+  align-items:stretch;
+  justify-content:stretch;
+  min-height:auto;
+  padding:6px 2px 2px;
+}
+.slide[data-module="self"][data-slide="8"] .vehicle-solution::before{
+  display:none;
+}
+.slide[data-module="self"][data-slide="8"] .vehicle-center{
+  position:relative !important;
+  left:auto !important;
+  top:auto !important;
+  transform:none !important;
+  width:100%;
+  height:auto;
+  min-height:74px;
+  border-radius:18px;
+  padding:13px 16px;
+  display:flex;
+  flex-direction:row;
+  justify-content:space-between;
+  gap:16px;
+  text-align:left;
+}
+.slide[data-module="self"][data-slide="8"] .vehicle-center strong{
+  font-size:17px;
+  line-height:1.25;
+  white-space:nowrap;
+}
+.slide[data-module="self"][data-slide="8"] .vehicle-center span{
+  margin-top:0;
+  font-size:10.8px;
+  line-height:1.55;
+  text-align:right;
+}
+.slide[data-module="self"][data-slide="8"] .vehicle-pillar-grid{
+  display:grid;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:10px;
+  width:100%;
+  height:auto;
+  min-height:auto;
+}
+.slide[data-module="self"][data-slide="8"] .vehicle-pillar{
+  position:relative !important;
+  left:auto !important;
+  right:auto !important;
+  top:auto !important;
+  bottom:auto !important;
+  transform:none !important;
+  width:auto;
+  min-height:124px;
+  padding:12px 12px 10px;
+  overflow:hidden;
+}
+.slide[data-module="self"][data-slide="8"] .vehicle-pillar::after{
+  display:none;
+}
+.slide[data-module="self"][data-slide="8"] .vehicle-pillar.p1,
+.slide[data-module="self"][data-slide="8"] .vehicle-pillar.p2,
+.slide[data-module="self"][data-slide="8"] .vehicle-pillar.p3{
+  grid-column:span 2;
+}
+.slide[data-module="self"][data-slide="8"] .vehicle-pillar.p4,
+.slide[data-module="self"][data-slide="8"] .vehicle-pillar.p5{
+  grid-column:span 3;
+}
+.slide[data-module="self"][data-slide="8"] .pillar-no{
+  width:30px;
+  height:24px;
+  border-radius:10px;
+  font-size:11px;
+  margin-bottom:6px;
+}
+.slide[data-module="self"][data-slide="8"] .vehicle-pillar h3{
+  font-size:12.6px;
+  margin-bottom:5px;
+}
+.slide[data-module="self"][data-slide="8"] .vehicle-pillar p{
+  font-size:10.2px;
+  line-height:1.45;
+  margin-bottom:7px;
+}
+.slide[data-module="self"][data-slide="8"] .pillar-tags{
+  gap:4px;
+}
+.slide[data-module="self"][data-slide="8"] .pillar-tags span{
+  font-size:8.6px;
+  padding:1px 5px;
+}
+.slide[data-module="self"][data-slide="8"] .deep-panel{
+  min-height:auto;
+}
+.slide[data-module="self"][data-slide="8"] .deep-item{
+  grid-template-columns:38px 1fr;
+  gap:8px;
+  padding:8px 0;
+}
+.slide[data-module="self"][data-slide="8"] .deep-icon{
+  width:34px;
+  height:34px;
+  font-size:15px;
+}
+.slide[data-module="self"][data-slide="8"] .deep-item b{
+  font-size:12.8px;
+}
+.slide[data-module="self"][data-slide="8"] .deep-item span{
+  font-size:10.8px;
+  line-height:1.55;
+}
+.slide[data-module="self"][data-slide="8"] .card-accent{
+  margin-top:10px;
+  padding:9px 13px;
+  font-size:11.2px;
+  line-height:1.55;
+}
+@media(max-width:1180px){
+  .slide[data-module="self"][data-slide="8"] .story-layout{grid-template-columns:1fr;}
+  .slide[data-module="self"][data-slide="8"] .vehicle-pillar-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .slide[data-module="self"][data-slide="8"] .vehicle-pillar.p1,
+  .slide[data-module="self"][data-slide="8"] .vehicle-pillar.p2,
+  .slide[data-module="self"][data-slide="8"] .vehicle-pillar.p3,
+  .slide[data-module="self"][data-slide="8"] .vehicle-pillar.p4,
+  .slide[data-module="self"][data-slide="8"] .vehicle-pillar.p5{grid-column:auto;}
+}
+@media(max-width:760px){
+  .slide[data-module="self"][data-slide="8"] .vehicle-pillar-grid{grid-template-columns:1fr;}
+  .slide[data-module="self"][data-slide="8"] .vehicle-center{flex-direction:column;text-align:left;}
+  .slide[data-module="self"][data-slide="8"] .vehicle-center span{text-align:left;}
+}
+
+/* latest fixes: final page layout and first-page SVG readability */
+.mini-ability{
+  padding:12px 12px;
+  border-radius:13px;
+  border:1px solid rgba(16,185,129,.13);
+  background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(246,253,250,.78));
+  min-height:108px;
+}
+.mini-ability strong{
+  display:block;
+  font-size:12px;
+  color:#047857;
+  font-weight:900;
+  margin-bottom:6px;
+}
+.mini-ability span{
+  display:block;
+  font-size:10.8px;
+  line-height:1.62;
+  color:var(--t2);
+}
+.final-ability-panel{overflow:hidden}
+@media(max-width:1180px){
+  .mini-ability{min-height:auto}
+  .final-ability-panel > div:nth-child(2){grid-template-columns:repeat(2,1fr)!important}
+  .final-kpis{grid-template-columns:repeat(2,1fr)!important}
+}
+@media(max-width:720px){
+  .final-ability-panel > div:nth-child(2){grid-template-columns:1fr!important}
+}
+</style>
+</head>
+<body>
+<div class="progress-bar" id="prog"></div>
+<div aria-label="模块切换" class="float-switch" id="floatSwitch">
+<button aria-expanded="false" aria-label="展开模块切换" class="switch-toggle" id="switchToggle" type="button">···</button>
+<div aria-label="模块标签" class="switch-tabs">
+<button class="active" data-module="self" type="button">自我介绍</button>
+</div>
+</div>
+<div class="stage" id="stage">
+<!-- ═══════════════ 1. HERO ═══════════════ -->
+<div class="slide active" data-module="self" data-slide="0">
+<div class="slide-inner hero-grid">
+<div>
+<div class="hero-deco-bar fu"></div>
+<h1 class="hero-name fu" style="font-size:clamp(36px,5vw,56px);letter-spacing:-0.01em">李锦涛</h1>
+<p class="fu" style="font-size:clamp(15px,1.5vw,20px);color:var(--gold-bright);font-weight:700;margin-top:6px;letter-spacing:.04em">复杂 ToB 产品与平台产品负责人</p>
+<p class="hero-subtitle mt12 fu" style="max-width:100%;font-size:clamp(13px,1.2vw,17px)">
+        长期在汽车、军工等复杂产业场景中负责平台产品、专业工具链、知识库与产品矩阵建设。<br/>
+        管理 10 人产品团队，经历从单点工具、平台化产品到企业智能化探索的完整过程。
+      </p>
+<div class="fu" style="margin-top:20px;padding:18px;border:1px solid var(--border);border-radius:var(--rl);background:var(--surface);font-size:var(--fs-base);line-height:1.7;color:var(--t2)">
+<div><span style="color:var(--violet);font-weight:700">产品体系</span> — 架构设计工具、服务仿真工具、服务编排、项目管理、知识库、运维监控等产品矩阵</div>
+<div><span style="color:var(--violet);font-weight:700">客户与交付</span> — 支撑东风、广汽及多个军工客户场景，参与售前、方案、标书、定价和交付推进</div>
+<div><span style="color:var(--violet);font-weight:700">负责人经历</span> — 从产品经理成长为产品负责人 / 产品总监，管理 10 人产品团队</div>
+<div><span style="color:var(--violet);font-weight:700">智能化探索</span> — 围绕知识库、工具调用、多步执行、状态管理和人工确认，探索 Agent 化工作流</div>
+<div>服务 <span style="color:var(--t);font-weight:700">100+</span> 研发用户，覆盖 <span style="color:var(--t);font-weight:700">10+</span> 客户项目；部分文档生成效率提升 <span style="color:var(--gold-bright);font-weight:700">50%+</span></div>
+</div>
+<div class="fu" style="margin-top:10px;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--t3)">
+<span style="padding:3px 10px;border:1px solid rgba(15,118,110,.2);border-radius:99px;color:var(--violet);font-size:10.5px">工信部汽车工具链摸底调研</span>
+</div>
+</div>
+<div class="topo-wrap ov-trigger" data-overlay="arch-detail">
+<span class="ov-badge">查看架构</span>
+<svg class="hero-enterprise-svg" viewbox="0 0 480 430" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<lineargradient id="heroPanelNew" x1="0" x2="1" y1="0" y2="1">
+<stop offset="0%" stop-color="rgba(255,255,255,.99)"></stop>
+<stop offset="100%" stop-color="rgba(248,249,251,.98)"></stop>
+</lineargradient>
+<lineargradient id="heroAgentRing" x1="0" x2="1" y1="0" y2="1">
+<stop offset="0%" stop-color="rgba(15,118,110,.18)"></stop>
+<stop offset="100%" stop-color="rgba(5,150,105,.14)"></stop>
+</lineargradient>
+</defs>
+<rect fill="url(#heroPanelNew)" height="410" rx="16" stroke="rgba(0,0,0,.06)" width="460" x="10" y="10"></rect>
+<text fill="#047857" font-size="11.5" font-weight="800" x="28" y="34">企业智能化产品架构关系</text>
+<g>
+<rect fill="rgba(15,118,110,.08)" height="30" rx="10" stroke="rgba(15,118,110,.16)" width="96" x="26" y="48"></rect>
+<text fill="#0f766e" font-size="10.2" font-weight="700" text-anchor="middle" x="74" y="67">文档生成</text>
+<rect fill="rgba(8,145,178,.08)" height="30" rx="10" stroke="rgba(8,145,178,.16)" width="96" x="132" y="48"></rect>
+<text fill="#0891b2" font-size="10.2" font-weight="700" text-anchor="middle" x="180" y="67">模型生成</text>
+<rect fill="rgba(5,150,105,.08)" height="30" rx="10" stroke="rgba(5,150,105,.16)" width="108" x="238" y="48"></rect>
+<text fill="#059669" font-size="10.2" font-weight="700" text-anchor="middle" x="292" y="67">一致性校验</text>
+<rect fill="rgba(16,185,129,.08)" height="30" rx="10" stroke="rgba(16,185,129,.16)" width="98" x="356" y="48"></rect>
+<text fill="#10b981" font-size="10.2" font-weight="700" text-anchor="middle" x="405" y="67">推荐 / 检索</text>
+</g>
+<line stroke="rgba(15,118,110,.10)" stroke-width="1.6" x1="74" x2="206" y1="78" y2="132"></line>
+<line stroke="rgba(8,145,178,.10)" stroke-width="1.6" x1="180" x2="228" y1="78" y2="132"></line>
+<line stroke="rgba(5,150,105,.10)" stroke-width="1.6" x1="292" x2="252" y1="78" y2="132"></line>
+<line stroke="rgba(16,185,129,.10)" stroke-width="1.6" x1="405" x2="274" y1="78" y2="132"></line>
+<circle cx="240" cy="178" fill="url(#heroAgentRing)" r="60" stroke="rgba(15,118,110,.16)"></circle>
+<circle cx="240" cy="178" fill="white" r="38" stroke="rgba(15,118,110,.14)"></circle>
+<text fill="#0f766e" font-size="11.5" font-weight="800" text-anchor="middle" x="240" y="168">Enterprise</text>
+<text fill="#0f766e" font-size="15.5" font-weight="900" text-anchor="middle" x="240" y="184">AI Agent</text>
+<text fill="#495468" font-size="9.6" text-anchor="middle" x="240" y="222">任务规划 · 工具路由 · 多步执行</text>
+<rect fill="rgba(5,150,105,.05)" height="104" rx="14" stroke="rgba(5,150,105,.18)" width="126" x="32" y="132"></rect>
+<text fill="#059669" font-size="11.5" font-weight="800" x="46" y="154">可信知识层（RAG）</text>
+<rect fill="white" height="20" rx="6" stroke="rgba(0,0,0,.08)" width="42" x="46" y="166"></rect>
+<text fill="#495468" font-size="8.8" font-weight="700" text-anchor="middle" x="67" y="180">规范</text>
+<rect fill="white" height="20" rx="6" stroke="rgba(0,0,0,.08)" width="52" x="94" y="166"></rect>
+<text fill="#495468" font-size="8.8" font-weight="700" text-anchor="middle" x="120" y="180">项目文档</text>
+<rect fill="white" height="20" rx="6" stroke="rgba(0,0,0,.08)" width="52" x="46" y="192"></rect>
+<text fill="#495468" font-size="8.8" font-weight="700" text-anchor="middle" x="72" y="206">历史案例</text>
+<rect fill="white" height="20" rx="6" stroke="rgba(0,0,0,.08)" width="42" x="104" y="192"></rect>
+<text fill="#495468" font-size="8.8" font-weight="700" text-anchor="middle" x="125" y="206">模型数据</text>
+<text fill="#5e6b7a" font-size="8.8" x="46" y="228">私有化部署 · 可信召回 · 跨项目复用</text>
+<rect fill="rgba(8,145,178,.05)" height="104" rx="14" stroke="rgba(8,145,178,.18)" width="126" x="322" y="132"></rect>
+<text fill="#0891b2" font-size="11.5" font-weight="800" x="336" y="154">可调用工具层</text>
+<rect fill="white" height="20" rx="6" stroke="rgba(0,0,0,.08)" width="54" x="336" y="166"></rect>
+<text fill="#495468" font-size="8.4" font-weight="700" text-anchor="middle" x="363" y="180">架构设计</text>
+<rect fill="white" height="20" rx="6" stroke="rgba(0,0,0,.08)" width="40" x="396" y="166"></rect>
+<text fill="#495468" font-size="8.4" font-weight="700" text-anchor="middle" x="416" y="180">服务仿真</text>
+<rect fill="white" height="20" rx="6" stroke="rgba(0,0,0,.08)" width="48" x="336" y="192"></rect>
+<text fill="#495468" font-size="8.8" font-weight="700" text-anchor="middle" x="360" y="206">服务编排</text>
+<rect fill="white" height="20" rx="6" stroke="rgba(0,0,0,.08)" width="46" x="390" y="192"></rect>
+<text fill="#495468" font-size="8.4" font-weight="700" text-anchor="middle" x="413" y="206">DevOps</text>
+<text fill="#5e6b7a" font-size="8.2" x="336" y="228">工具调用 · 结果回写 · 权限 / 审计</text>
+<line stroke="rgba(5,150,105,.26)" stroke-width="2" x1="158" x2="182" y1="178" y2="178"></line>
+<polygon fill="rgba(5,150,105,.34)" points="176,173 186,178 176,183"></polygon>
+<line stroke="rgba(8,145,178,.26)" stroke-width="2" x1="298" x2="322" y1="178" y2="178"></line>
+<polygon fill="rgba(8,145,178,.34)" points="316,173 326,178 316,183"></polygon>
+<line stroke="rgba(16,185,129,.22)" stroke-width="2" x1="240" x2="240" y1="236" y2="254"></line>
+<polygon fill="rgba(16,185,129,.30)" points="235,250 240,258 245,250"></polygon>
+<rect fill="rgba(16,185,129,.05)" height="116" rx="16" stroke="rgba(16,185,129,.18)" width="368" x="56" y="266"></rect>
+<text fill="#10b981" font-size="11.5" font-weight="800" x="72" y="290">统一底座层</text>
+<text fill="#495468" font-size="10.1" text-anchor="middle" x="240" y="308">统一数据模型 · 组织与项目空间 · 审计 / 权限 · 私有化部署</text>
+<rect fill="rgba(255,255,255,.75)" height="32" rx="10" stroke="rgba(16,185,129,.12)" width="92" x="80" y="324"></rect>
+<text fill="#10b981" font-size="9.1" font-weight="700" text-anchor="middle" x="126" y="344">知识可追溯</text>
+<rect fill="rgba(255,255,255,.75)" height="32" rx="10" stroke="rgba(16,185,129,.12)" width="92" x="194" y="324"></rect>
+<text fill="#10b981" font-size="9.1" font-weight="700" text-anchor="middle" x="240" y="344">流程可执行</text>
+<rect fill="rgba(255,255,255,.75)" height="32" rx="10" stroke="rgba(16,185,129,.12)" width="92" x="308" y="324"></rect>
+<text fill="#10b981" font-size="9.1" font-weight="700" text-anchor="middle" x="354" y="344">结果可回写</text>
+<text fill="#5e6b7a" font-size="9.3" text-anchor="middle" x="240" y="370">核心不在单点能力，而在知识、工具、编排与底座之间形成稳定、可控的关联关系</text>
+</svg>
+</div>
+</div>
+<div class="scroll-hint">1 / 10</div>
+</div>
+<!-- ═══════════════ 2. FOUNDATION ═══════════════ -->
+<div class="slide" data-module="self" data-slide="1">
+<div class="slide-inner">
+<div class="eb">Foundation · 2020—2022</div>
+<h2 class="h2">我的起点，是在互联网团队完成产品经理的基础训练</h2>
+<p class="lead mt10">
+      在进入汽车行业之前，我在京东和百度做了三轮产品实习——B 端后台、数据基建、用户增长。这段经历奠定了我的产品方法论：<span class="accent">先理解业务本质，再定义产品形态，用数据验证决策</span>。
+    </p>
+<div class="g3 mt10">
+<div class="fd-card fu">
+<div class="fd-company">京东健康</div>
+<div class="fd-role">后台产品实习生 · <span>2020.12—2021.03</span></div>
+<div class="fd-item">测评中台从 0 到 1 建设</div>
+<div class="fd-item">医生管理后台迭代</div>
+<div class="fd-item">搜索召回逻辑优化</div>
+<div class="fd-item">医生管理后台从 0 到 1 搭建</div>
+<div style="font-size:10px;color:var(--t3);margin-top:8px;text-align:left">▶ 学会：从零搭建一个业务系统</div>
+</div>
+<div class="fd-card fu">
+<div class="fd-company">百度 MEG</div>
+<div class="fd-role">后台产品实习生 · <span>2021.05—2021.09</span></div>
+<div class="fd-item">B 端机构答主系统搭建</div>
+<div class="fd-item">BI 数据报表体系 + 用户画像</div>
+<div class="fd-item">音视频咨询等 B 端特色功能</div>
+<div class="fd-item"><span class="accent">数据驱动业务决策体系</span></div>
+<div style="font-size:10px;color:var(--t3);margin-top:8px;text-align:left">▶ 学会：B 端平台架构 + 数据驱动</div>
+</div>
+<div class="fd-card fu">
+<div class="fd-company">京东商业提升</div>
+<div class="fd-role">用户产品实习生 · <span>2021.12—2022.04</span></div>
+<div class="fd-item">智能营销屏产品迭代</div>
+<div class="fd-item">权益中心建设，共 17 款权益</div>
+<div class="fd-item">权益商业化探索</div>
+<div class="fd-item"><span class="accent">权益点击占比 3.7% 持续提升</span></div>
+<div style="font-size:10px;color:var(--t3);margin-top:8px;text-align:left">▶ 学会：用户增长 + 商业化闭环</div>
+</div>
+</div>
+<div class="card-accent v mt12 fu">
+<strong>这三段经历给我的不是某一个行业的领域知识——</strong>而是一套跨领域可迁移的产品方法论。B 端后台让我理解平台架构，数据基建让我学会用指标说话，用户增长让我建立商业化思维。后来在面对 CAN 总线、UDS 诊断、SOME/IP 这些陌生技术时，这套方法论让我能快速切入业务本质，而不是停留在功能表面。
+    </div>
+</div>
+<div class="scroll-hint">2 / 10</div>
+</div>
+<!-- ═══════════════ 3. GAP + DOMAIN ═══════════════ -->
+<div class="slide" data-module="self" data-slide="2">
+<div class="slide-inner">
+<div class="eb">The Gap · 2022.08—2023.06</div>
+<h2 class="h2">随后我进入汽车电子工具链，开始面对一个高知识密度、强流程协同，也长期由国外工具主导的复杂领域</h2>
+<!-- V-model: monopoly -->
+<div class="v-wrap mt10">
+<svg viewbox="0 0 1060 580" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<filter id="g1"><fegaussianblur result="blur" stddeviation="2"></fegaussianblur><femerge><femergenode in="blur"></femergenode><femergenode in="SourceGraphic"></femergenode></femerge></filter>
+</defs>
+<line stroke="rgba(138,153,170,0.35)" stroke-dasharray="12,6" stroke-width="2.5" x1="180" x2="530" y1="48" y2="430"></line>
+<line stroke="rgba(85,98,112,0.2)" stroke-dasharray="10,5" stroke-width="2" x1="530" x2="880" y1="430" y2="48"></line>
+<line stroke="rgba(16,185,129,.25)" stroke-width="2" x1="530" x2="530" y1="430" y2="545"></line>
+<!-- Design nodes (left arm) -->
+<g><rect fill="rgba(0,0,0,0.02)" height="52" rx="8" stroke="rgba(0,0,0,0.06)" width="310" x="30" y="24"></rect><text fill="#495468" font-size="12" font-weight="700" x="46" y="44">需求管理</text><text fill="#5e6b7a" font-size="10.5" x="46" y="60">IBM DOORS / Siemens Polarion</text></g>
+<g><rect fill="rgba(0,0,0,0.02)" height="52" rx="8" stroke="rgba(0,0,0,0.06)" width="310" x="30" y="100"></rect><text fill="#495468" font-size="12" font-weight="700" x="46" y="120">功能设计</text><text fill="#5e6b7a" font-size="10.5" x="46" y="136">Sparx EA / PREEvision</text></g>
+<g><rect fill="rgba(0,0,0,0.02)" height="52" rx="8" stroke="rgba(0,0,0,0.06)" width="310" x="30" y="176"></rect><text fill="#495468" font-size="12" font-weight="700" x="46" y="196">系统设计</text><text fill="#5e6b7a" font-size="10.5" x="46" y="212">PREEvision / SystemWeaver</text></g>
+<g><rect fill="rgba(0,0,0,0.02)" height="52" rx="8" stroke="rgba(0,0,0,0.06)" width="310" x="30" y="252"></rect><text fill="#495468" font-size="12" font-weight="700" x="46" y="272">软件设计</text><text fill="#5e6b7a" font-size="10.5" x="46" y="288">EA / PREEvision</text></g>
+<g><rect fill="rgba(5,150,105,0.06)" height="52" rx="8" stroke="rgba(5,150,105,0.2)" width="310" x="30" y="328"></rect><text fill="#059669" font-size="12" font-weight="700" x="46" y="348">通信设计</text><text fill="#5e6b7a" font-size="10.5" x="46" y="364">CANdb++（桌面单机）</text><rect fill="rgba(5,150,105,.16)" height="18" rx="4" width="72" x="260" y="338"></rect><text fill="#059669" font-size="9.5" font-weight="700" text-anchor="middle" x="296" y="351">国产客户端</text></g>
+<g><rect fill="rgba(5,150,105,0.06)" height="52" rx="8" stroke="rgba(5,150,105,0.2)" width="310" x="30" y="404"></rect><text fill="#059669" font-size="12" font-weight="700" x="46" y="424">诊断设计</text><text fill="#5e6b7a" font-size="10.5" x="46" y="440">CANdelaStudio（桌面单机）</text></g>
+<!-- Test nodes (right arm, grey) -->
+<g><rect fill="rgba(6,182,212,0.06)" height="52" rx="8" stroke="rgba(6,182,212,0.2)" width="310" x="720" y="24"></rect><text fill="#06b6d4" font-size="12" font-weight="700" x="736" y="44">仿真验证</text><text fill="#5e6b7a" font-size="10.5" x="736" y="60">HIL / SIL / 服务仿真</text></g>
+<g><rect fill="rgba(0,0,0,0.02)" height="52" rx="8" stroke="rgba(0,0,0,0.05)" width="310" x="720" y="88"></rect><text fill="#5e6b7a" font-size="12" font-weight="700" x="736" y="108">验收测试</text><text fill="#5e6b7a" font-size="10.5" x="736" y="124">CANoe / Indigo</text></g>
+<g><rect fill="rgba(0,0,0,0.02)" height="52" rx="8" stroke="rgba(0,0,0,0.05)" width="310" x="720" y="164"></rect><text fill="#5e6b7a" font-size="12" font-weight="700" x="736" y="184">系统测试</text><text fill="#5e6b7a" font-size="10.5" x="736" y="200">CANoe / dSPACE</text></g>
+<g><rect fill="rgba(0,0,0,0.02)" height="52" rx="8" stroke="rgba(0,0,0,0.05)" width="310" x="720" y="240"></rect><text fill="#5e6b7a" font-size="12" font-weight="700" x="736" y="260">集成测试</text><text fill="#5e6b7a" font-size="10.5" x="736" y="276">CANoe / TSMaster*</text></g>
+<g><rect fill="rgba(0,0,0,0.02)" height="52" rx="8" stroke="rgba(0,0,0,0.05)" width="310" x="720" y="316"></rect><text fill="#5e6b7a" font-size="12" font-weight="700" x="736" y="336">部件测试</text><text fill="#5e6b7a" font-size="10.5" x="736" y="352">CANoe.DiVa</text></g>
+<!-- Bottom platform -->
+<rect fill="rgba(16,185,129,0.06)" height="42" rx="8" stroke="rgba(16,185,129,0.25)" width="380" x="340" y="515"></rect>
+<text fill="#10b981" font-size="12.5" font-weight="800" text-anchor="middle" x="530" y="536">架构协同平台</text>
+<text fill="#5e6b7a" font-size="10" text-anchor="middle" x="530" y="550">PREEvision / SystemWeaver 主导 · 桌面单机 · 零 AI</text>
+<text fill="#495468" font-size="12.5" font-weight="700" text-anchor="middle" x="185" y="10">设计域（左臂）</text>
+<text fill="#5e6b7a" font-size="12.5" font-weight="700" text-anchor="middle" x="875" y="10">测试域（右臂）</text>
+</svg>
+</div>
+<div style="font-size:10.5px;color:var(--t3);text-align:center;margin-top:4px">
+      6 个设计环节中，4 个完全没有国产产品。全部国外工具均为桌面单机架构，AI 能力为零。
+    </div>
+<!-- My Hengrun experience -->
+<div class="g2 mt10" style="gap:14px">
+<div>
+<div class="card fu" style="border-left:4px solid var(--gold-bright)">
+<div style="font-weight:800;font-size:13px;color:var(--t);margin-bottom:6px">我的经纬恒润经历</div>
+<div class="tl">
+<div class="tl-item"><div class="tl-time">2022.08</div><div class="tl-text">入职，<span class="accent">深入一线</span>——实际参与通信工程师的日常工作，理解 Excel 通信矩阵的真实痛点</div></div>
+<div class="tl-item"><div class="tl-time">2022.08—2023.01</div><div class="tl-text"><span class="accent">VDE Cloud 云端化</span>：协同编辑 · 变更申请与审批 · 版本追溯 · 平台→车型→网段三级数据模型</div></div>
+<div class="tl-item"><div class="tl-time">2022.12—2023.05</div><div class="tl-text"><span class="accent">诊断设计系统 0→1</span>：诊断服务 · DTC/DID · 安全策略 · 账号权限 · 审批流 · 操作审计</div></div>
+<div class="tl-item"><div class="tl-time">2023.06</div><div class="tl-text">两个工具<span class="accent">交付两家头部主机厂</span>，SaaS + 平台化管理方法论初步验证</div></div>
+</div>
+</div>
+</div>
+<div>
+<div class="card-accent fu">
+<strong>三个发现定义了后续所有产品方向：</strong><br/>
+① 多人并行编辑通信矩阵时的 <span class="accent">数据冲突和版本错乱</span> → 需要协同审批机制<br/>
+② 平台化战略要求车型间 <span class="accent">数据复用</span>，桌面工具完全做不到 → 需要三级数据模型<br/>
+③ <strong>事后总结：</strong>做完 VDE Cloud 后确认——通信矩阵的层级结构（网段→节点→报文→信号）是工程数据中最适合做结构化建模的类型之一，这后来成为后续 AI 能力落地的第一块结构化数据基础
+</div>
+</div>
+</div>
+<div class="card-accent v mt12 fu">
+<strong>两个工具验证了一件事：</strong>云原生 SaaS + 平台化管理在工程严肃性最高的领域也能成立。下一个问题——如果六个设计环节都需要这种能力，应该先做什么？
+    </div>
+</div>
+<div class="scroll-hint">3 / 10</div>
+</div>
+<!-- ═══════════════ 4. PLATFORM ═══════════════ -->
+<div class="slide" data-module="self" data-slide="3">
+<div class="slide-inner">
+<div class="story-page">
+<div class="story-head">
+<div>
+<div class="story-kicker">Customer Breakthrough · 国科础石 Phase 1</div>
+<h2 class="story-title">从客户项目打开局面：<span class="sub">第一次完整跑通产品闭环</span></h2>
+<p class="story-lead">在与客户沟通、诊断 OEM 工具链问题的过程中，我识别出 SOME/IP 服务设计在多团队协作、接口一致性、可观测性与变更管理上的痛点，并推动从客户沟通、售前方案推进，到工具 0→1 落地与平台能力沉淀的完整闭环。</p>
+</div>
+<div class="story-chip"><i></i>客户项目 → 产品能力</div>
+</div>
+<div class="story-layout">
+<div class="story-main-panel ov-trigger" data-overlay="platform">
+<span class="ov-badge">查看分层</span>
+<div class="loop-flow">
+<div class="loop-card fu">
+<div class="loop-no">01</div><div class="loop-icon">◎</div>
+<h3>客户痛点识别</h3>
+<ul><li>识别 SOME/IP 服务设计在接口一致性、版本管理、可观测性和设计效率上的痛点。</li><li>结合 OEM 工具链与开发流程，明确可落地的价值切入点。</li></ul>
+</div>
+<div class="loop-card fu">
+<div class="loop-no">02</div><div class="loop-icon">☵</div>
+<h3>售前与方案推进</h3>
+<ul><li>输出解决方案和价值论证，完成技术交流与方案演示。</li><li>联合客户团队对齐需求，推动项目立项与推进。</li></ul>
+</div>
+<div class="loop-card fu">
+<div class="loop-no">03</div><div class="loop-icon">▣</div>
+<h3>SOME/IP 工具 0→1</h3>
+<ul><li>覆盖服务建模、校验、代码生成、可视化与追溯。</li><li>在客户项目中落地验证，闭环解决核心痛点。</li></ul>
+</div>
+<div class="loop-card fu">
+<div class="loop-no">04</div><div class="loop-icon">▤</div>
+<h3>平台能力沉淀</h3>
+<ul><li>沉淀流程、模板、经验和通用能力。</li><li>形成可复制的产品能力与交付体系。</li></ul>
+</div>
+</div>
+<div class="evo-strip fu">
+<div class="evo-label">能力演进路径</div>
+<div class="evo-path">
+<div class="evo-node"><strong>DDS</strong><span>通信基础认知</span></div><div class="evo-arrow">→</div>
+<div class="evo-node"><strong>SOME/IP</strong><span>协议与服务理解</span></div><div class="evo-arrow">→</div>
+<div class="evo-node"><strong>通信设计能力</strong><span>建模 / 设计 / 验证闭环</span></div><div class="evo-arrow">→</div>
+<div class="evo-node"><strong>架构设计工具</strong><span>纳入架构平台生态</span></div>
+</div>
+</div>
+</div>
+<div class="deep-panel" style="background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(243,253,249,.78));color:var(--t);border:1px solid rgba(16,185,129,.18);box-shadow:0 14px 34px rgba(15,118,110,.075), inset 0 1px 0 rgba(255,255,255,.86);">
+<h3 class="deep-title" style="color:#047857">为什么这是关键转折</h3>
+<div class="deep-list">
+<div class="deep-item"><div class="deep-icon">✓</div><div><b style="color:var(--t)">行业认知被验证</b><span style="color:var(--t2)">通过真实项目验证产品价值，获得客户认可与市场反馈。</span></div></div>
+<div class="deep-item"><div class="deep-icon">👥</div><div><b style="color:var(--t)">客户沟通能力建立</b><span style="color:var(--t2)">从需求挖掘到方案落地，建立与多角色沟通和信任的能力。</span></div></div>
+<div class="deep-item"><div class="deep-icon">◇</div><div><b style="color:var(--t)">从项目到产品抽象</b><span style="color:var(--t2)">将一次性项目经验抽象为通用能力，形成可复制的产品。</span></div></div>
+<div class="deep-item"><div class="deep-icon">★</div><div><b style="color:var(--t)">获得内部信任与负责人角色</b><span style="color:var(--t2)">用结果赢得团队与管理层信任，正式成为产品负责人。</span></div></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="scroll-hint">4 / 10</div>
+</div>
+<!-- ═══════════════ 5. 架构设计工具 SYSTEM PRODUCT ═══════════════ -->
+<div class="slide" data-module="self" data-slide="4">
+<div class="slide-inner" style="max-width:1060px">
+<div class="story-page">
+<div class="story-head">
+<div>
+<div class="story-kicker">Core Product · 架构设计工具</div>
+<h2 class="story-title">架构设计工具：<span class="sub">覆盖 V 模型关键设计链路的系统级产品</span></h2>
+<p class="story-lead">面向汽车与复杂装备研发，覆盖需求、功能、系统、通信、诊断、软件等关键设计对象，支撑多角色协同、一致性管理、变更追溯和客户交付。</p>
+</div>
+<div class="story-chip"><i></i>系统工程平台</div>
+</div>
+<div class="story-layout">
+<div class="story-main-panel ov-trigger" data-overlay="arch-modules">
+<span class="ov-badge">查看六大模块</span>
+<div class="v-wrap">
+<svg aria-label="架构设计工具覆盖 V 模型关键设计链路" viewbox="0 0 1060 580" xmlns="http://www.w3.org/2000/svg">
+<defs><filter id="vsoft"><fegaussianblur result="blur" stddeviation="2.2"></fegaussianblur><femerge><femergenode in="blur"></femergenode><femergenode in="SourceGraphic"></femergenode></femerge></filter></defs>
+<line stroke="rgba(5,150,105,0.40)" stroke-dasharray="12,6" stroke-width="3" x1="180" x2="530" y1="48" y2="430"></line>
+<line stroke="rgba(15,118,110,0.20)" stroke-dasharray="10,5" stroke-width="2" x1="530" x2="880" y1="430" y2="48"></line>
+<line stroke="rgba(5,150,105,.32)" stroke-width="2.5" x1="530" x2="530" y1="430" y2="545"></line>
+<text fill="#047857" font-size="13" font-weight="900" text-anchor="middle" x="185" y="12">设计链路</text>
+<text fill="#5e6b7a" font-size="13" font-weight="800" text-anchor="middle" x="875" y="12">验证与交付链路</text>
+<g><rect fill="rgba(5,150,105,0.10)" height="52" rx="8" stroke="rgba(5,150,105,0.30)" width="320" x="30" y="24"></rect><text fill="#047857" font-size="12" font-weight="800" x="46" y="44">需求管理</text><text fill="#047857" font-size="10.5" x="46" y="60">结构化需求 · 变更控制 · 追溯关系</text><rect fill="rgba(5,150,105,.16)" height="20" rx="5" width="72" x="268" y="34"></rect><text fill="#047857" font-size="10" font-weight="800" text-anchor="middle" x="304" y="48">覆盖 ✓</text></g>
+<g><rect fill="rgba(5,150,105,0.10)" height="52" rx="8" stroke="rgba(5,150,105,0.30)" width="320" x="30" y="100"></rect><text fill="#047857" font-size="12" font-weight="800" x="46" y="120">功能设计</text><text fill="#047857" font-size="10.5" x="46" y="136">功能分解 · 行为定义 · 功能分配</text><rect fill="rgba(5,150,105,.16)" height="20" rx="5" width="72" x="268" y="110"></rect><text fill="#047857" font-size="10" font-weight="800" text-anchor="middle" x="304" y="124">覆盖 ✓</text></g>
+<g><rect fill="rgba(5,150,105,0.10)" height="52" rx="8" stroke="rgba(5,150,105,0.30)" width="320" x="30" y="176"></rect><text fill="#047857" font-size="12" font-weight="800" x="46" y="196">系统设计</text><text fill="#047857" font-size="10.5" x="46" y="212">逻辑架构 · 物理架构 · 接口关系</text><rect fill="rgba(5,150,105,.16)" height="20" rx="5" width="72" x="268" y="186"></rect><text fill="#047857" font-size="10" font-weight="800" text-anchor="middle" x="304" y="200">覆盖 ✓</text></g>
+<g><rect fill="rgba(5,150,105,0.10)" height="52" rx="8" stroke="rgba(5,150,105,0.30)" width="320" x="30" y="252"></rect><text fill="#047857" font-size="12" font-weight="800" x="46" y="272">软件设计</text><text fill="#047857" font-size="10.5" x="46" y="288">SWC · Interface · 软件承接</text><rect fill="rgba(5,150,105,.16)" height="20" rx="5" width="72" x="268" y="262"></rect><text fill="#047857" font-size="10" font-weight="800" text-anchor="middle" x="304" y="276">覆盖 ✓</text></g>
+<g><rect fill="rgba(5,150,105,0.10)" height="52" rx="8" stroke="rgba(5,150,105,0.30)" width="320" x="30" y="328"></rect><text fill="#047857" font-size="12" font-weight="800" x="46" y="348">通信设计</text><text fill="#047857" font-size="10.5" x="46" y="364">Signal / Message / Service / Topic</text><rect fill="rgba(5,150,105,.16)" height="20" rx="5" width="72" x="268" y="338"></rect><text fill="#047857" font-size="10" font-weight="800" text-anchor="middle" x="304" y="352">覆盖 ✓</text></g>
+<g><rect fill="rgba(5,150,105,0.10)" height="52" rx="8" stroke="rgba(5,150,105,0.30)" width="320" x="30" y="404"></rect><text fill="#047857" font-size="12" font-weight="800" x="46" y="424">诊断设计</text><text fill="#047857" font-size="10.5" x="46" y="440">DID / DTC · 诊断策略 · 故障管理</text><rect fill="rgba(5,150,105,.16)" height="20" rx="5" width="72" x="268" y="414"></rect><text fill="#047857" font-size="10" font-weight="800" text-anchor="middle" x="304" y="428">覆盖 ✓</text></g>
+<g><rect fill="rgba(5,150,105,0.10)" height="52" rx="8" stroke="rgba(5,150,105,0.30)" width="310" x="720" y="24"></rect><text fill="#047857" font-size="12" font-weight="800" x="736" y="44">仿真验证</text><text fill="#047857" font-size="10.5" x="736" y="60">服务仿真工具 / 场景验证 / 结果分析</text><rect fill="rgba(5,150,105,.16)" height="20" rx="5" width="72" x="948" y="34"></rect><text fill="#047857" font-size="10" font-weight="800" text-anchor="middle" x="984" y="48">覆盖 ✓</text></g>
+<g><rect fill="rgba(0,0,0,0.02)" height="52" rx="8" stroke="rgba(0,0,0,0.06)" width="310" x="720" y="100"></rect><text fill="#5e6b7a" font-size="12" font-weight="800" x="736" y="120">集成测试</text><text fill="#5e6b7a" font-size="10.5" x="736" y="136">接口一致性 · 集成回归</text></g>
+<g><rect fill="rgba(0,0,0,0.02)" height="52" rx="8" stroke="rgba(0,0,0,0.06)" width="310" x="720" y="176"></rect><text fill="#5e6b7a" font-size="12" font-weight="800" x="736" y="196">系统测试</text><text fill="#5e6b7a" font-size="10.5" x="736" y="212">系统级验证 · 缺陷闭环</text></g>
+<g><rect fill="rgba(0,0,0,0.02)" height="52" rx="8" stroke="rgba(0,0,0,0.06)" width="310" x="720" y="252"></rect><text fill="#5e6b7a" font-size="12" font-weight="800" x="736" y="272">验收测试</text><text fill="#5e6b7a" font-size="10.5" x="736" y="288">客户验收 · 交付材料</text></g>
+<rect fill="rgba(5,150,105,0.10)" height="50" rx="10" stroke="rgba(5,150,105,0.30)" width="400" x="330" y="508"></rect>
+<text fill="#047857" font-size="13" font-weight="900" text-anchor="middle" x="530" y="530">架构设计工具 · 系统工程与架构协同平台</text>
+<text fill="#5e6b7a" font-size="10.5" text-anchor="middle" x="530" y="546">需求 / 功能 / 系统 / 通信 / 诊断 / 软件 · 多角色协同 · 变更追溯</text>
+</svg>
+</div>
+</div>
+<div class="deep-panel"><h3 class="deep-title">这段经历沉淀了什么</h3><div class="deep-list"><div class="deep-item"><div class="deep-icon">◇</div><div><b>复杂对象建模</b><span>把需求、功能、系统、通信、诊断、软件等工程对象结构化、可追溯。</span></div></div><div class="deep-item"><div class="deep-icon">👥</div><div><b>多角色协同理解</b><span>理解架构师、通信工程师、诊断工程师、软件工程师之间的协作关系。</span></div></div><div class="deep-item"><div class="deep-icon">▣</div><div><b>项目需求产品化</b><span>把客户痛点和工程实践抽象为产品能力。</span></div></div><div class="deep-item"><div class="deep-icon">↗</div><div><b>系统级产品规划</b><span>从单点工具走向覆盖研发链路的系统级平台。</span></div></div></div></div>
+</div>
+<div class="card-accent mt12 fu"><strong>关键收束：</strong>架构设计工具是我从“做工具”进入“建设系统级产品”的代表项目，也为后续工具底座、知识库和工程助手能力提供了工程对象基础。</div>
+</div>
+</div>
+<div class="scroll-hint">5 / 10</div>
+</div>
+<!-- ═══════════════ 6. TOOL FOUNDATION ═══════════════ -->
+<div class="slide" data-module="self" data-slide="5">
+<div class="slide-inner">
+<div class="story-page">
+<div class="story-head">
+<div>
+<div class="story-kicker">Product System · 全生命周期协同平台</div>
+<h2 class="story-title">全生命周期协同平台：<span class="sub">从专业工具到复杂研发组织的产品体系</span></h2>
+<p class="story-lead">围绕项目协作、架构设计、服务仿真、服务编排、知识库、DevOps 与观测运维，形成覆盖复杂研发全流程的产品矩阵和平台底座。</p>
+</div>
+<div class="story-chip"><i></i>复杂研发协同平台</div>
+</div>
+<div class="story-layout">
+<div class="story-main-panel ov-trigger" data-overlay="product-matrix"><span class="ov-badge">查看底座说明</span>
+<div class="lifecycle-band-wrap">
+<div class="lifecycle-track">
+<div class="lifecycle-step">需求规划</div>
+<div class="lifecycle-step">架构设计</div>
+<div class="lifecycle-step">仿真验证</div>
+<div class="lifecycle-step">流程编排</div>
+<div class="lifecycle-step">知识复用</div>
+<div class="lifecycle-step">研发交付</div>
+<div class="lifecycle-step">运行反馈</div>
+</div>
+<div class="lifecycle-products">
+<div class="lifecycle-card"><div class="life-ico">▣</div><b>项目管理</b><span>计划、进度、风险与资源，承接项目协同与过程管理。</span></div>
+<div class="lifecycle-card"><div class="life-ico">⬡</div><b>架构设计工具</b><span>需求、功能、系统、通信、诊断、软件等设计对象的一体化管理。</span></div>
+<div class="lifecycle-card"><div class="life-ico">∿</div><b>服务仿真工具</b><span>服务仿真、场景验证、结果分析，连接设计与验证闭环。</span></div>
+<div class="lifecycle-card"><div class="life-ico">⌬</div><b>服务编排</b><span>流程编排、任务编排与自动化执行，连接跨工具协同。</span></div>
+<div class="lifecycle-card"><div class="life-ico">▤</div><b>知识库</b><span>经验沉淀、检索与复用，让项目知识变成组织能力。</span></div>
+<div class="lifecycle-card"><div class="life-ico">∞</div><b>DevOps 集成</b><span>流水线、CI/CD 与制品管理，支撑研发交付效率。</span></div>
+<div class="lifecycle-card"><div class="life-ico">▧</div><b>运维监控</b><span>运行监控、告警与性能分析，形成交付后的运行反馈。</span></div>
+</div>
+<div class="lifecycle-cloud">云平台统一底座</div>
+<div class="lifecycle-note">
+<div class="mini"><b>从单点到矩阵</b>单点工具解决局部效率，产品矩阵连接完整流程。</div>
+<div class="mini"><b>从交付到复用</b>知识库与平台能力把项目经验沉淀为可复用能力。</div>
+<div class="mini"><b>从工具到底座</b>统一云平台、权限、项目空间和基础服务支撑持续演进。</div>
+</div>
+</div></div>
+<div class="deep-panel"><h3 class="deep-title">平台化视角</h3><div class="deep-list"><div class="deep-item"><div class="deep-icon">◎</div><div><b>单点工具提升局部效率</b><span>每个产品解决一个关键环节，先把专业场景做深做透。</span></div></div><div class="deep-item"><div class="deep-icon">⇄</div><div><b>产品矩阵覆盖完整流程</b><span>多产品协同承接从设计、仿真、协作到交付运维的连续工作。</span></div></div><div class="deep-item"><div class="deep-icon">▤</div><div><b>知识沉淀支撑复用</b><span>将项目经验、规范模板和最佳实践结构化沉淀，让复用成为默认能力。</span></div></div><div class="deep-item"><div class="deep-icon">↺</div><div><b>平台能力支撑持续演进</b><span>统一底座让产品矩阵可以持续扩展，并支撑智能化能力进入工程流程。</span></div></div></div></div>
+</div>
+</div>
+</div>
+<div class="scroll-hint">6 / 10</div>
+</div>
+<div class="slide" data-module="self" data-slide="6">
+<div class="slide-inner">
+<div class="story-page">
+<div class="story-head">
+<div>
+<div class="story-kicker">Landed Capability · AI Agent 工作流</div>
+<h2 class="story-title">已落地：受控式 AI Agent 工作流<span class="sub">知识库 + RAG + 原生工具调用 + 人工确认</span></h2>
+<p class="story-lead">面向工程设计、文档生产、模型生成与一致性校验等高频场景，将 AI 从问答辅助推进到真实业务系统中的可控产物生成。</p>
+</div>
+<div class="story-chip"><i></i>已落地能力</div>
+</div>
+<div class="story-layout">
+<div>
+<div class="agent-flow-panel ov-trigger" data-overlay="agent-workflow">
+<span class="ov-badge">查看工作流</span>
+<div class="knowledge-base-strip">
+<b>知识资产底座</b>
+<div class="knowledge-tags">
+<span>项目文档</span><span>架构模型</span><span>设计规范</span><span>历史方案</span><span>工具数据</span>
+</div>
+</div>
+<div class="agent-pipeline">
+<div class="agent-step"><div class="agent-no">01</div><b>知识检索</b><span>基于 RAG 召回规范、项目文档与历史方案</span></div>
+<div class="agent-step"><div class="agent-no">02</div><b>任务规划</b><span>将用户目标拆解为可执行任务链</span></div>
+<div class="agent-step"><div class="agent-no">03</div><b>原生工具调用</b><span>调用平台内自研工具与工程能力</span></div>
+<div class="agent-step"><div class="agent-no">04</div><b>多步骤执行</b><span>按链路生成、校验、修正和汇总</span></div>
+<div class="agent-step"><div class="agent-no">05</div><b>产物预览</b><span>输出文档、模型图或校验结论草稿</span></div>
+<div class="agent-step"><div class="agent-no">06</div><b>人工确认</b><span>关键产物由工程师确认后进入下一步</span></div>
+<div class="agent-step"><div class="agent-no">07</div><b>结果归档</b><span>确认结果回流知识资产，支持复用</span></div>
+</div>
+</div>
+<div class="viz-panel agent-scenarios">
+<div class="viz-panel-title">已落地场景</div>
+<div class="scenario-grid">
+<div class="scenario-card"><b>FDS / SSTS 文档生成</b><span>基于知识库、规范和项目上下文生成设计文档初稿。</span></div>
+<div class="scenario-card"><b>UML / SysML 模型生成</b><span>结合架构对象和任务目标，辅助生成模型图与结构化产物。</span></div>
+<div class="scenario-card"><b>跨文档 / 模型一致性校验</b><span>校验文档、模型和设计对象之间的关系，降低协同成本。</span></div>
+<div class="scenario-card"><b>历史方案推荐</b><span>基于项目经验和设计规范，提供方案参考与设计建议。</span></div>
+</div>
+</div>
+<div class="agent-result-strip">
+<div class="result-pill"><b>100+ 人</b>服务研发团队，覆盖主机厂从需求科到软件科的流程节点</div>
+<div class="result-pill"><b>20%+</b>需求设计、架构建模、软件开发等环节效率提升</div>
+<div class="result-pill"><b>50%+</b>文档生成与通信设计环节效率提升</div>
+</div>
+</div>
+<div class="deep-panel">
+<h3 class="deep-title">为什么是受控式</h3>
+<div class="deep-list">
+<div class="deep-item"><div class="deep-icon">⌕</div><div><b>明确上下文边界</b><span>在项目文档、架构模型、设计规范和历史方案范围内生成、推荐与校验。</span></div></div>
+<div class="deep-item"><div class="deep-icon">⌬</div><div><b>原生工具调用</b><span>仅调用平台内自研工具，不直接调用第三方外部工具。</span></div></div>
+<div class="deep-item"><div class="deep-icon">⇄</div><div><b>多步骤执行</b><span>将复杂任务拆为检索、规划、调用、生成、预览、确认、归档链路。</span></div></div>
+<div class="deep-item"><div class="deep-icon">✓</div><div><b>产物预览确认</b><span>文档、模型和一致性校验结果输出前增加用户确认。</span></div></div>
+<div class="deep-item"><div class="deep-icon">▤</div><div><b>结果归档复用</b><span>将产物和确认结果沉淀回知识资产体系，支持后续复用。</span></div></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="scroll-hint">7 / 10</div>
+</div>
+<!-- ═══════════════ 8. ROLE EXPERT ASSISTANTS ═══════════════ -->
+<div class="slide" data-module="self" data-slide="7">
+<div class="slide-inner">
+<div class="story-page">
+<div class="story-head">
+<div>
+<div class="story-kicker">In Progress · 专家助手体系</div>
+<h2 class="story-title">在建设：面向 EE 工程角色的专家助手体系</h2>
+<p class="story-lead">从单点工程助手进一步走向面向角色、对象和任务的专家助手体系，让助手从“能回答 / 能生成”走向“能辅助一个工程师完成一类工作”。</p>
+</div>
+<div class="story-chip"><i></i>正在建设</div>
+</div>
+<div class="story-layout">
+<div>
+<div class="viz-panel ov-trigger" data-overlay="role-assistant">
+<span class="ov-badge">查看角色链路</span>
+<div class="role-path">
+<div class="role-step"><div class="role-icon">👥</div><strong>角色洞察</strong><span>理解工程师工作场景与痛点</span></div>
+<div class="role-step"><div class="role-icon">▤</div><strong>知识沉淀</strong><span>结构化工程知识与经验</span></div>
+<div class="role-step"><div class="role-icon">◈</div><strong>能力封装</strong><span>工具能力 + 知识能力服务化封装</span></div>
+<div class="role-step"><div class="role-icon">✣</div><strong>助手集成</strong><span>融入工程流程，自然触达</span></div>
+<div class="role-step"><div class="role-icon">▴</div><strong>持续进化</strong><span>反馈驱动迭代，越用越懂工程师</span></div>
+</div>
+</div>
+<div class="viz-panel mt12"><div class="viz-panel-title">典型工程角色地图</div>
+<div class="role-map">
+<div class="role-card">
+<div class="role-top">
+<div class="role-badge">架</div>
+<h4>架构工程师</h4>
+</div>
+<dl>
+<dt>核心对象</dt><dd>需求 / 功能 / 系统 / 接口</dd>
+<dt>主要任务</dt><dd>需求承接、功能分解、系统设计、接口协同、变更影响分析。</dd>
+<dt>助手价值</dt><dd>更快完成架构理解、影响分析和评审准备。</dd>
+</dl>
+</div>
+<div class="role-card">
+<div class="role-top">
+<div class="role-badge">通</div>
+<h4>通信工程师</h4>
+</div>
+<dl>
+<dt>核心对象</dt><dd>Service / Signal / Message / Topic</dd>
+<dt>主要任务</dt><dd>通信影响确认、矩阵维护、版本对比、校验分析、供应商下发。</dd>
+<dt>助手价值</dt><dd>减少重复劳动，提升通信设计效率与一致性。</dd>
+</dl>
+</div>
+<div class="role-card">
+<div class="role-top">
+<div class="role-badge">系</div>
+<h4>系统工程师</h4>
+</div>
+<dl>
+<dt>核心对象</dt><dd>需求 / 架构 / 接口</dd>
+<dt>主要任务</dt><dd>需求分析、系统建模、方案定义、跨角色协同。</dd>
+<dt>助手价值</dt><dd>更快理解复杂系统，辅助方案设计与对象追踪。</dd>
+</dl>
+</div>
+<div class="role-card">
+<div class="role-top">
+<div class="role-badge">诊</div>
+<h4>诊断工程师</h4>
+</div>
+<dl>
+<dt>核心对象</dt><dd>DID / DTC / 诊断服务</dd>
+<dt>主要任务</dt><dd>诊断策略设计、故障分析、诊断覆盖检查。</dd>
+<dt>助手价值</dt><dd>提升诊断设计效率，加快问题闭环。</dd>
+</dl>
+</div>
+<div class="role-card">
+<div class="role-top">
+<div class="role-badge">软</div>
+<h4>软件工程师</h4>
+</div>
+<dl>
+<dt>核心对象</dt><dd>SWC / 接口版本</dd>
+<dt>主要任务</dt><dd>软件承接、接口版本管理、提测准备、变更同步。</dd>
+<dt>助手价值</dt><dd>提升承接效率，减少接口理解与版本沟通成本。</dd>
+</dl>
+</div>
+</div>
+<div class="role-map-foot"><b>当前建设方式：</b>优先从架构工程师、通信工程师等高频核心角色切入，把角色知识、工具能力和流程任务封装成可持续进化的专家助手。</div></div>
+</div>
+<div class="deep-panel"><h3 class="deep-title">角色型助手的价值</h3><div class="deep-list"><div class="deep-item"><div class="deep-icon">◎</div><div><b>更懂工程场景</b><span>基于角色场景与工程知识，而不是通用问答。</span></div></div><div class="deep-item"><div class="deep-icon">✓</div><div><b>更可信赖</b><span>来源可追溯、规则可解释、结果可验证。</span></div></div><div class="deep-item"><div class="deep-icon">↗</div><div><b>可持续进化</b><span>在真实工作流中学习，越用越好用。</span></div></div><div class="deep-item"><div class="deep-icon">⌁</div><div><b>融入工程工作流</b><span>在工具链、协同平台中自然触达。</span></div></div></div></div>
+</div>
+</div>
+</div>
+<div class="scroll-hint">8 / 10</div>
+</div>
+<!-- ═══════════════ 9. RESULT + JUDGEMENT ═══════════════ -->
+<div class="slide" data-module="self" data-slide="8">
+<div class="slide-inner">
+<div class="story-page">
+<div class="story-head">
+<div>
+<div class="story-kicker">Vehicle-level Solution · 整车级 E/E</div>
+<h2 class="story-title">整车级 E/E 解决方案：<span class="sub">从车型平台到变更闭环</span></h2>
+<p class="story-lead">围绕产品线、车型变体和架构基线，统一管理架构方案、工程对象、复用派生、追溯关系和变更影响，让整车平台在多车型、多配置、多版本下持续演进。</p>
+</div>
+<div class="story-chip"><i></i> 整车工程治理</div>
+</div>
+<div class="story-layout">
+<div class="story-main-panel ov-trigger" data-overlay="ee-digital-thread">
+<span class="ov-badge">查看能力边界</span>
+<div class="vehicle-solution">
+<div class="vehicle-center">
+<strong>整车 E/E 架构基线</strong>
+<span>产品线 · 车型变体 · 架构版本 · 工程对象</span>
+</div>
+<div class="vehicle-pillar-grid">
+<div class="vehicle-pillar p1">
+<div class="pillar-no">01</div>
+<h3>产品线 / 车型变体管理</h3>
+<p>从平台模型出发，管理车型系列、具体车型、配置差异与功能选装。</p>
+<div class="pillar-tags"><span>产品线</span><span>车型平台</span><span>150% 模型</span><span>变体派生</span></div>
+</div>
+<div class="vehicle-pillar p2">
+<div class="pillar-no">02</div>
+<h3>整车架构方案评估</h3>
+<p>对不同 E/E 架构方案进行成本、重量、空间、功耗、网络负载、时序与安全约束评估。</p>
+<div class="pillar-tags"><span>方案对比</span><span>成本 / 重量</span><span>网络负载</span><span>安全约束</span></div>
+</div>
+<div class="vehicle-pillar p3">
+<div class="pillar-no">03</div>
+<h3>全流程追溯</h3>
+<p>建立需求、功能、逻辑架构、软硬件、通信、测试、工单与工作流之间的双向追溯。</p>
+<div class="pillar-tags"><span>需求</span><span>架构</span><span>软件 / 硬件</span><span>测试 / 工单</span></div>
+</div>
+<div class="vehicle-pillar p4">
+<div class="pillar-no">04</div>
+<h3>复用与派生</h3>
+<p>支持系统、模块、工件和架构片段在产品线中复用，并派生到不同车型与配置。</p>
+<div class="pillar-tags"><span>平台复用</span><span>模块复用</span><span>车型派生</span><span>分支合并</span></div>
+</div>
+<div class="vehicle-pillar p5">
+<div class="pillar-no">05</div>
+<h3>变更影响分析</h3>
+<p>当需求、功能、架构或接口变化时，沿产品线、车型变体、工程对象和追溯关系识别影响范围。</p>
+<div class="pillar-tags"><span>变更请求</span><span>影响范围</span><span>角色任务</span><span>评审关闭</span></div>
+</div>
+</div>
+</div>
+</div>
+<div class="deep-panel">
+<h3 class="deep-title">整车级方案的关键价值</h3>
+<div class="deep-list">
+<div class="deep-item"><div class="deep-icon">▦</div><div><b>从单车到产品线</b><span>不只管理单一车型，而是面向平台、车型系列、配置变体和版本基线管理整车 E/E 架构。</span></div></div>
+<div class="deep-item"><div class="deep-icon">⌁</div><div><b>从对象到关系</b><span>不只管理需求、通信、软件等单个对象，而是管理它们之间的追溯、映射、依赖和影响关系。</span></div></div>
+<div class="deep-item"><div class="deep-icon">◇</div><div><b>从方案到评估</b><span>不只画出架构方案，还要支持成本、重量、空间、功耗、网络负载、时序、安全等整车级权衡。</span></div></div>
+<div class="deep-item"><div class="deep-icon">↺</div><div><b>从变更到闭环</b><span>不只识别变化，而是把影响分析、任务拆解、修改验证、评审冻结和发布管理串成闭环。</span></div></div>
+</div>
+</div>
+</div>
+<div class="card-accent mt12 fu">整车级 E/E 方案的核心，是围绕产品线、车型变体和架构基线，统一管理方案评估、复用派生、全流程追溯和变更影响，让一次工程变化能够在整车工程模型中被定位、评估、分派、验证和关闭。</div>
+</div>
+</div>
+<div class="scroll-hint">9 / 10</div>
+</div><div class="slide" data-module="self" data-slide="9">
+<div class="slide-inner">
+<div class="eb">Result &amp; Judgement · 建设结果与判断</div>
+<h2 class="h2">建设结果与我的判断：把复杂工程能力做成可交付产品系统</h2>
+<p class="lead mt8">
+  这几年的工作最终沉淀出的，不是单一行业标签，也不是单点 AI 功能经验，而是把复杂业务、工程对象、专业工具、知识库、角色工作流和评审闭环组织成可执行产品系统的能力。
+</p>
+<div class="g3 mt12 final-kpis" style="grid-template-columns:repeat(5,1fr);gap:10px">
+<div class="card fu" style="text-align:center">
+<strong style="display:block;font-size:24px;color:#059669">10+</strong>
+<span style="font-size:11px;color:var(--t2)">客户 / 项目</span>
+</div>
+<div class="card fu" style="text-align:center">
+<strong style="display:block;font-size:24px;color:#059669">100+</strong>
+<span style="font-size:11px;color:var(--t2)">研发用户</span>
+</div>
+<div class="card fu" style="text-align:center">
+<strong style="display:block;font-size:24px;color:#059669">10+</strong>
+<span style="font-size:11px;color:var(--t2)">覆盖 Agent 工作流</span>
+</div>
+<div class="card fu" style="text-align:center">
+<strong style="display:block;font-size:24px;color:#059669">10 人</strong>
+<span style="font-size:11px;color:var(--t2)">产品团队管理</span>
+</div>
+<div class="card fu" style="text-align:center">
+<strong style="display:block;font-size:24px;color:#059669">7 类</strong>
+<span style="font-size:11px;color:var(--t2)">核心产品与平台能力</span>
+</div>
+</div>
+<div class="card fu final-ability-panel mt14" style="padding:22px 24px;border-left:4px solid #059669;box-shadow:0 14px 34px rgba(15,118,110,.075)">
+<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:14px">
+<div>
+<h3 style="font-size:20px;font-weight:900;color:var(--t);line-height:1.25">能力沉淀：AI 深化信息化建设的产品方法</h3>
+<p style="font-size:12px;color:var(--t2);line-height:1.7;margin-top:6px;max-width:780px">
+        从工具链、平台底座、知识库到受控式 Agent 工作流，核心不是追逐单点自动化，而是让 AI 深入客户已有业务系统，补齐知识沉淀、流程协同、产物生成和评审闭环。
+      </p>
+</div>
+<div style="padding:8px 12px;border-radius:999px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.16);font-size:11px;font-weight:900;color:#047857;white-space:nowrap">
+      AI × 信息化建设
+    </div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">
+<div class="mini-ability">
+<strong>复杂业务理解</strong>
+<span>快速进入高知识密度行业，识别真实业务对象、角色流程和价值断点。</span>
+</div>
+<div class="mini-ability">
+<strong>产品体系抽象</strong>
+<span>从单点工具走向产品矩阵、平台底座和可复用能力体系。</span>
+</div>
+<div class="mini-ability">
+<strong>工程对象建模</strong>
+<span>把需求、功能、系统、通信、诊断、软件和评审转化为可追溯对象。</span>
+</div>
+<div class="mini-ability">
+<strong>客户与商业闭环</strong>
+<span>参与售前、方案、标书、定价、交付和客户反馈沉淀。</span>
+</div>
+<div class="mini-ability">
+<strong>AI 产品化判断</strong>
+<span>把 AI 放进真实流程，以可控、可审计、可交付为核心。</span>
+</div>
+</div>
+</div>
+<div class="quote mt16 fu" style="font-size:16px;line-height:1.75;font-weight:900;color:var(--t)">
+  最终判断：AI 的价值不是替代信息化建设，而是深化信息化建设——把知识、流程、工具、数据和评审闭环真正沉淀进客户业务系统，形成可交付、可验证、可复制、可商业化的产品系统。
+</div>
+</div>
+<div class="scroll-hint">10 / 10</div>
+</div>
+</div><!-- /stage -->
+<button aria-label="上一页" class="nav-arrow nav-prev" id="prev"><svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-width="2.5" viewbox="0 0 24 24" width="18"><polyline points="15,6 9,12 15,18"></polyline></svg></button>
+<button aria-label="下一页" class="nav-arrow nav-next" id="next"><svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-width="2.5" viewbox="0 0 24 24" width="18"><polyline points="9,6 15,12 9,18"></polyline></svg></button>
+<div class="dots" id="dots"></div>
+<script>
+(function(){
+  const slides=Array.from(document.querySelectorAll('.slide')),prevBtn=document.getElementById('prev'),nextBtn=document.getElementById('next'),dotsEl=document.getElementById('dots'),prog=document.getElementById('prog');
+  let activeModule='self', moduleIndex=0, locked=false;
+
+  slides.forEach(function(s){ if(!s.dataset.module) s.dataset.module='self'; });
+
+  const pageNum=document.createElement('span');
+  pageNum.className='page-num';
+  dotsEl.appendChild(pageNum);
+
+  function moduleSlides(){ return slides.filter(s=>s.dataset.module===activeModule); }
+  function globalIndexFor(moduleName, idx){
+    const arr=slides.filter(s=>s.dataset.module===moduleName);
+    if(!arr.length) return -1;
+    const target=arr[Math.max(0,Math.min(idx,arr.length-1))];
+    return slides.indexOf(target);
+  }
+  function rebuildDots(){
+    dotsEl.querySelectorAll('.dot').forEach(d=>d.remove());
+    const arr=moduleSlides();
+    arr.forEach(function(_,i){
+      const dot=document.createElement('button');
+      dot.className='dot'+(i===moduleIndex?' active':'');
+      dot.setAttribute('aria-label','第'+(i+1)+'页');
+      dot.addEventListener('click',()=>goToModuleIndex(i));
+      dotsEl.insertBefore(dot,pageNum);
+    });
+  }
+  function updateUI(){
+    const arr=moduleSlides();
+    prevBtn.disabled=moduleIndex===0;
+    nextBtn.disabled=moduleIndex===arr.length-1;
+    prog.style.width=arr.length?((moduleIndex+1)/arr.length*100)+'%':'0%';
+    dotsEl.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===moduleIndex));
+    const name='\u81ea\u6211\u4ecb\u7ecd';
+    pageNum.textContent=name+' '+(moduleIndex+1)+' / '+arr.length;
+  }
+  function render(targetGlobal){
+    slides.forEach(function(s,i){
+      s.classList.remove('left','right','active');
+      if(s.dataset.module!==activeModule){ s.classList.add('right'); return; }
+      if(i<targetGlobal) s.classList.add('left');
+      else if(i===targetGlobal) s.classList.add('active');
+      else s.classList.add('right');
+    });
+    const active=slides[targetGlobal];
+    if(active) active.scrollTop=0;
+    updateUI();
+
+    const globalCurrent=targetGlobal;
+    if(activeModule==='self' && globalCurrent===999){
+      setTimeout(()=>{document.querySelectorAll('.bar-fill').forEach(b=>{var w=b.getAttribute('data-width')||'0';b.style.width=w+'%';});},350);
+    }
+    if(activeModule==='self' && globalCurrent===8){
+      setTimeout(()=>{
+        document.querySelectorAll('.counter').forEach(el=>{
+          var target=parseFloat(el.getAttribute('data-to')||el.textContent);
+          var dur=parseInt(el.getAttribute('data-dur')||'1600',10);
+          var start=performance.now();
+          function tick(now){
+            var t=Math.min(1,(now-start)/dur);
+            var c1=1.70158;var c3=c1+1;
+            var v=target*(1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2));
+            el.textContent=(target%1===0)?Math.round(v).toString():v.toFixed(1);
+            if(t<1)requestAnimationFrame(tick);
+            else{el.textContent=el.getAttribute('data-to')+'+';el.style.transform='scale(1.18)';el.style.transition='transform .12s ease';requestAnimationFrame(()=>{el.style.transform='scale(1)';});}
+          }
+          el.style.transform='scale(1)';el.style.transition='transform .3s ease';requestAnimationFrame(tick);
+        });
+      },400);
+    }
+  }
+  function goToModuleIndex(idx){
+    const arr=moduleSlides();
+    if(idx===moduleIndex||idx<0||idx>=arr.length||locked)return;
+    var ov=document.getElementById('overlay');if(ov&&ov.classList.contains('open'))return;
+    locked=true;moduleIndex=idx;render(slides.indexOf(arr[idx]));setTimeout(()=>{locked=false},620);
+  }
+  function switchModule(name){
+    if(!['self','job','material'].includes(name)) return;
+    activeModule=name;moduleIndex=0;rebuildDots();render(globalIndexFor(name,0));
+    document.querySelectorAll('.switch-tabs button').forEach(function(b){b.classList.toggle('active',b.dataset.module===name);});
+    var ov=document.getElementById('overlay');if(ov){ov.classList.remove('open');document.body.style.overflow='';}
+  }
+  window.interviewSwitchModule=switchModule;
+  window.interviewGoToModuleIndex=goToModuleIndex;
+
+  prevBtn.addEventListener('click',()=>goToModuleIndex(moduleIndex-1));
+  nextBtn.addEventListener('click',()=>goToModuleIndex(moduleIndex+1));
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key==='ArrowDown'){e.preventDefault();goToModuleIndex(moduleIndex+1);}
+    if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();goToModuleIndex(moduleIndex-1);}
+  });
+  let sx=0,sy=0;
+  document.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY},{passive:true});
+  document.addEventListener('touchend',e=>{
+    const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;
+    if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>50)goToModuleIndex(dx<0?moduleIndex+1:moduleIndex-1);
+  });
+  rebuildDots();
+  render(globalIndexFor('self',0));
+
+  // ── Fu stagger init ──
+  document.querySelectorAll('.slide-inner').forEach(function(inner){
+    var items=inner.querySelectorAll(':scope > .fu, :scope > * > .fu, :scope > * > * > .fu');
+    var fi=0;
+    items.forEach(function(el,i){el.style.transitionDelay=(fi*0.04)+'s';fi++;});
+  });
+
+  // ── Overlay system (deferred until DOM ready) ──
+  document.addEventListener('DOMContentLoaded', function() {
+    var overlay = document.getElementById('overlay');
+    var ovContent = document.getElementById('ovContent');
+    var ovClose = document.getElementById('ovClose');
+
+    function openOverlay(id) {
+      var tpl = document.getElementById('ov-' + id);
+      if (!tpl) return;
+      ovContent.innerHTML = tpl.innerHTML;
+      overlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeOverlay() {
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    ovClose.addEventListener('click', closeOverlay);
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) closeOverlay();
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && overlay.classList.contains('open')) {
+        closeOverlay();
+      }
+    });
+
+    document.addEventListener('click', function(e) {
+      var trigger = e.target.closest('.ov-trigger');
+      if (trigger) {
+        var overlayId = trigger.getAttribute('data-overlay');
+        if (overlayId) openOverlay(overlayId);
+      }
+    });
+  });
+})();
+</script>
+<!-- ═══════════════ OVERLAY SYSTEM ═══════════════ -->
+<div class="overlay" id="overlay">
+<div class="ov-panel" id="ovPanel">
+<button aria-label="关闭" class="ov-close" id="ovClose">×</button>
+<div class="ov-content" id="ovContent"></div>
+</div>
+</div>
+<template id="ov-agent-workflow">
+<div class="ov-content">
+<h2 style="font-size:24px;font-weight:900;margin-bottom:10px;color:#0f766e">受控式 AI Agent 工作流</h2>
+<p style="font-size:13px;color:#495468;line-height:1.75;margin-bottom:16px">面向工程设计、文档生产、模型生成和一致性校验等高频业务场景，将“知识库 + RAG + 原生工具调用 + 人工确认”组织为可控执行链路。</p>
+<div class="module-grid">
+<div class="module-card"><h4>知识检索</h4><p>基于项目文档、架构模型、设计规范和历史方案召回上下文。</p></div>
+<div class="module-card"><h4>任务规划</h4><p>将 FDS/SSTS 文档生成、UML/SysML 模型生成、一致性校验拆解为步骤。</p></div>
+<div class="module-card"><h4>原生工具调用</h4><p>仅调用平台内自研工具，避免开放式工具调用带来的不可控风险。</p></div>
+<div class="module-card"><h4>产物预览</h4><p>输出文档、模型图、校验结论等草稿，供工程师确认。</p></div>
+<div class="module-card"><h4>人工确认</h4><p>关键产物输出前由用户确认，保障业务边界和工程可信度。</p></div>
+<div class="module-card"><h4>结果归档</h4><p>将确认结果回流知识库，形成可复用知识资产。</p></div>
+</div>
+</div>
+</template>
+<template id="ov-rag-detail">
+<h3 style="font-size:22px;font-weight:900;color:var(--t);margin-bottom:6px">RAG 知识库 · 全链路数据流</h3>
+<p style="color:var(--t2);font-size:12.5px;margin-bottom:16px">全部私有化部署（本地化部署的大模型），满足军工、航天客户合规要求。知识库是所有 Agent 共享的唯一数据底座。</p>
+<svg style="width:100%;max-height:290px" viewbox="0 0 900 300" xmlns="http://www.w3.org/2000/svg">
+<rect fill="rgba(0,0,0,.02)" height="268" rx="12" stroke="rgba(0,0,0,.08)" width="200" x="20" y="16"></rect>
+<text fill="#1a1d27" font-size="13" font-weight="700" text-anchor="middle" x="120" y="44">数据层</text>
+<rect fill="rgba(16,185,129,.07)" height="30" rx="6" stroke="rgba(16,185,129,.12)" width="160" x="40" y="62"></rect>
+<text fill="#047857" font-size="9.5" font-weight="600" text-anchor="middle" x="120" y="81">项目文档 (Word/PDF)</text>
+<rect fill="rgba(15,118,110,.07)" height="30" rx="6" stroke="rgba(15,118,110,.12)" width="160" x="40" y="102"></rect>
+<text fill="#0f766e" font-size="9.5" font-weight="600" text-anchor="middle" x="120" y="121">架构模型 (UML/SysML)</text>
+<rect fill="rgba(5,150,105,.07)" height="30" rx="6" stroke="rgba(5,150,105,.12)" width="160" x="40" y="142"></rect>
+<text fill="#059669" font-size="9.5" font-weight="600" text-anchor="middle" x="120" y="161">设计规范 (SSTS/FDS)</text>
+<rect fill="rgba(8,145,178,.07)" height="30" rx="6" stroke="rgba(8,145,178,.12)" width="160" x="40" y="182"></rect>
+<text fill="#0891b2" font-size="9.5" font-weight="600" text-anchor="middle" x="120" y="201">历史方案 &amp; 变更记录</text>
+<rect fill="rgba(0,0,0,.02)" height="30" rx="6" stroke="rgba(0,0,0,.06)" width="160" x="40" y="222"></rect>
+<text fill="#5e6b7a" font-size="9.5" text-anchor="middle" x="120" y="241">工程元数据 &amp; 日志</text>
+<text fill="#5e6b7a" font-size="9.5" text-anchor="middle" x="120" y="272">6 类工程数据源</text>
+<polygon fill="rgba(15,118,110,.15)" points="230,140 260,140 260,110 280,150 260,190 260,160 230,160" stroke="rgba(15,118,110,.2)"></polygon>
+<rect fill="rgba(15,118,110,.04)" height="200" rx="12" stroke="rgba(15,118,110,.15)" width="180" x="290" y="56"></rect>
+<text fill="#0f766e" font-size="13" font-weight="700" text-anchor="middle" x="380" y="84">处理层</text>
+<rect fill="rgba(15,118,110,.05)" height="28" rx="6" stroke="rgba(15,118,110,.1)" width="140" x="310" y="102"></rect>
+<text fill="#0f766e" font-size="9.5" text-anchor="middle" x="380" y="120">文档解析 &amp; 语义切分</text>
+<rect fill="rgba(15,118,110,.05)" height="28" rx="6" stroke="rgba(15,118,110,.1)" width="140" x="310" y="138"></rect>
+<text fill="#0f766e" font-size="9.5" text-anchor="middle" x="380" y="156">向量嵌入</text>
+<rect fill="rgba(15,118,110,.05)" height="28" rx="6" stroke="rgba(15,118,110,.1)" width="140" x="310" y="174"></rect>
+<text fill="#0f766e" font-size="9.5" text-anchor="middle" x="380" y="192">增量更新管道</text>
+<rect fill="rgba(15,118,110,.05)" height="28" rx="6" stroke="rgba(15,118,110,.1)" width="140" x="310" y="210"></rect>
+<text fill="#0f766e" font-size="9.5" text-anchor="middle" x="380" y="228">质量校验 &amp; 去重</text>
+<polygon fill="rgba(15,118,110,.2)" points="480,140 510,140 510,110 530,150 510,190 510,160 480,160" stroke="rgba(15,118,110,.25)"></polygon>
+<rect fill="rgba(15,118,110,.08)" height="160" rx="12" stroke="rgba(15,118,110,.2)" width="160" x="540" y="76"></rect>
+<text fill="#0f766e" font-size="13" font-weight="700" text-anchor="middle" x="620" y="104">检索层</text>
+<rect fill="rgba(15,118,110,.12)" height="32" rx="6" stroke="rgba(15,118,110,.25)" width="120" x="560" y="122"></rect>
+<text fill="#0f766e" font-size="9.5" font-weight="700" text-anchor="middle" x="620" y="137">向量语义检索</text>
+<text fill="#0f766e" font-size="9.5" text-anchor="middle" x="620" y="149">召回率 &gt;85%（2000+ 文档评测）</text>
+<rect fill="rgba(15,118,110,.05)" height="28" rx="6" stroke="rgba(15,118,110,.1)" width="120" x="560" y="162"></rect>
+<text fill="#0f766e" font-size="9.5" text-anchor="middle" x="620" y="180">关键词+语义混合</text>
+<rect fill="rgba(15,118,110,.05)" height="28" rx="6" stroke="rgba(15,118,110,.1)" width="120" x="560" y="198"></rect>
+<text fill="#0f766e" font-size="9.5" text-anchor="middle" x="620" y="216">重排序 (Rerank)</text>
+<polygon fill="rgba(15,118,110,.22)" points="710,140 740,140 740,110 760,150 740,190 740,160 710,160" stroke="rgba(15,118,110,.28)"></polygon>
+<rect fill="rgba(16,185,129,.05)" height="160" rx="12" stroke="rgba(16,185,129,.12)" width="110" x="770" y="76"></rect>
+<text fill="#047857" font-size="13" font-weight="700" text-anchor="middle" x="825" y="104">应用层</text>
+<text fill="#1a1d27" font-size="10" font-weight="600" text-anchor="middle" x="825" y="128">5 个 Agent</text>
+<text fill="#5e6b7a" font-size="9.5" text-anchor="middle" x="825" y="148">知识问答 / 方案推荐</text>
+<text fill="#5e6b7a" font-size="9.5" text-anchor="middle" x="825" y="168">合规校验 / 智能诊断</text>
+<text fill="#5e6b7a" font-size="9.5" text-anchor="middle" x="825" y="188">文档生成</text>
+<text fill="#059669" font-size="9.5" font-weight="600" text-anchor="middle" x="450" y="294">全部私有化部署 · 本地化部署的大模型 · 满足军工/航天客户合规红线</text>
+</svg>
+</template>
+<template id="ov-conflict-types">
+<h3 style="font-size:22px;font-weight:900;color:var(--t);margin-bottom:6px">一致性校验 Agent · 7 大类冲突场景</h3>
+<p style="color:var(--t2);font-size:12.5px;margin-bottom:16px">覆盖 50+ 子场景。人工比对上百页规范——不是效率问题，是可行性问题。</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div style="padding:12px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface)">
+<div style="font-weight:800;font-size:12px;color:var(--t);margin-bottom:3px">1. 功能触发条件冲突</div>
+<div style="font-size:10px;color:var(--t3);line-height:1.5">同一信号触发互斥功能 · 触发逻辑互斥 · 优先级冲突 · 场景边界模糊 · 状态迁移冲突</div>
+</div>
+<div style="padding:12px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface)">
+<div style="font-weight:800;font-size:12px;color:var(--t);margin-bottom:3px">2. 功能执行时序冲突</div>
+<div style="font-size:10px;color:var(--t3);line-height:1.5">启停时序颠倒 · 并行执行死锁 · 周期任务调度冲突 · 抢占超时 · 状态机死循环</div>
+</div>
+<div style="padding:12px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface)">
+<div style="font-weight:800;font-size:12px;color:var(--t);margin-bottom:3px">3. 网络通信资源冲突</div>
+<div style="font-size:10px;color:var(--t3);line-height:1.5">CAN/LIN/Ethernet 信号 ID/周期/帧长度冲突 · 总线负载超限 · 仲裁冲突 · 路由不一致</div>
+</div>
+<div style="padding:12px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface)">
+<div style="font-weight:800;font-size:12px;color:var(--t);margin-bottom:3px">4. 供电与功耗冲突</div>
+<div style="font-size:10px;color:var(--t3);line-height:1.5">电源模式冲突 · 多负载瞬时过流 · 功耗预算超限 · 热管理&amp;用电策略冲突 · 高低压域逻辑冲突</div>
+</div>
+<div style="padding:12px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface)">
+<div style="font-weight:800;font-size:12px;color:var(--t);margin-bottom:3px">5. 功能安全与诊断冲突</div>
+<div style="font-size:10px;color:var(--t3);line-height:1.5">ASIL/QM 资源抢占 · 故障诊断逻辑冲突 · 同一故障多个 DTC 重复判定 · 安全机制矛盾</div>
+</div>
+<div style="padding:12px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface)">
+<div style="font-weight:800;font-size:12px;color:var(--t);margin-bottom:3px">6. 多域/多控制器协同冲突</div>
+<div style="font-size:10px;color:var(--t3);line-height:1.5">域控间功能定义不一致 · 接口不匹配 · 跨域信号同步/时钟不同步 · 数据一致性问题</div>
+</div>
+<div style="padding:12px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);grid-column:1/-1">
+<div style="font-weight:800;font-size:12px;color:var(--t);margin-bottom:3px">7. 定义完整性校验</div>
+<div style="font-size:10px;color:var(--t3);line-height:1.5">文档重复定义（智驾/座舱等不同文档对同一功能定义不一致） · 功能定义缺失 · 性能指标未明确 · 接口定义缺失</div>
+</div>
+</div>
+</template>
+<template id="ov-arch-detail">
+<h3 style="font-size:22px;font-weight:900;color:var(--t);margin-bottom:6px">企业级 AI Agent 架构 · 三层关系</h3>
+<p style="color:var(--t2);font-size:12.5px;margin-bottom:16px">核心关系是：<strong>工具链提供结构化数据源头</strong> → RAG 负责可信知识沉淀 → AI Agent 在此基础上完成任务规划、工具调用与结果回写。</p>
+<svg style="width:100%;max-height:440px" viewbox="0 0 900 460" xmlns="http://www.w3.org/2000/svg">
+<rect fill="rgba(15,118,110,.04)" height="130" rx="12" stroke="rgba(15,118,110,.12)" width="880" x="10" y="10"></rect>
+<text fill="#0f766e" font-size="14" font-weight="800" text-anchor="middle" x="450" y="34">AI Agent 智能层</text>
+<rect fill="rgba(15,118,110,.10)" height="38" rx="8" stroke="rgba(15,118,110,.2)" width="160" x="20" y="50"></rect>
+<text fill="#0f766e" font-size="10.5" font-weight="700" text-anchor="middle" x="100" y="66">文档生成 Agent</text>
+<text fill="rgba(15,118,110,.5)" font-size="9.5" text-anchor="middle" x="100" y="80">FDS/SSTS 初稿</text>
+<rect fill="rgba(8,145,178,.10)" height="38" rx="8" stroke="rgba(8,145,178,.2)" width="160" x="195" y="50"></rect>
+<text fill="#0891b2" font-size="10.5" font-weight="700" text-anchor="middle" x="275" y="66">模型生成 Agent</text>
+<text fill="rgba(8,145,178,.5)" font-size="9.5" text-anchor="middle" x="275" y="80">UML/SysML 草稿</text>
+<rect fill="rgba(5,150,105,.10)" height="38" rx="8" stroke="rgba(5,150,105,.2)" width="160" x="370" y="50"></rect>
+<text fill="#059669" font-size="10.5" font-weight="700" text-anchor="middle" x="450" y="66">一致性校验 Agent</text>
+<text fill="rgba(5,150,105,.5)" font-size="9.5" text-anchor="middle" x="450" y="80">7 类冲突检测</text>
+<rect fill="rgba(16,185,129,.10)" height="38" rx="8" stroke="rgba(16,185,129,.2)" width="160" x="545" y="50"></rect>
+<text fill="#047857" font-size="10.5" font-weight="700" text-anchor="middle" x="625" y="66">方案推荐 Agent</text>
+<text fill="rgba(16,185,129,.5)" font-size="9.5" text-anchor="middle" x="625" y="80">历史案例匹配</text>
+<rect fill="rgba(184,93,106,.10)" height="38" rx="8" stroke="rgba(184,93,106,.2)" width="160" x="720" y="50"></rect>
+<text fill="#b85d6a" font-size="10.5" font-weight="700" text-anchor="middle" x="800" y="66">知识检索 Agent</text>
+<text fill="rgba(184,93,106,.5)" font-size="9.5" text-anchor="middle" x="800" y="80">RAG 跨项目搜索</text>
+<text fill="#5e6b7a" font-size="9.5" text-anchor="middle" x="450" y="112">任务规划 → 工具调用 → 多步执行 → 状态管理 → 人工确认 → 结果归档</text>
+<text fill="rgba(15,118,110,.4)" font-size="9.5" text-anchor="middle" x="450" y="128">私有化部署 · 本地化部署的大模型 · 审计可追溯 · 人工最终确认</text>
+<line stroke="rgba(15,118,110,.25)" stroke-width="2" x1="450" x2="450" y1="140" y2="170"></line>
+<polygon fill="rgba(15,118,110,.25)" points="442,165 450,180 458,165"></polygon>
+<rect fill="rgba(15,118,110,.05)" height="100" rx="12" stroke="rgba(15,118,110,.18)" width="880" x="10" y="180"></rect>
+<text fill="#0f766e" font-size="14" font-weight="800" text-anchor="middle" x="450" y="204">RAG 知识库 · 数据底座</text>
+<rect fill="rgba(15,118,110,.06)" height="30" rx="6" stroke="rgba(15,118,110,.12)" width="195" x="30" y="220"></rect>
+<text fill="#0f766e" font-size="9.5" text-anchor="middle" x="127" y="239">文档预处理 &amp; 语义切分</text>
+<rect fill="rgba(15,118,110,.06)" height="30" rx="6" stroke="rgba(15,118,110,.12)" width="195" x="240" y="220"></rect>
+<text fill="#0f766e" font-size="9.5" text-anchor="middle" x="337" y="239">向量嵌入 &amp; 增量更新</text>
+<rect fill="rgba(15,118,110,.10)" height="30" rx="6" stroke="rgba(15,118,110,.18)" width="195" x="450" y="220"></rect>
+<text fill="#0f766e" font-size="9.5" font-weight="700" text-anchor="middle" x="547" y="239">向量语义检索 · 召回&gt;85%</text>
+<rect fill="rgba(15,118,110,.06)" height="30" rx="6" stroke="rgba(15,118,110,.12)" width="195" x="660" y="220"></rect>
+<text fill="#0f766e" font-size="9.5" text-anchor="middle" x="757" y="239">重排序 &amp; 上下文组装</text>
+<text fill="rgba(5,150,105,.45)" font-size="9.5" text-anchor="middle" x="450" y="272">全部私有化部署 · 本地化部署的大模型 · 军工/航天合规</text>
+<line stroke="rgba(16,185,129,.25)" stroke-width="2" x1="450" x2="450" y1="280" y2="310"></line>
+<polygon fill="rgba(16,185,129,.25)" points="442,305 450,320 458,305"></polygon>
+<rect fill="rgba(16,185,129,.04)" height="110" rx="12" stroke="rgba(16,185,129,.12)" width="880" x="10" y="320"></rect>
+<text fill="#047857" font-size="14" font-weight="800" text-anchor="middle" x="450" y="344">一体化工具链 · 结构化数据源头</text>
+<rect fill="rgba(16,185,129,.08)" height="38" rx="8" stroke="rgba(16,185,129,.15)" width="150" x="20" y="362"></rect>
+<text fill="#047857" font-size="10.5" font-weight="700" text-anchor="middle" x="95" y="379">架构设计工具</text>
+<text fill="rgba(16,185,129,.45)" font-size="10" text-anchor="middle" x="95" y="393">6 模块架构设计</text>
+<text fill="rgba(0,0,0,.1)" font-size="12" text-anchor="middle" x="177" y="384">→</text>
+<rect fill="rgba(184,93,106,.06)" height="38" rx="8" stroke="rgba(184,93,106,.12)" width="150" x="192" y="362"></rect>
+<text fill="#b85d6a" font-size="10.5" font-weight="700" text-anchor="middle" x="267" y="379">服务编排</text>
+<text fill="rgba(184,93,106,.45)" font-size="10" text-anchor="middle" x="267" y="393">原子→组合服务</text>
+<text fill="rgba(0,0,0,.1)" font-size="12" text-anchor="middle" x="349" y="384">→</text>
+<rect fill="rgba(6,182,212,.06)" height="38" rx="8" stroke="rgba(6,182,212,.12)" width="150" x="364" y="362"></rect>
+<text fill="#06b6d4" font-size="10.5" font-weight="700" text-anchor="middle" x="439" y="379">服务仿真</text>
+<text fill="rgba(6,182,212,.45)" font-size="10" text-anchor="middle" x="439" y="393">低代码验证</text>
+<text fill="rgba(0,0,0,.1)" font-size="12" text-anchor="middle" x="521" y="384">→</text>
+<rect fill="rgba(74,138,90,.06)" height="38" rx="8" stroke="rgba(74,138,90,.12)" width="150" x="536" y="362"></rect>
+<text fill="#4a8a5a" font-size="10.5" font-weight="700" text-anchor="middle" x="611" y="379">DevOps</text>
+<text fill="rgba(74,138,90,.45)" font-size="10" text-anchor="middle" x="611" y="393">持续交付</text>
+<text fill="rgba(0,0,0,.1)" font-size="12" text-anchor="middle" x="693" y="384">→</text>
+<rect fill="rgba(16,185,129,.05)" height="38" rx="8" stroke="rgba(16,185,129,.1)" width="150" x="708" y="362"></rect>
+<text fill="#047857" font-size="10.5" font-weight="700" text-anchor="middle" x="783" y="379">观测运维</text>
+<text fill="rgba(16,185,129,.45)" font-size="10" text-anchor="middle" x="783" y="393">监控 &amp; 诊断</text>
+<text fill="#5e6b7a" font-size="9.5" text-anchor="middle" x="450" y="424">各阶段产出 → 沉淀至知识库 → Agent 检索调用 → 反哺设计决策</text>
+</svg>
+</template>
+<template id="ov-platform">
+<h3 style="font-size:22px;font-weight:900;color:var(--t);margin-bottom:6px">平台基础设施 · 分层架构</h3>
+<p style="color:var(--t2);font-size:12.5px;margin-bottom:16px">平台层优先的核心决策：用户体系、权限模型、项目空间、消息通知、操作审计作为独立基础设施层。</p>
+<svg style="width:100%;max-height:330px" viewbox="0 0 800 340" xmlns="http://www.w3.org/2000/svg">
+<rect fill="rgba(16,185,129,.06)" height="55" rx="10" stroke="rgba(16,185,129,.15)" width="780" x="10" y="10"></rect>
+<text fill="#047857" font-size="12" font-weight="700" text-anchor="middle" x="400" y="32">应用模块层</text>
+<text fill="#5e6b7a" font-size="10" text-anchor="middle" x="400" y="50">需求管理 · 功能设计 · 系统设计 · 软件设计 · 通信设计 · 诊断设计（6 个模块共享平台底座）</text>
+<rect fill="rgba(15,118,110,.06)" height="55" rx="10" stroke="rgba(15,118,110,.15)" width="780" x="10" y="75"></rect>
+<text fill="#0f766e" font-size="12" font-weight="700" text-anchor="middle" x="400" y="97">平台服务层</text>
+<text fill="#5e6b7a" font-size="10" text-anchor="middle" x="400" y="115">协同编辑 · 变更审批 · 版本管理 · 消息通知 · 操作审计 · 数据导入导出</text>
+<rect fill="rgba(8,145,178,.06)" height="55" rx="10" stroke="rgba(8,145,178,.15)" width="780" x="10" y="140"></rect>
+<text fill="#0891b2" font-size="12" font-weight="700" text-anchor="middle" x="400" y="162">认证与项目管理层</text>
+<text fill="#5e6b7a" font-size="10" text-anchor="middle" x="400" y="180">用户认证 · 角色权限 · 部门组织 · 项目空间 · 多租户隔离</text>
+<rect fill="rgba(5,150,105,.06)" height="55" rx="10" stroke="rgba(5,150,105,.15)" width="780" x="10" y="205"></rect>
+<text fill="#059669" font-size="12" font-weight="700" text-anchor="middle" x="400" y="227">统一数据模型层</text>
+<text fill="#5e6b7a" font-size="10" text-anchor="middle" x="400" y="245">跨模块数据关联 · 平台→车型→网段三级模型 · 结构化 Schema · API 标准化</text>
+<rect fill="rgba(0,0,0,.02)" height="55" rx="10" stroke="rgba(0,0,0,.08)" width="780" x="10" y="270"></rect>
+<text fill="#1a1d27" font-size="12" font-weight="700" text-anchor="middle" x="400" y="292">存储与基础设施层</text>
+<text fill="#5e6b7a" font-size="10" text-anchor="middle" x="400" y="310">PostgreSQL · 对象存储 · Redis 缓存 · 向量数据库 · K8s 编排</text>
+<text fill="rgba(5,150,105,.45)" font-size="9.5" text-anchor="middle" x="400" y="332">平台层优先 → 6 模块上线快 2× → 结构化数据沉淀 → AI Agent 数据基础</text>
+</svg>
+</template>
+<template id="ov-protocol-evolution">
+<h3 style="font-size:22px;font-weight:900;color:var(--t);margin-bottom:6px">DDS / SOME-IP 与 架构设计工具 的关系</h3>
+<p style="color:var(--t2);font-size:12.5px;margin-bottom:14px;line-height:1.75">形成路径：前期在恒润积累通信协议与工程数据认知；进入础石后先承担 <strong>DDS 工具链配套</strong>，再通过 <strong>SOME-IP 客户项目</strong> 完成客户价值验证，最终推动通信 / 诊断能力并入 <strong>架构设计工具</strong> 的统一产品体系。</p>
+<svg style="width:100%;max-height:296px" viewbox="0 0 980 300" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<lineargradient id="peg1n" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="rgba(16,185,129,.10)"></stop><stop offset="100%" stop-color="rgba(16,185,129,.04)"></stop></lineargradient>
+<lineargradient id="peg2n" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="rgba(5,150,105,.10)"></stop><stop offset="100%" stop-color="rgba(5,150,105,.04)"></stop></lineargradient>
+<lineargradient id="peg3n" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="rgba(15,118,110,.10)"></stop><stop offset="100%" stop-color="rgba(15,118,110,.04)"></stop></lineargradient>
+</defs>
+<rect fill="url(#peg1n)" height="156" rx="16" stroke="rgba(16,185,129,.20)" width="236" x="18" y="40"></rect>
+<text fill="#10b981" font-size="12" font-weight="800" x="38" y="66">前置背景 · 恒润经验沉淀</text>
+<text fill="#495468" font-size="15" font-weight="800" x="38" y="92">通信协议与工程数据基础</text>
+<text fill="#5e6b7a" font-size="11.2" x="38" y="120">CAN / CAN FD / LIN / J1939 / SOME-IP</text>
+<text fill="#5e6b7a" font-size="11.2" x="38" y="142">理解通信矩阵、诊断数据与协同流程</text>
+<text fill="#5e6b7a" font-size="11.2" x="38" y="164">为后续在础石判断通信设计机会提供基础</text>
+<text fill="#10b981" font-size="26" font-weight="800" x="278" y="122">→</text>
+<rect fill="url(#peg2n)" height="188" rx="16" stroke="rgba(5,150,105,.20)" width="286" x="316" y="24"></rect>
+<text fill="#059669" font-size="12" font-weight="800" x="340" y="50">国科础石 Phase 1 · 机会验证</text>
+<text fill="#495468" font-size="14" font-weight="800" x="340" y="74">先做 DDS 配套</text>
+<text fill="#495468" font-size="14" font-weight="800" x="340" y="94">再完成 SOME-IP 项目验证</text>
+<rect fill="white" height="24" rx="8" stroke="rgba(0,0,0,.08)" width="74" x="340" y="110"></rect>
+<text fill="#495468" font-size="10" font-weight="700" text-anchor="middle" x="377" y="126">DDS 配套</text>
+<text fill="#5e6b7a" font-size="11" x="340" y="152">公司最初以 DDS 协议栈为核心，</text>
+<text fill="#5e6b7a" font-size="11" x="340" y="170">工具链首先承担协议栈配套工作。</text>
+<rect fill="white" height="24" rx="8" stroke="rgba(0,0,0,.08)" width="118" x="430" y="110"></rect>
+<text fill="#495468" font-size="10" font-weight="700" text-anchor="middle" x="489" y="126">SOME-IP 客户项目</text>
+<text fill="#5e6b7a" font-size="11" x="340" y="194">随后独立承担售前并切入 SOME-IP 项目，</text>
+<text fill="#5e6b7a" font-size="11" x="340" y="212">验证了工具链具备独立产品化空间。</text>
+<text fill="#10b981" font-size="26" font-weight="800" x="622" y="122">→</text>
+<rect fill="url(#peg3n)" height="156" rx="16" stroke="rgba(15,118,110,.20)" width="310" x="650" y="40"></rect>
+<text fill="#0f766e" font-size="12" font-weight="800" x="674" y="66">资源到位后 · 体系化整合</text>
+<text fill="#495468" font-size="15" font-weight="800" x="674" y="92">通信 / 诊断能力并入 架构设计工具</text>
+<text fill="#5e6b7a" font-size="11.2" x="674" y="120">在客户价值被验证后，相关能力持续收敛，</text>
+<text fill="#5e6b7a" font-size="11.2" x="674" y="142">并逐步与需求、功能、系统、软件模块整合。</text>
+<text fill="#5e6b7a" font-size="11.2" x="674" y="164">这也成为后续知识库与 Agent 工作流演进的起点。</text>
+</svg>
+<div style="margin-top:14px;padding:12px 14px;border-left:3px solid var(--violet);background:rgba(15,118,110,.04);border-radius:0 12px 12px 0;font-size:11.5px;line-height:1.72;color:var(--t2)"><strong style="color:var(--violet)">关键结论：</strong> 这部分强调的并不是“做过多少协议”，而是基于前期通信理解，在础石阶段经历了 <strong>DDS 配套</strong> 与 <strong>SOME-IP 项目验证</strong> 两个关键步骤，最终推动能力并入 <strong>架构设计工具</strong>，由此形成后续平台化、知识库化与 Agent 化演进的起点。</div>
+</template>
+<template id="ov-tool-foundation">
+<h3 style="font-size:22px;font-weight:900;color:var(--t);margin-bottom:6px">工具底座建设 · 为什么先做这个</h3>
+<p style="color:var(--t2);font-size:12.5px;margin-bottom:16px;line-height:1.75">Agent 能力建立在专业工具、工程对象、知识沉淀和流程协同之上。</p>
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
+<div class="module-card"><h4 style="color:var(--teal)">工具矩阵</h4><p>架构设计工具、服务仿真工具、服务编排、项目管理、知识库、DevOps、运维监控等能力共同构成工程数字底座。</p></div>
+<div class="module-card"><h4 style="color:var(--violet)">对象体系</h4><p>需求、功能、系统、通信、诊断、软件、测试、变更和评审材料被逐步结构化，形成可追溯对象链。</p></div>
+<div class="module-card"><h4 style="color:var(--blue)">知识与流程</h4><p>项目经验、规范和历史方案沉淀为知识库；审批、评审、变更和交付流转形成可审计流程。</p></div>
+<div class="module-card"><h4 style="color:var(--green)">智能化前提</h4><p>只有底座先成型，AI 才能理解上下文、调用工具、输出建议，并在人工确认后进入真实工程状态。</p></div>
+</div>
+</template>
+<template id="ov-controlled-assistant">
+<h3 style="font-size:22px;font-weight:900;color:var(--t);margin-bottom:6px">受控式工程助手 · 能力边界</h3>
+<p style="color:var(--t2);font-size:12.5px;margin-bottom:16px;line-height:1.75">工程助手能力以可靠、可审计、可追溯为首要原则，围绕真实工程上下文完成分析、建议与人工确认。</p>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+<div class="module-card"><h4 style="color:var(--teal)">已参与 / 已落地</h4><p>RAG、知识检索、文档生成、工具调用、人工确认、结果归档、引用溯源。</p></div>
+<div class="module-card"><h4 style="color:var(--violet)">有雏形</h4><p>多步执行、任务状态管理、建议写入、对象影响分析、评审材料草稿。</p></div>
+<div class="module-card"><h4 style="color:var(--rose)">不夸大</h4><p>失败恢复、自动评测、开放工具生态、成熟 AgentOps 平台仍需持续建设。</p></div>
+</div>
+<div style="margin-top:14px;padding:12px 14px;border-left:3px solid var(--teal);background:rgba(5,150,105,.04);border-radius:0 12px 12px 0;font-size:11.5px;color:var(--t2);line-height:1.72"><strong style="color:var(--teal)">讲述边界：</strong>AI 输出是建议、草稿、解释和差异说明；关键工程对象写入、评审结论和风险关闭仍由工程师确认。</div>
+</template>
+<template id="ov-role-assistants">
+<h3 style="font-size:22px;font-weight:900;color:var(--t);margin-bottom:6px">多角色工程专家助手体系</h3>
+<p style="color:var(--t2);font-size:12.5px;margin-bottom:16px;line-height:1.75">专家助手不按“AI 功能”拆，而按工程角色、主对象和交付物拆。每个角色的助手嵌入自己的工作台与对象详情页。</p>
+<div class="module-row"><strong>通信工程师</strong><span>Service / Signal / Message / Topic / ECU / 网段；通信影响确认、矩阵下发、协议对象校验。</span></div>
+<div class="module-row"><strong>架构师 / 功能负责人</strong><span>Function / 子系统 / 需求映射；功能视图、下游承接、架构冻结准备。</span></div>
+<div class="module-row"><strong>诊断工程师</strong><span>DID / DTC / 诊断服务；诊断影响确认、诊断覆盖、诊断测试。</span></div>
+<div class="module-row"><strong>软件工程师</strong><span>SWC / 接口版本；软件承接、接口版本差异、提测准备。</span></div>
+<div class="module-row"><strong>测试 / 项目负责人</strong><span>Test Case / Review Material；回归范围、覆盖矩阵、评审准入、遗留项关闭。</span></div>
+</template>
+<template id="ov-ee-digital-thread">
+<h3 style="font-size:22px;font-weight:900;color:var(--t);margin-bottom:6px">整车级 E/E 解决方案 · 能力边界</h3>
+<p style="color:var(--t2);font-size:12.5px;margin-bottom:16px;line-height:1.75">整车级能力不是专业工具的并列，而是围绕产品线、车型变体和架构基线，将方案评估、追溯关系、复用派生和变更影响组织到同一工程模型里。</p>
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">
+<div class="module-card"><h4 style="color:var(--teal)">产品线 / 车型变体</h4><p>平台模型、车型系列、具体车型、配置差异、功能选装和变体派生。</p></div>
+<div class="module-card"><h4 style="color:var(--teal)">架构方案评估</h4><p>成本、重量、空间、功耗、网络负载、时序、安全约束等整车级指标权衡。</p></div>
+<div class="module-card"><h4 style="color:var(--teal)">全流程追溯</h4><p>需求、功能、架构、软硬件、通信、测试、工单和工作流之间的双向追溯。</p></div>
+<div class="module-card"><h4 style="color:var(--teal)">复用与派生</h4><p>系统、模块、工件和架构片段复用，并派生到不同车型与配置。</p></div>
+<div class="module-card"><h4 style="color:var(--teal)">变更影响分析</h4><p>沿产品线、车型变体、工程对象和追溯关系识别影响范围并推动关闭。</p></div>
+</div>
+<div style="margin-top:14px;padding:12px 14px;border-left:3px solid var(--violet);background:rgba(15,118,110,.04);border-radius:0 12px 12px 0;font-size:11.5px;color:var(--t2);line-height:1.72"><strong style="color:var(--violet)">能力状态：</strong>当前强调的是面向整车级工程治理的方案方向与产品路线，不表述为已完整交付的整车级自动化平台。</div>
+</template>
+<script>
+(function(){
+  var floatSwitch=document.getElementById('floatSwitch');
+  var switchToggle=document.getElementById('switchToggle');
+  if(!floatSwitch||!switchToggle)return;
+  function setOpen(open){floatSwitch.classList.toggle('expanded',!!open);switchToggle.setAttribute('aria-expanded',open?'true':'false');}
+  switchToggle.addEventListener('click',function(e){e.stopPropagation();setOpen(!floatSwitch.classList.contains('expanded'));});
+  document.querySelectorAll('.switch-tabs button').forEach(function(btn){
+    btn.addEventListener('click',function(e){
+      e.stopPropagation();setOpen(false);
+      if(window.interviewSwitchModule) window.interviewSwitchModule(btn.dataset.module);
+    });
+  });
+  document.addEventListener('click',function(e){if(!floatSwitch.contains(e.target))setOpen(false);});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='m'||e.key==='M'){setOpen(!floatSwitch.classList.contains('expanded'));}
+    if(e.key==='1'&&window.interviewSwitchModule){window.interviewSwitchModule('self');setOpen(false);}
+    if(e.key==='2'&&window.interviewSwitchModule){window.interviewSwitchModule('job');setOpen(false);}
+    if(e.key==='3'&&window.interviewSwitchModule){window.interviewSwitchModule('material');setOpen(false);}
+    if(e.key==='Escape'){setOpen(false);}
+  });
+})();
+</script>
+</body>
+</html>

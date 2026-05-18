@@ -20,7 +20,7 @@ const CARD_METRIC_STYLES = [
   { color: "var(--teal)" },
 ];
 
-export function ImpactSlide({ slide, theme }: Props) {
+export function ImpactSlide({ slide }: Props) {
   const cards = slide.cards ?? [];
   const bullets = slide.bullets ?? [];
   const highlightCallouts = slide.highlightCallouts ?? [];
