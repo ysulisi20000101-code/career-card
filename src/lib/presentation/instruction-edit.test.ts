@@ -46,4 +46,20 @@ describe("applyPresentationInstruction", () => {
     expect(result.draft.slides[0]?.featurePills?.some((pill) => pill.label === "AI Agent")).toBe(true);
     expect(result.draft.slides[0]?.speakerNotes).toContain("AI / Agent");
   });
+
+  it("applies page-specific review instructions only to the requested slide", () => {
+    const result = applyPresentationInstruction(draftWithSlides(8), "只改第 3 页，让它更像真实项目复盘；不要新增事实");
+
+    expect(result.draft.slides[0]?.summaryLine).toBeUndefined();
+    expect(result.draft.slides[2]?.summaryLine).toContain("真实项目复盘");
+    expect(result.draft.slides[2]?.speakerNotes).toContain("问题是什么");
+    expect(result.changes?.items.some((item) => item.slideId === "slide-2")).toBe(true);
+  });
+
+  it("adds an eight-minute talk track without hiding slides", () => {
+    const result = applyPresentationInstruction(draftWithSlides(9), "调整成 8 分钟讲法");
+
+    expect(result.draft.slides.filter((slide) => !slide.hidden)).toHaveLength(9);
+    expect(result.draft.slides.some((slide) => slide.speakerNotes?.includes("8 分钟讲法"))).toBe(true);
+  });
 });

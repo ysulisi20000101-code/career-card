@@ -278,6 +278,31 @@ describe("generatePresentationDraft", () => {
   });
 
   describe("edge cases", () => {
+    it("returns an editable starter deck instead of fake zero-metric content for blank input", () => {
+      const blank: ResumeData = {
+        profile: { id: "", name: "", email: "" },
+        timeline: [],
+        skills: [],
+        education: [],
+        architecture: [],
+        roleUnderstanding: {
+          targetRoleTitle: "",
+          oneLineInterpretation: "",
+          priorityProblems: [],
+          ninetyDayPlan: { day0To30: "", day31To60: "", day61To90: "" },
+          experienceMappings: [],
+        },
+      };
+      const draft = generatePresentationDraft(blank);
+      const rendered = JSON.stringify(draft);
+
+      expect(draft.narrativeProfile?.presetId).toBe("starter-interview-outline");
+      expect(draft.slides.length).toBeGreaterThanOrEqual(5);
+      expect(draft.slides[0]?.title).toContain("面试 PPT 演示框架");
+      expect(rendered).not.toMatch(/0 段|0 年|0 家/);
+      expect(rendered).toContain("上传简历");
+    });
+
     it("handles empty timeline gracefully", () => {
       const empty: ResumeData = { ...MINIMAL_RESUME, timeline: [], skills: [] };
       const draft = generatePresentationDraft(empty);

@@ -40,6 +40,10 @@ export function generatePresentationDraft(data: ResumeData, options: GeneratePre
     return buildLijintaoPresentationDraft(data, options, safeRandomId(), now);
   }
 
+  if (isStarterPresentationInput(data)) {
+    return buildStarterPresentationDraft(data, now);
+  }
+
   const slides: PresentationSlide[] = [];
   const overlays: PresentationOverlay[] = [];
 
@@ -173,6 +177,143 @@ function assignSlidesToModule(
     moduleTitle,
     moduleOrder: index,
   }));
+}
+
+function cleanText(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function hasText(value: unknown): boolean {
+  return cleanText(value).length > 0;
+}
+
+function hasAnyText(values: unknown[]): boolean {
+  return values.some(hasText);
+}
+
+function isStarterPresentationInput(data: ResumeData): boolean {
+  const hasNarrativeEvidence = hasAnyText([
+    data.profile.summary,
+    data.roleUnderstanding?.oneLineInterpretation,
+    data.roleUnderstanding?.companyContext,
+  ]) || (data.roleUnderstanding?.priorityProblems?.length ?? 0) > 0 || (data.roleUnderstanding?.experienceMappings?.length ?? 0) > 0;
+  const hasTimelineEvidence = (data.timeline ?? []).some((node) => (
+    hasAnyText([
+      node.company,
+      node.position,
+      node.description,
+      node.storyTitle,
+      node.storyScene,
+      node.storyChallenge,
+      node.storyAction,
+      node.storyOutcome,
+      node.evidenceResult,
+      node.evidenceProof,
+    ]) || (node.highlights ?? []).some(hasText) || (node.skills ?? []).some(hasText)
+  ));
+
+  return !hasNarrativeEvidence && !hasTimelineEvidence;
+}
+
+function buildStarterPresentationDraft(data: ResumeData, now: string): PresentationDraft {
+  const candidateName = cleanText(data.profile.name) || "候选人";
+  const targetRole = cleanText(data.roleUnderstanding?.targetRoleTitle) || cleanText(data.profile.title) || "待补充目标方向";
+  const starterSource = [{ type: "profile" as const, path: "starter-interview-outline" }];
+  const slides = assignSlidesToModule([
+    {
+      id: "hero",
+      kind: "starter_outline",
+      title: candidateName === "候选人" ? "面试 PPT 演示框架" : `${candidateName}的面试 PPT 演示框架`,
+      subtitle: "上传简历后自动替换为真实内容",
+      body: "当前项目还没有可用简历素材。先提供一套可以翻页、可以对话微调的演示框架；补充简历后，Agent 会把它替换成真实经历、数据和表达重点。",
+      bullets: ["先看到完整成稿结构", "再补充真实经历证据", "最后用 Agent 微调讲述方式"],
+      visualizations: [{ type: "orbit", data: { core: "面试主线", satellites: ["经历", "项目", "成果", "能力", "表达"] } }],
+      speakerNotes: "这是一个待补充素材的演示框架，适合先确认页数、节奏和讲述结构。",
+      sourceRefs: starterSource,
+    },
+    {
+      id: "foundation",
+      kind: "starter_outline",
+      title: "第一版 PPT 会围绕一条主线组织",
+      subtitle: "从简历事实到面试表达",
+      body: "上传简历后，系统会先识别职业阶段、代表项目和可验证成果，再把它们组织成适合面试开场的故事线。",
+      bullets: ["提炼职业定位，而不是堆简历条目", "把项目经历转成问题、行动、结果", "保留可追溯证据，避免过度包装"],
+      visualizations: [{ type: "pipeline", data: { stages: ["简历", "主线", "项目", "成果", "PPT"] } }],
+      speakerNotes: "这一页用于解释候选人的职业起点和能力积累逻辑。",
+      sourceRefs: starterSource,
+    },
+    {
+      id: "tension",
+      kind: "starter_outline",
+      title: "生成前最需要补齐的三类信息",
+      subtitle: "让第一版更像成稿",
+      body: "素材越具体，第一版越接近可投屏状态。尤其需要明确最近一段核心经历、最有说服力的项目，以及结果数据或业务影响。",
+      bullets: ["核心经历：公司、岗位、职责范围", "代表项目：背景、难点、你的动作", "成果证据：指标、规模、反馈或复盘"],
+      visualizations: [{ type: "platform-quadrants", data: { quadrants: ["经历", "项目", "数据", "表达"] } }],
+      speakerNotes: "这一页帮助用户理解为什么要补充素材，以及补充什么最有效。",
+      sourceRefs: starterSource,
+    },
+    {
+      id: "platform-build",
+      kind: "starter_outline",
+      title: "面试演示的默认结构",
+      subtitle: "先完整，再精修",
+      body: "默认会生成开场定位、职业主线、关键项目、能力证据、成果总结和收束表达。用户可以在生成后用 Chat 直接改页数、重点、语气和顺序。",
+      bullets: ["开场 30 秒建立定位", "用 2-3 个项目证明能力", "用结果和反思收束可信度"],
+      visualizations: [{ type: "hero-architecture", data: { center: "候选人故事", layers: ["定位", "项目", "证据", "表达"] } }],
+      speakerNotes: "这一页是投屏时的结构说明，也能作为后续微调的导航。",
+      sourceRefs: starterSource,
+    },
+    {
+      id: "impact",
+      kind: "starter_outline",
+      title: "成果页会优先使用真实证据",
+      subtitle: "没有证据时会提示待补充",
+      body: "系统不会凭空编造数据。解析不到可验证指标时，会把对应位置标记为待补充，用户可以通过对话把真实数据补进去。",
+      bullets: ["优先使用简历里的量化结果", "缺失指标时保留待补充占位", "每次修改都能查看改动差异"],
+      visualizations: [{ type: "impact-metrics", data: { metrics: ["真实指标", "业务影响", "团队贡献"] } }],
+      speakerNotes: "这一页强调事实边界，避免为了好看而牺牲可信度。",
+      sourceRefs: starterSource,
+    },
+    {
+      id: "resolution",
+      kind: "starter_outline",
+      title: "下一步：上传简历生成真实版本",
+      subtitle: "让 Agent 从框架进入成稿",
+      body: "上传简历后，当前框架会被真实内容替换，并自动进入面试空间。之后可以用右侧 Agent 继续要求压缩页数、强化某段项目、调整成更适合投屏的表达。",
+      bullets: ["上传简历", "自动生成第一版", "对话微调并查看改动"],
+      visualizations: [{ type: "pipeline", data: { stages: ["上传", "生成", "微调", "演示"] } }],
+      speakerNotes: "最后把用户带回核心动作：上传简历并生成真实 PPT。",
+      closingQuote: "先给你看见完整形状，再用真实素材把它打磨成可上场的版本。",
+      sourceRefs: starterSource,
+    },
+  ], "self", "自我介绍");
+
+  return {
+    id: safeRandomId(),
+    schemaVersion: 1,
+    sourceResumeRevision: getResumeRevision(data),
+    targetRole,
+    template: "agent-product-arc",
+    modules: DEFAULT_PRESENTATION_MODULES,
+    slides,
+    overlays: [],
+    themeId: "light-story",
+    narrativeProfile: {
+      presetId: "starter-interview-outline",
+      confidence: 0,
+      candidateName,
+      targetRole,
+      positioning: "待补充简历素材的面试演示框架",
+      domainContext: [],
+      evidenceKeywords: [],
+      metrics: [],
+      transferableCapabilities: ["结构化讲述", "经历证据整理", "面试表达微调"],
+      riskNotes: ["当前项目没有可用简历证据，内容是可编辑框架，上传简历后会替换成真实内容。"],
+    },
+    createdAt: now,
+    updatedAt: now,
+  };
 }
 
 // ─── Slide Builders ────────────────────────────────────────────────

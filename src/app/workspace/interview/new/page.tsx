@@ -18,7 +18,7 @@ export default function NewInterviewProjectPage() {
     createdRef.current = true;
     try {
       const now = new Date();
-      const name = `面试故事 PPT ${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+      const name = `面试演示 PPT ${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
       const record = createProjectRecord("interview", name);
       queueMicrotask(() => setLatestId(record.id));
       window.location.href = `/workspace/interview/${record.id}/edit`;
@@ -79,7 +79,7 @@ export default function NewInterviewProjectPage() {
             </div>
             <h1 className="text-xl font-semibold text-zinc-900">正在打开简历上传页</h1>
             <p className="mt-2 max-w-sm text-sm text-zinc-500">
-              只要上传简历，系统会自动生成第一版面试故事 PPT，不需要再手动点生成。
+              只要上传简历，系统会自动生成第一版面试演示 PPT，不需要再手动点生成。
             </p>
             {showFallback && (
               <div className="mt-6">
@@ -98,7 +98,7 @@ export default function NewInterviewProjectPage() {
                     onClick={() => {
                       try {
                         const now = new Date();
-                        const name = `面试故事 PPT ${now.getMonth()+1}/${now.getDate()}`;
+                        const name = `面试演示 PPT ${now.getMonth()+1}/${now.getDate()}`;
                         const record = createProjectRecord("interview", name);
                         window.location.href = `/workspace/interview/${record.id}/edit`;
                       } catch {

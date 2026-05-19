@@ -9,6 +9,14 @@ export interface AgentChangeItem {
   before: string;
   after: string;
   kind?: "added" | "removed" | "changed";
+  category?: "content" | "structure" | "visual" | "notes" | "risk";
+  reason?: string;
+  riskLevel?: "none" | "needs-confirmation" | "blocked";
+  source?: "resume" | "agent" | "manual" | "template";
+  slideId?: string;
+  field?: keyof PresentationSlide | keyof PresentationDraft;
+  beforeValue?: unknown;
+  afterValue?: unknown;
 }
 
 export interface AgentChangeSet {
@@ -16,6 +24,13 @@ export interface AgentChangeSet {
   summary: string;
   createdAt: string;
   items: AgentChangeItem[];
+  riskFlags?: Array<{
+    id: string;
+    severity: "info" | "warning" | "error";
+    label: string;
+    detail: string;
+    slideId?: string;
+  }>;
 }
 
 function text(value: unknown): string {
@@ -30,10 +45,12 @@ function pushChange(
   label: string,
   beforeValue: unknown,
   afterValue: unknown,
+  meta: Partial<AgentChangeItem> = {},
 ) {
   const before = text(beforeValue);
   const after = text(afterValue);
   if (before === after) return;
+  const hasMetric = /\d|%|倍|万|千|ROI|NPS|DAU|MAU|GMV/i.test(after);
   items.push({
     id: generateId(),
     scope,
@@ -41,15 +58,34 @@ function pushChange(
     before: before || "空",
     after: after || "空",
     kind: !before ? "added" : !after ? "removed" : "changed",
+    beforeValue,
+    afterValue,
+    category: meta.category,
+    reason: meta.reason,
+    riskLevel: meta.riskLevel ?? (scope === "presentation" && hasMetric ? "needs-confirmation" : undefined),
+    source: meta.source ?? (scope === "presentation" ? "agent" : undefined),
+    slideId: meta.slideId,
+    field: meta.field,
   });
 }
 
 function makeChangeSet(summary: string, items: AgentChangeItem[]): AgentChangeSet {
+  const riskFlags = items
+    .filter((item) => item.riskLevel && item.riskLevel !== "none")
+    .map((item) => ({
+      id: generateId(),
+      severity: item.riskLevel === "blocked" ? "error" as const : "warning" as const,
+      label: item.label,
+      detail: item.reason ?? "这条修改含有量化或事实性表述，建议确认口径、周期和个人贡献边界。",
+      slideId: item.slideId,
+    }))
+    .slice(0, 8);
   return {
     id: generateId(),
     summary,
     createdAt: new Date().toISOString(),
     items,
+    riskFlags,
   };
 }
 
@@ -85,13 +121,62 @@ export function diffPresentationDraft(
       continue;
     }
 
-    pushChange(items, "presentation", `${label} 标题`, previous.slide.title, slide.title);
-    pushChange(items, "presentation", `${label} 正文`, previous.slide.body, slide.body);
-    pushChange(items, "presentation", `${label} 要点`, previous.slide.bullets, slide.bullets);
-    pushChange(items, "presentation", `${label} 讲稿备注`, previous.slide.speakerNotes, slide.speakerNotes);
+    pushChange(items, "presentation", `${label} 标题`, previous.slide.title, slide.title, {
+      category: "content",
+      slideId: slide.id,
+      field: "title",
+      reason: "标题会改变面试官对这一页的第一判断。",
+    });
+    pushChange(items, "presentation", `${label} 正文`, previous.slide.body, slide.body, {
+      category: "content",
+      slideId: slide.id,
+      field: "body",
+      reason: "正文会影响这一页的主张和事实表达。",
+    });
+    pushChange(items, "presentation", `${label} 要点`, previous.slide.bullets, slide.bullets, {
+      category: "content",
+      slideId: slide.id,
+      field: "bullets",
+      reason: "要点会影响用户讲述顺序和证据密度。",
+    });
+    pushChange(items, "presentation", `${label} 摘要`, previous.slide.summaryLine, slide.summaryLine, {
+      category: "content",
+      slideId: slide.id,
+      field: "summaryLine",
+      reason: "摘要会影响这一页的口播结论。",
+    });
+    pushChange(items, "presentation", `${label} 卡片`, previous.slide.cards, slide.cards, {
+      category: "visual",
+      slideId: slide.id,
+      field: "cards",
+      reason: "卡片变化会影响页面的信息分组和投屏可读性。",
+    });
+    pushChange(items, "presentation", `${label} 强调信息`, previous.slide.highlightCallouts, slide.highlightCallouts, {
+      category: "visual",
+      slideId: slide.id,
+      field: "highlightCallouts",
+      reason: "强调信息会改变面试官优先注意的内容。",
+    });
+    pushChange(items, "presentation", `${label} 讲稿备注`, previous.slide.speakerNotes, slide.speakerNotes, {
+      category: "notes",
+      slideId: slide.id,
+      field: "speakerNotes",
+      reason: "讲稿备注会影响真实面试时的表达节奏。",
+    });
     if (previous.slide.hidden !== slide.hidden) {
-      pushChange(items, "presentation", `${label} 可见性`, previous.slide.hidden ? "隐藏" : "显示", slide.hidden ? "隐藏" : "显示");
+      pushChange(items, "presentation", `${label} 可见性`, previous.slide.hidden ? "隐藏" : "显示", slide.hidden ? "隐藏" : "显示", {
+        category: "structure",
+        slideId: slide.id,
+        field: "hidden",
+        reason: "可见性变化会改变最终演示结构。",
+      });
     }
+    pushChange(items, "presentation", `${label} 版式密度`, previous.slide.layoutIntensity, slide.layoutIntensity, {
+      category: "visual",
+      slideId: slide.id,
+      field: "layoutIntensity",
+      reason: "版式密度会影响投屏时的信息压迫感。",
+    });
   }
 
   for (const { slide, index } of beforeById.values()) {
@@ -100,7 +185,13 @@ export function diffPresentationDraft(
     }
   }
 
-  return makeChangeSet(summary, items.slice(0, 24));
+  pushChange(items, "presentation", "整套视觉主题", before.themeId, after.themeId, {
+    category: "visual",
+    field: "themeId",
+    reason: "视觉主题变化会影响整份演示的气质。",
+  });
+
+  return makeChangeSet(summary, items.slice(0, 32));
 }
 
 export function diffCareerSiteDraft(

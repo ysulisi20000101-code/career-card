@@ -26,6 +26,7 @@ export const slideRenderers: Record<string, SlideRenderer> = {
   job_solution_path: StructuredInterviewSlide,
   material_index: StructuredInterviewSlide,
   material_framework: StructuredInterviewSlide,
+  starter_outline: StructuredInterviewSlide,
 };
 
 export function getSlideRenderer(kind: string): SlideRenderer {

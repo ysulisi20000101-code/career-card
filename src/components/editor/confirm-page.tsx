@@ -458,7 +458,7 @@ export function ConfirmPage({
           onClick={handleGenerate}
         >
           <Sparkles className="h-4 w-4" />
-          {mode === "interview" ? "生成故事演示" : "生成网站"}
+          {mode === "interview" ? "生成面试 PPT" : "生成网站"}
         </Button>
         <button
           type="button"

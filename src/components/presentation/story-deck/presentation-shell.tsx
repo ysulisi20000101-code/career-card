@@ -30,6 +30,7 @@ interface PresentationShellProps {
   draft: PresentationDraft;
   onExit: () => void;
   onDraftChange?: (previous: PresentationDraft, updated: PresentationDraft) => void;
+  onActiveSlideChange?: (slide: PresentationSlide, index: number, total: number) => void;
   embedded?: boolean;
   displayMode?: "prepare" | "interview";
 }
@@ -64,6 +65,7 @@ export function PresentationShell({
   draft: initialDraft,
   onExit,
   onDraftChange,
+  onActiveSlideChange,
   embedded = false,
   displayMode = "prepare",
 }: PresentationShellProps) {
@@ -251,6 +253,11 @@ export function PresentationShell({
   }, [draft]);
 
   const currentSlide = moduleSlides[safeCurrent];
+  useEffect(() => {
+    if (currentSlide) {
+      onActiveSlideChange?.(currentSlide, safeCurrent, total);
+    }
+  }, [currentSlide, onActiveSlideChange, safeCurrent, total]);
   const hasNotes = currentSlide?.speakerNotes && currentSlide.speakerNotes.trim().length > 0;
   const activeModuleLabel = activeModule?.label;
   const coachBrief = useMemo(

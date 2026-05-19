@@ -25,8 +25,22 @@ const steps: StepItem<EditorStep>[] = [
 ];
 const stepOrder: EditorStep[] = steps.map((s) => s.key);
 
+const generationDeckSteps = [
+  { title: "提炼候选人故事线", body: "把简历压成适合开场的主线" },
+  { title: "组织亮点证据", body: "筛出项目、指标和可信证据" },
+  { title: "生成演示结构", body: "搭好可投屏的页面节奏" },
+  { title: "打开 PPT 工作台", body: "进入面试空间继续微调" },
+];
+
 function GeneratingDeckOverlay() {
-  const steps = ["提炼候选人故事线", "组织亮点证据", "生成演示结构", "打开 PPT 工作台"];
+  const [activeStep, setActiveStep] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setActiveStep((prev) => Math.min(prev + 1, generationDeckSteps.length - 1));
+    }, 420);
+    return () => window.clearInterval(timer);
+  }, []);
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-zinc-950/55 px-6 backdrop-blur-sm">
@@ -42,12 +56,24 @@ function GeneratingDeckOverlay() {
           上传已经完成，接下来不需要再点按钮。我会先给你一套可演示的成稿。
         </p>
         <div className="mt-5 grid gap-2 text-left">
-          {steps.map((step, index) => (
-            <div key={step} className="flex items-center gap-3 rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2 text-xs text-zinc-600">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-zinc-900 text-[10px] font-semibold text-white">
-                {index + 1}
+          {generationDeckSteps.map((step, index) => (
+            <div
+              key={step.title}
+              className={`flex items-start gap-3 rounded-lg border px-3 py-2 text-xs transition ${
+                index <= activeStep
+                  ? "border-zinc-200 bg-zinc-50 text-zinc-700"
+                  : "border-zinc-100 bg-white text-zinc-400"
+              }`}
+            >
+              <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ${
+                index < activeStep ? "bg-emerald-600 text-white" : index === activeStep ? "bg-zinc-900 text-white" : "bg-zinc-200 text-zinc-500"
+              }`}>
+                {index < activeStep ? <CheckCircle2 className="h-3 w-3" /> : index + 1}
               </span>
-              {step}
+              <span>
+                <span className="block font-semibold">{step.title}</span>
+                <span className="mt-0.5 block text-[11px] text-zinc-500">{step.body}</span>
+              </span>
             </div>
           ))}
         </div>
@@ -147,8 +173,8 @@ export default function InterviewEditPage() {
       } catch {
         // best-effort
       }
-      window.setTimeout(() => router.push(`/workspace/interview/${id}/present`), 180);
-    }, 120);
+      window.setTimeout(() => router.push(`/workspace/interview/${id}/present`), 320);
+    }, 760);
   }, [id, flushSave, router, setResumeData]);
   const goNext = () => {
     if (currentStep === "confirm") {

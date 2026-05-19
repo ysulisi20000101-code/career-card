@@ -337,10 +337,10 @@ export default function WorkspacePage() {
             primaryAction={(item) => {
               const status = getInterviewDraftStatus(item);
               return status === "ready"
-                ? { label: "故事演示", icon: Play }
+                ? { label: "面试 PPT", icon: Play }
                 : { label: "演示", icon: Play };
             }}
-            emptyHint="还没有面试演示。上传简历后可以直接生成一版可投屏的故事 PPT。"
+            emptyHint="还没有面试演示。上传简历后可以直接生成一版可投屏的演示 PPT。"
             onRename={handleRename}
             onDuplicate={handleDuplicate}
             onArchive={handleArchive}
@@ -372,7 +372,7 @@ export default function WorkspacePage() {
                   onClick={() => handleGenerateStoryDeck(item)}
                 >
                   <Sparkles className="h-3 w-3" />
-                  {generatingId === item.id ? "生成中..." : "生成故事演示"}
+                  {generatingId === item.id ? "生成中..." : "生成面试 PPT"}
                 </Button>
               );
             }}

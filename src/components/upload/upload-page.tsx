@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, useSyncExternalStore } from "react";
 import { motion } from "framer-motion";
 import {
   AlertCircle,
@@ -45,7 +45,7 @@ const careerUploadNotes = [
 
 const interviewUploadNotes = [
   { icon: FileCheck2, label: "输入", value: "上传简历 PDF，系统直接生成演示 PPT" },
-  { icon: Clock3, label: "反馈", value: "解析完成后自动进入故事演示" },
+  { icon: Clock3, label: "反馈", value: "解析完成后自动进入面试 PPT" },
   { icon: ShieldCheck, label: "输出", value: "只生成自我介绍主线演示" },
   { icon: Trash2, label: "微调", value: "进入演示页后可用 Chat 调整风格和重点" },
 ];
@@ -59,10 +59,23 @@ const interviewFlow = [
 
 const interviewPreviewSlides = [
   "开场定位",
-  "项目故事",
+  "项目案例",
   "能力证据",
   "收束总结",
 ];
+
+function subscribeHydration(callback: () => void): () => void {
+  const id = window.setTimeout(callback, 0);
+  return () => window.clearTimeout(id);
+}
+
+function getClientHydrationSnapshot(): boolean {
+  return true;
+}
+
+function getServerHydrationSnapshot(): boolean {
+  return false;
+}
 
 function getFriendlyUploadError(err: unknown): FailureInfo {
   const rawCode: FailureInfo["code"] = err instanceof ParseError ? err.code : "UNKNOWN";
@@ -103,6 +116,11 @@ export function UploadPage({ onParsed, variant = "career" }: UploadPageProps = {
   const [progress, setProgress] = useState(0);
   const [failure, setFailure] = useState<FailureInfo | null>(null);
   const [lastStats, setLastStats] = useState<ParseStats | null>(null);
+  const isHydrated = useSyncExternalStore(
+    subscribeHydration,
+    getClientHydrationSnapshot,
+    getServerHydrationSnapshot,
+  );
   const cancelRef = useRef(false);
 
   const tickProgress = useCallback((to: number) => {
@@ -214,15 +232,19 @@ export function UploadPage({ onParsed, variant = "career" }: UploadPageProps = {
     };
     setResumeData(emptyData);
     setParseMeta(null);
+    if (variant === "interview" && onParsed) {
+      window.setTimeout(onParsed, 0);
+      return;
+    }
     setCurrentStep(variant === "interview" ? "edit" : "confirm");
-  }, [setResumeData, setParseMeta, setCurrentStep, variant]);
+  }, [setResumeData, setParseMeta, setCurrentStep, variant, onParsed]);
 
   const isInterview = variant === "interview";
   const uploadNotes = isInterview ? interviewUploadNotes : careerUploadNotes;
   const badgeText = isInterview ? "上传即生成 · 第一版 PPT 自动完成" : "本地解析 · 文本型 PDF";
-  const title = isInterview ? "上传简历，立刻生成面试故事 PPT" : "Career Card";
+  const title = isInterview ? "上传简历，立刻生成面试演示 PPT" : "Career Card";
   const description = isInterview
-    ? "不需要先填表，也不需要再点生成。上传后我会直接提炼故事线、亮点证据和演示结构，把第一版 PPT 做出来。"
+    ? "不需要先填表，也不需要再点生成。上传后我会直接提炼演示主线、亮点证据和页面结构，把第一版 PPT 做出来。"
     : "上传简历 PDF，先生成职业档案草稿；下一步只需要校准关键信息和表达重点。";
 
   const uploadSurface = failure ? (
@@ -241,7 +263,7 @@ export function UploadPage({ onParsed, variant = "career" }: UploadPageProps = {
       </Button>
     </div>
   ) : (
-    <PDFUpload onUpload={handleUpload} isProcessing={isProcessing} progress={progress} variant={variant} />
+    <PDFUpload onUpload={handleUpload} isProcessing={isProcessing} progress={progress} variant={variant} isReady={isHydrated} />
   );
 
   if (isInterview) {
@@ -261,7 +283,7 @@ export function UploadPage({ onParsed, variant = "career" }: UploadPageProps = {
             </div>
             <h1 className="mt-5 max-w-3xl text-4xl font-semibold leading-tight text-zinc-950 sm:text-5xl dark:text-zinc-50">
               <span className="block">上传简历，立刻生成</span>
-              <span className="block">面试故事 PPT</span>
+              <span className="block">面试演示 PPT</span>
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-600 dark:text-zinc-300">
               {description}
@@ -341,10 +363,10 @@ export function UploadPage({ onParsed, variant = "career" }: UploadPageProps = {
                 size="sm"
                 className="gap-1.5 rounded-full text-xs text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
                 onClick={handleManualCreate}
-                disabled={isProcessing}
+                disabled={isProcessing || !isHydrated}
               >
                 <Pencil className="h-3.5 w-3.5" />
-                手动创建空白项目
+                {isHydrated ? "没有 PDF？先看演示框架" : "正在准备上传入口..."}
               </Button>
               <p className="text-[11px] text-zinc-400 dark:text-zinc-500">PDF · 10MB 以内</p>
             </div>

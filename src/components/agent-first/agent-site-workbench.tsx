@@ -152,7 +152,7 @@ function initialAgentMessage(draft?: CareerSiteDraft | null): ChatMessage {
     content:
       missing.length > 0
         ? `我已经生成了网站初稿，但发布前建议先确认：${missing.join("、")}。你也可以直接告诉我想改哪一版风格或叙事重点。`
-        : "我已经生成了一个可继续精修的网站初稿。你可以直接说：更像某个岗位、换一种风格、突出某段经历，或者让表达更可信。",
+        : "我已经生成了一个可继续精修的网站初稿。你可以直接说：更贴近某类机会、换一种风格、突出某段经历，或者让表达更可信。",
   };
 }
 
@@ -351,7 +351,7 @@ export function AgentSiteWorkbench({
     { intent: "analyze_resume", label: "分析优势", icon: Lightbulb },
     { intent: "ask_clarifying_questions", label: "追问细节", icon: Search },
     { intent: "rewrite_experience_story", label: "整理经历", icon: PenLine },
-    { intent: "map_to_target_role", label: "匹配岗位", icon: Target },
+    { intent: "map_to_target_role", label: "调整定位", icon: Target },
     { intent: "review_before_publish", label: "检查发布", icon: ClipboardCheck },
   ];
 
@@ -747,7 +747,7 @@ export function AgentSiteWorkbench({
                 }
               }}
               rows={3}
-              placeholder="直接说你想怎么改：更偏某个岗位、换一种风格、突出某段经历、让表达更可信..."
+              placeholder="直接说你想怎么改：更偏目标方向、换一种风格、突出某段经历、让表达更可信..."
               className="min-h-20 flex-1 resize-y border border-zinc-200 bg-white px-3 py-2 text-sm outline-none transition placeholder:text-zinc-400 focus:border-zinc-400"
             />
             <Button type="submit" className="h-auto self-stretch gap-1.5" disabled={isChatting || !input.trim()}>

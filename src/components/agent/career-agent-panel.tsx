@@ -38,7 +38,7 @@ const intentOptions: {
   { intent: "analyze_resume", label: "分析", icon: SearchCheck },
   { intent: "ask_clarifying_questions", label: "追问", icon: HelpCircle },
   { intent: "rewrite_experience_story", label: "整理经历", icon: PenLine },
-  { intent: "map_to_target_role", label: "匹配岗位", icon: Target },
+  { intent: "map_to_target_role", label: "调整定位", icon: Target },
   { intent: "review_before_publish", label: "发布检查", icon: ClipboardCheck },
 ];
 
@@ -199,7 +199,7 @@ export function CareerAgentPanel({ currentSection }: { currentSection: AgentSect
             职业表达助手
           </div>
           <p className="mt-1 text-xs leading-5 text-zinc-500">
-            当前目标：{currentRole || "尚未设置目标岗位"}
+            当前方向：{currentRole || "尚未设置目标"}
           </p>
         </div>
         {response && (

@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Career Card - 简历变职业网站，面试变故事演示",
+  title: "Career Card - 简历变职业网站，面试变演示 PPT",
   description:
     "上传简历，一键生成职业网站和面试演示，分享稳定链接获取阅读反馈。",
 };

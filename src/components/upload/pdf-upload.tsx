@@ -16,6 +16,7 @@ interface PDFUploadProps {
   isProcessing?: boolean;
   progress?: number;
   variant?: "career" | "interview";
+  isReady?: boolean;
 }
 
 type UploadState = "idle" | "dragging" | "uploading" | "success" | "error";
@@ -32,11 +33,20 @@ function isPdfFile(file: File): boolean {
   return file.type === "application/pdf" || /\.pdf$/i.test(file.name);
 }
 
+function getProgressMessage(progress: number, isInterview: boolean): string {
+  if (!isInterview) return `正在解析简历... ${Math.round(progress)}%`;
+  if (progress < 25) return `正在读取 PDF 文本... ${Math.round(progress)}%`;
+  if (progress < 72) return `正在识别经历、技能和教育信息... ${Math.round(progress)}%`;
+  if (progress < 98) return `正在准备第一版面试 PPT... ${Math.round(progress)}%`;
+  return `简历已解析，正在进入 PPT 工作台... ${Math.round(progress)}%`;
+}
+
 export function PDFUpload({
   onUpload,
   isProcessing = false,
   progress = 0,
   variant = "career",
+  isReady = true,
 }: PDFUploadProps) {
   const [state, setState] = useState<UploadState>("idle");
   const [errorMessage, setErrorMessage] = useState("");
@@ -116,10 +126,11 @@ export function PDFUpload({
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        onClick={() => uploadState === "idle" && inputRef.current?.click()}
+        onClick={() => uploadState === "idle" && isReady && inputRef.current?.click()}
         className={cn(
           "relative overflow-hidden rounded-lg border-2 border-dashed p-8 text-center transition-colors",
           "cursor-pointer select-none",
+          !isReady && "pointer-events-none opacity-75",
           uploadState === "idle" &&
             "border-zinc-300 bg-zinc-50/50 hover:border-indigo-400 hover:bg-indigo-50/40 dark:border-zinc-700 dark:bg-zinc-900/50 dark:hover:border-indigo-500 dark:hover:bg-indigo-950/30",
           uploadState === "dragging" &&
@@ -172,13 +183,13 @@ export function PDFUpload({
               </motion.div>
               <div>
                 <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  {isInterview ? "拖入简历 PDF，或" : "拖拽PDF文件到此处，或"}
+                  {!isReady ? "正在准备上传入口" : isInterview ? "拖入简历 PDF，或" : "拖拽PDF文件到此处，或"}
                   <span className="text-indigo-600 dark:text-indigo-400">
-                    {isInterview ? " 点击上传" : " 点击上传"}
+                    {isReady ? (isInterview ? " 点击上传" : " 点击上传") : ""}
                   </span>
                 </p>
                 <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
-                  {isInterview ? "上传后自动生成第一版面试故事 PPT" : "仅支持 PDF 格式，最大 10MB"}
+                  {isInterview ? "上传后自动生成第一版面试演示 PPT" : "仅支持 PDF 格式，最大 10MB"}
                 </p>
               </div>
             </motion.div>
@@ -242,7 +253,7 @@ export function PDFUpload({
                   />
                 </div>
                 <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-                  {isInterview ? "正在解析简历，并准备进入 PPT 生成..." : "正在解析简历..."} {Math.round(progress)}%
+                  {getProgressMessage(progress, isInterview)}
                 </p>
               </div>
             </motion.div>
@@ -277,7 +288,7 @@ export function PDFUpload({
                 </div>
               )}
               <p className="text-xs text-emerald-600 dark:text-emerald-400">
-                {isInterview ? "简历已就绪，正在生成第一版 PPT" : "文件已就绪"}
+                {isInterview ? "简历已解析，正在进入 PPT 工作台" : "文件已就绪"}
               </p>
             </motion.div>
           )}
