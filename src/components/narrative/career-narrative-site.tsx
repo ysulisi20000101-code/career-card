@@ -123,7 +123,7 @@ function referenceHeroMetrics(fallback: PublicOverview["metrics"]): PublicOvervi
     { label: "客户项目", value: "10+", helper: "汽车 / 军工等客户项目" },
     { label: "协作范围", value: "100+", helper: "研发用户与业务团队支撑" },
     { label: "效率提升", value: "50%+", helper: "关键环节效率提升" },
-    { label: "AI 工作流", value: "0→1", helper: "受控式 Agent 工作流" },
+    { label: "专家 Agent", value: "0→1", helper: "E/E 全域协作系统" },
   ];
 
   if (fallback.length >= 4) return preferred;
@@ -136,8 +136,8 @@ function referenceHeroMetrics(fallback: PublicOverview["metrics"]): PublicOvervi
 
 const REFERENCE_VALUE_CARDS = [
   {
-    title: "企业级 AI Agent 落地",
-    body: "具备任务规划、原生工具调用、多步骤执行、状态管理与人工确认机制设计经验。",
+    title: "专家 Agent 协作落地",
+    body: "具备工程对象建模、专家路由、工具编排、设计依据维护与工程评审机制设计经验。",
   },
   {
     title: "复杂业务快速抽象",
@@ -683,18 +683,18 @@ const REFERENCE_PROJECTS = [
   },
   {
     num: "02",
-    eyebrow: "产品负责人",
-    title: "企业级 AI Agent 工作流与知识库平台",
+    eyebrow: "产品负责人 · E/E 专家 Agent",
+    title: "汽车 E/E 全域专家 Agent 协作系统",
     description:
-      "面向文档生成、模型生成、一致性校验与知识检索等商业业务场景，构建“知识库 + RAG + 原生工具调用 + 人工确认”的受控式 AI Agent 工作流。",
+      "面向汽车 E/E 全域工程，基于工程知识库、原生工具编排与全域数据维护，构建覆盖架构、通信、诊断、软件多角色协同的专家 Agent 体系。",
     bullets: [
-      "任务规划、工具调用、多步骤执行、状态管理、人工确认",
-      "FDS/SSTS 文档、UML/SysML 模型和一致性校验",
-      "100+ 研发用户，各环节效率提升 20%+",
-      "文档生成和通信设计环节效率提升 50%+",
+      "设计架构、网络通信、诊断、软件四类专家 Agent 的业务范围与协作边界",
+      "通过统一工程对象、产品线上下文、变更影响链和设计依据维护支撑跨角色协同",
+      "面向变更影响分析、车型变型管理、方案复用、一致性校验与工程追溯等高价值任务",
+      "覆盖 10+ 客户 / 项目与 100+ 研发用户，关键流程效率提升 20%+",
     ],
     visual: "agent",
-    imageSrc: "/project-visuals/agent-workflow.png",
+    imageSrc: "/project-visuals/agent-ee-expert-system.png",
   },
   {
     num: "03",
@@ -774,25 +774,25 @@ function ArchitectureStack({ title, subtitle, items, tone }: { title: string; su
 
 function AgentProjectVisual({ expanded = false }: { expanded?: boolean }) {
   const agents = [
-    ["文档生成", "FDS/SSTS 初稿"],
-    ["模型生成", "UML/SysML 草稿"],
-    ["一致性校验", "冲突场景检测"],
-    ["方案推荐", "历史案例匹配"],
-    ["知识检索", "RAG 跨项目搜索"],
+    ["架构专家", "全车方案评估"],
+    ["通信专家", "接口一致性"],
+    ["诊断专家", "测试闭环"],
+    ["软件专家", "版本与追溯"],
+    ["协作中枢", "产品线/变更链"],
   ] as const;
   const metrics = [
+    ["10+", "客户 / 项目验证"],
     ["100+", "研发用户覆盖"],
-    ["20%+", "各环节效率提升"],
-    ["50%+", "关键设计环节提效"],
-    ["受控", "人工确认与追溯"],
+    ["20%+", "流程提效"],
+    ["50%+", "关键环节提效"],
   ] as const;
 
   return (
     <div className={cn("relative z-20 w-full rounded-2xl border border-slate-100 bg-white text-slate-900 shadow-xl shadow-slate-900/10", expanded ? "p-5 sm:p-7" : "p-4")}>
       <div className="border-b border-slate-100 pb-4 text-center">
-        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-600">Enterprise AI Agent Platform</p>
-        <h4 className="mt-1 text-lg font-semibold tracking-tight text-slate-900">企业级 AI Agent 工作流与知识库平台</h4>
-        <p className="mt-1 text-[11px] font-medium text-emerald-700">受控式 AI 工作流 · 私有知识库 · 原生工具调用</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-600">Automotive E/E Expert Agent System</p>
+        <h4 className="mt-1 text-lg font-semibold tracking-tight text-slate-900">汽车 E/E 全域专家 Agent 协作系统</h4>
+        <p className="mt-1 text-[11px] font-medium text-emerald-700">专家 Agent 协作 · 工程对象建模 · 原生工具编排</p>
       </div>
 
       <div className={cn("mt-5 grid gap-3", expanded ? "sm:grid-cols-5" : "grid-cols-2 xl:grid-cols-5")}>
@@ -810,17 +810,17 @@ function AgentProjectVisual({ expanded = false }: { expanded?: boolean }) {
       <div className="mt-5 rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-4">
         <div className={cn("grid gap-3", expanded ? "sm:grid-cols-[0.95fr_1.05fr]" : "xl:grid-cols-[0.95fr_1.05fr]")}>
           <div className="rounded-xl border border-emerald-100 bg-white p-4">
-            <p className="text-xs font-bold text-emerald-700">企业知识库</p>
+            <p className="text-xs font-bold text-emerald-700">工程资产底座</p>
             <div className="mt-3 grid grid-cols-2 gap-2 text-[10px] text-slate-500">
-              {["项目文档", "架构模型", "设计规范", "历史方案"].map((item) => (
+              {["需求文档", "架构模型", "通信接口", "历史方案"].map((item) => (
                 <span key={item} className="rounded-lg bg-slate-50 px-2 py-1.5 text-center">{item}</span>
               ))}
             </div>
           </div>
           <div className="rounded-xl border border-slate-100 bg-white p-4">
-            <p className="text-xs font-bold text-slate-800">工作流闭环</p>
+            <p className="text-xs font-bold text-slate-800">产品化机制</p>
             <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[10px] font-medium text-slate-500">
-              {["任务规划", "工具调用", "多步执行", "人工确认", "结果归档"].map((item, index) => (
+              {["对象建模", "专家路由", "工具编排", "工程评审", "质量回流"].map((item, index) => (
                 <span key={item} className={cn("rounded-full px-2 py-1", index === 3 ? "bg-amber-50 text-amber-700" : "bg-slate-50")}>{item}</span>
               ))}
             </div>
@@ -1305,7 +1305,7 @@ const REFERENCE_SKILL_COLUMNS = [
       { name: "平台产品架构", percent: 95 },
       { name: "复杂业务抽象", percent: 92 },
       { name: "工具链产品设计", percent: 90 },
-      { name: "AI Agent 工作流", percent: 80 },
+      { name: "专家 Agent 协作", percent: 80 },
       { name: "团队管理（10人）", percent: 80 },
     ],
   },
