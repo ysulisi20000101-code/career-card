@@ -54,9 +54,8 @@ export function buildShareArtifacts(
     reason: "本机预览依赖当前设备或当前开发地址，不能保证跨设备访问。",
   };
   // Portable link is always available if encode/decode round-trip succeeds,
-  // regardless of QR length. serverless platforms may route GET to a
-  // different instance, so the portable (hash-embedded) link is the
-  // most reliable cross-device sharing method.
+  // regardless of QR length. It stays available as a diagnostic fallback when
+  // the short server link cannot be verified.
   const portableLink: ShareLinkState = portableUrlReady
     ? {
         capability: "portable",
@@ -87,17 +86,15 @@ export function choosePrimaryShareLink(params: {
   serverAccessible: boolean;
   portableLink: ShareLinkState;
 }): ShareLinkState {
-  // Prefer portable link on serverless platforms where GET may hit a
-  // different instance than POST, making server-side storage unreliable.
-  if (params.portableLink.ready) return params.portableLink;
   if (params.serverReady && params.serverAccessible && params.serverUrl) {
     return {
       capability: "server",
       url: params.serverUrl,
       ready: true,
-      reason: "服务端保存发布快照，可跨设备稳定访问。",
+      reason: "正式短链接已发布并校验，可复制到微信等渠道分享。",
     };
   }
+  if (params.portableLink.ready) return params.portableLink;
   return unavailable(params.portableLink.reason ?? "暂无可跨设备访问的分享链接。");
 }
 

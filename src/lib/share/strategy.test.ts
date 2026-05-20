@@ -84,7 +84,7 @@ describe("share strategy", () => {
     expect(primary.capability).toBe("portable");
   });
 
-  it("prefers portable link over server link when both are available", () => {
+  it("prefers verified server short link when available", () => {
     const artifacts = buildShareArtifacts("https://example.com", "demo", smallResumeData);
 
     const primary = choosePrimaryShareLink({
@@ -95,6 +95,20 @@ describe("share strategy", () => {
     });
 
     expect(artifacts.portableLink.ready).toBe(true);
+    expect(primary.capability).toBe("server");
+    expect(primary.url).toBe("https://example.com/p/demo");
+  });
+
+  it("keeps portable link primary when server link is local-only", () => {
+    const artifacts = buildShareArtifacts("http://127.0.0.1:3000", "demo", smallResumeData);
+
+    const primary = choosePrimaryShareLink({
+      serverUrl: "http://127.0.0.1:3000/p/demo",
+      serverReady: true,
+      serverAccessible: false,
+      portableLink: artifacts.portableLink,
+    });
+
     expect(primary.capability).toBe("portable");
   });
 

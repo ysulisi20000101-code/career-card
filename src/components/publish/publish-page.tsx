@@ -101,6 +101,7 @@ export function PublishPage({ projectId, siteId, onPublished }: PublishPageProps
     [isLocalOrigin, portableLink, serverPublish.ready, serverPublish.url],
   );
   const primaryShareKey = primaryShare.capability;
+  const primaryShareTitle = primaryShare.capability === "server" ? "可分享短链接" : primaryShare.capability === "portable" ? "可分享长链接（兜底）" : "可分享链接";
 
   const copyText = useCallback(async (value: string, key: string) => {
     if (!value) return;
@@ -149,10 +150,11 @@ export function PublishPage({ projectId, siteId, onPublished }: PublishPageProps
       const payload = (await response.json()) as { error?: string; site?: unknown };
       if (!response.ok) throw new Error(readablePublishError(payload.error));
 
+      const verifyResponse = await fetch(`/api/published-sites/${slug}`, { cache: "no-store" });
+      if (!verifyResponse.ok) {
+        throw new Error("短链接发布后校验失败，已保留便携长链接兜底。");
+      }
       serverLinkReady = true;
-
-      // Best-effort verify (may hit different serverless instance on Vercel/EdgeOne)
-      fetch(`/api/published-sites/${slug}`, { cache: "no-store" }).catch(() => {});
 
       // API is source of truth; update localStorage as cache after success
       savePublishedResume(slug, resumeData);
@@ -353,7 +355,7 @@ export function PublishPage({ projectId, siteId, onPublished }: PublishPageProps
             </div>
 
             <div className="space-y-3 rounded-lg border border-zinc-100 bg-white/90 p-5 shadow-sm backdrop-blur">
-              <LinkCard stripe="bg-gradient-to-b from-indigo-500 to-violet-500" title="可分享链接" hint={primaryShare.reason ?? "当前没有可跨设备访问的链接"}>
+              <LinkCard stripe="bg-gradient-to-b from-indigo-500 to-violet-500" title={primaryShareTitle} hint={primaryShare.reason ?? "当前没有可跨设备访问的链接"}>
                 <CopyableLink
                   value={primaryShare.url}
                   copied={copied === primaryShareKey}
@@ -388,7 +390,7 @@ export function PublishPage({ projectId, siteId, onPublished }: PublishPageProps
                       onCopy={() => copyText(localPreviewLink.url, "localOnly")}
                     />
                   </LinkCard>
-                  <LinkCard stripe="bg-gradient-to-b from-rose-400 to-amber-400" title="便携链接" hint={portableLink.reason ?? "数据写入链接，无需 localStorage"}>
+                  <LinkCard stripe="bg-gradient-to-b from-rose-400 to-amber-400" title="便携长链接（备用）" hint={portableLink.reason ?? "数据写入链接，无需 localStorage"}>
                     <CopyableLink
                       value={portableLink.url}
                       copied={copied === "portable"}
