@@ -143,8 +143,8 @@ describe("buildPublicSiteContent", () => {
 
     expect(content.journey.map((item) => item.title)).toContain("产品实习生");
     expect(content.details.find((detail) => detail.id === "internship")?.earlyRows).toHaveLength(3);
-    expect(content.details.map((detail) => detail.title)).toContain("阶段一：平台产品经理 / 工具链产品经理");
-    expect(content.details.map((detail) => detail.title)).toContain("阶段二：产品负责人 / 产品总监");
+    expect(content.details.map((detail) => detail.title)).toContain("国科础石｜阶段一：平台产品经理 / 工具链产品经理");
+    expect(content.details.map((detail) => detail.title)).toContain("国科础石｜阶段二：产品负责人 / 产品总监");
     expect(copy).not.toMatch(/候选人|这里合并|可补充|生成|草稿|上传|接触新领域|我换领域/);
   });
 

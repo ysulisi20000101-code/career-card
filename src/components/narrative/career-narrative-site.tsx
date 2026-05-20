@@ -668,21 +668,6 @@ const TYPE_LABELS: Record<string, string> = { business: "业务产品", technica
 const REFERENCE_PROJECTS = [
   {
     num: "01",
-    eyebrow: "核心单品负责人",
-    title: "Groot-Arch 架构设计工具",
-    description:
-      "面向复杂装备研发的系统工程平台，覆盖需求、功能、系统、通信、诊断、软件六大模块，体现我对高复杂度业务流程的平台化抽象能力。",
-    bullets: [
-      "统一需求、架构、通信、诊断与软件设计数据模型",
-      "对标 DOORS、EA、PREEvision、SystemWeaver 等工具生态",
-      "支撑文档驱动向模型驱动转型",
-      "参与工信部汽车工具链摸底调研",
-    ],
-    visual: "architecture",
-    imageSrc: "/project-visuals/groot-arch.png",
-  },
-  {
-    num: "02",
     eyebrow: "产品负责人 · E/E 专家 Agent",
     title: "汽车 E/E 全域专家 Agent 协作系统",
     description:
@@ -695,6 +680,21 @@ const REFERENCE_PROJECTS = [
     ],
     visual: "agent",
     imageSrc: "/project-visuals/agent-ee-expert-system.png",
+  },
+  {
+    num: "02",
+    eyebrow: "核心单品负责人",
+    title: "Groot-Arch 架构设计工具",
+    description:
+      "面向复杂装备研发的系统工程平台，覆盖需求、功能、系统、通信、诊断、软件六大模块，体现我对高复杂度业务流程的平台化抽象能力。",
+    bullets: [
+      "统一需求、架构、通信、诊断与软件设计数据模型",
+      "对标 DOORS、EA、PREEvision、SystemWeaver 等工具生态",
+      "支撑文档驱动向模型驱动转型",
+      "参与工信部汽车工具链摸底调研",
+    ],
+    visual: "architecture",
+    imageSrc: "/project-visuals/groot-arch.png",
   },
   {
     num: "03",

@@ -339,7 +339,7 @@ function latestStageDetails(node: TimelineNode, startIndex: number, total: numbe
     {
       id: `${node.id}-stage-1`,
       eyebrow: `经历详情 ${String(startIndex + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`,
-      title: `阶段一：${stage1Title}`,
+      title: node.company ? `${node.company}｜阶段一：${stage1Title}` : `阶段一：${stage1Title}`,
       period: firstStage?.period || displayPeriod(node.startDate, node.endDate),
       meta: `${node.company} · ${stage1Title}`,
       blocks: [
@@ -360,7 +360,7 @@ function latestStageDetails(node: TimelineNode, startIndex: number, total: numbe
     {
       id: `${node.id}-stage-2`,
       eyebrow: `经历详情 ${String(startIndex + 2).padStart(2, "0")} / ${String(total).padStart(2, "0")}`,
-      title: `阶段二：${stage2Title}`,
+      title: node.company ? `${node.company}｜阶段二：${stage2Title}` : `阶段二：${stage2Title}`,
       period: secondPeriod,
       meta: `${node.company} · ${stage2Title}`,
       blocks: [
