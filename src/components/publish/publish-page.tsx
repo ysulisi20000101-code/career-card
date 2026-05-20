@@ -25,6 +25,7 @@ import { savePublishedResume, removePublishedSite } from "@/lib/share/storage";
 import {
   buildShareArtifacts,
   choosePrimaryShareLink,
+  QR_MAX_URL_LENGTH,
   type ShareLinkState,
 } from "@/lib/share/strategy";
 import { getPublishChecks, hasBlockingPublishChecks, type PublishCheck } from "@/lib/share/publish-checks";
@@ -97,11 +98,17 @@ export function PublishPage({ projectId, siteId, onPublished }: PublishPageProps
         serverReady: serverPublish.ready,
         serverAccessible: !isLocalOrigin,
         portableLink,
+        portableUrlTooLong: portableLink.url.length > QR_MAX_URL_LENGTH,
       }),
     [isLocalOrigin, portableLink, serverPublish.ready, serverPublish.url],
   );
   const primaryShareKey = primaryShare.capability;
-  const primaryShareTitle = primaryShare.capability === "server" ? "可分享短链接" : primaryShare.capability === "portable" ? "可分享长链接（兜底）" : "可分享链接";
+  const primaryShareTitle =
+    primaryShare.capability === "server"
+      ? "可分享短链接"
+      : primaryShare.capability === "portable" && primaryShare.url.length > QR_MAX_URL_LENGTH
+        ? "可分享长链接（兜底）"
+        : "可分享链接（跨设备）";
 
   const copyText = useCallback(async (value: string, key: string) => {
     if (!value) return;
@@ -204,7 +211,13 @@ export function PublishPage({ projectId, siteId, onPublished }: PublishPageProps
       onPublished?.({
         slug,
         shortUrl: publicUrl,
-        shareUrl: serverLinkReady && !isLocalOrigin ? publicUrl : artifacts.recommendedLink.url,
+        shareUrl: choosePrimaryShareLink({
+          serverUrl: publicUrl,
+          serverReady: serverLinkReady,
+          serverAccessible: !isLocalOrigin,
+          portableLink: artifacts.portableLink,
+          portableUrlTooLong: artifacts.portableUrlTooLong,
+        }).url,
         publishedAt: now,
       });
     }

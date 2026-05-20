@@ -76,7 +76,7 @@ export function buildShareArtifacts(
     qrLevel,
     localPreviewLink,
     portableLink,
-    recommendedLink: portableLink.ready ? portableLink : unavailable(portableLink.reason ?? "暂无可分享链接。"),
+    recommendedLink: portableLink.ready && !portableUrlTooLong ? portableLink : unavailable(portableLink.reason ?? "暂无可分享链接。"),
   };
 }
 
@@ -85,7 +85,9 @@ export function choosePrimaryShareLink(params: {
   serverReady: boolean;
   serverAccessible: boolean;
   portableLink: ShareLinkState;
+  portableUrlTooLong?: boolean;
 }): ShareLinkState {
+  if (params.portableLink.ready && !params.portableUrlTooLong) return params.portableLink;
   if (params.serverReady && params.serverAccessible && params.serverUrl) {
     return {
       capability: "server",

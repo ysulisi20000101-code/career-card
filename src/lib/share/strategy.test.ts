@@ -84,7 +84,7 @@ describe("share strategy", () => {
     expect(primary.capability).toBe("portable");
   });
 
-  it("prefers verified server short link when available", () => {
+  it("prefers compact portable link when it fits normal sharing channels", () => {
     const artifacts = buildShareArtifacts("https://example.com", "demo", smallResumeData);
 
     const primary = choosePrimaryShareLink({
@@ -95,6 +95,20 @@ describe("share strategy", () => {
     });
 
     expect(artifacts.portableLink.ready).toBe(true);
+    expect(primary.capability).toBe("portable");
+  });
+
+  it("prefers verified server short link when portable link is too long", () => {
+    const artifacts = buildShareArtifacts("https://example.com", "demo", smallResumeData);
+
+    const primary = choosePrimaryShareLink({
+      serverUrl: "https://example.com/p/demo",
+      serverReady: true,
+      serverAccessible: true,
+      portableLink: artifacts.portableLink,
+      portableUrlTooLong: true,
+    });
+
     expect(primary.capability).toBe("server");
     expect(primary.url).toBe("https://example.com/p/demo");
   });
@@ -110,6 +124,39 @@ describe("share strategy", () => {
     });
 
     expect(primary.capability).toBe("portable");
+  });
+
+  it("keeps reference-profile portable links short enough for WeChat sharing", () => {
+    const data: ResumeData = {
+      ...smallResumeData,
+      profile: {
+        ...smallResumeData.profile,
+        name: "李锦涛",
+        title: "产品负责人 / 产品总监",
+        summary: "Groot-Arch、AI Agent、RAG、国科础石、工具链、SOME/IP、DDS。",
+      },
+      timeline: [
+        {
+          id: "gkcs",
+          company: "国科础石",
+          position: "平台产品负责人 / AI 产品负责人",
+          startDate: "2023.06",
+          endDate: "至今",
+          description: "负责 Groot-Arch、AI Agent、RAG 与工具链平台建设。",
+          highlights: ["10+ 客户项目", "100+ 研发用户"],
+          projects: [],
+          skills: ["Groot-Arch", "AI Agent", "RAG"],
+          order: 0,
+          careerKind: "fulltime",
+        },
+      ],
+    };
+
+    const artifacts = buildShareArtifacts("https://example.com", "lijintao", data);
+
+    expect(artifacts.portableLink.ready).toBe(true);
+    expect(artifacts.portableUrlTooLong).toBe(false);
+    expect(artifacts.portableUrl.length).toBeLessThan(1800);
   });
 
   it("compresses portable payloads while preserving hash decoding", () => {
